@@ -1,0 +1,2106 @@
+[
+  {
+    "id": 1,
+    "question": "Explain the difference between 'var', 'let', and 'const'.",
+    "answer": "1. **var**: Function-scoped, can be re-declared, and is hoisted (initialized as 'undefined'). \n2. **let**: Block-scoped, cannot be re-declared in the same scope, and is not hoisted (technically in a 'Temporal Dead Zone'). \n3. **const**: Same as 'let' but its value cannot be reassigned (though objects/arrays assigned to 'const' can still be mutated). Modern JavaScript best practice is to **use 'const' by default** and only use 'let' if you know the value needs to change. Avoid 'var' entirely as it can lead to unpredictable behavior due to its scoping rules.",
+    "counterQuestion": "What is the 'Temporal Dead Zone'?",
+    "counterQuestionAnswer": "The Temporal Dead Zone (TDZ) is the period between the start of a block and the actual line where a 'let' or 'const' variable is declared. If you try to access the variable during this time, JavaScript throws a ReferenceError, preventing the common bugs associated with 'var' hoisting.",
+    "category": "javascript",
+    "topic": "basics",
+    "difficulty": "easy",
+    "tags": [
+      "javascript",
+      "es6",
+      "basics",
+      "#highly_asked"
+    ],
+    "analogy": "Scoping is like 'Building Visibility'. 'var' is like a 'Global Megaphone' (everyone in the room/function hears it). 'let' is like a 'Private Conversation' (only people inside the current room/block hear it). 'const' is like 'Engraving in Stone' (once written, it cannot be changed).",
+    "code": "// var: Function scoped & hoisted\nvar x = 1;\n\n// let: Block scoped\nlet y = 2;\ny = 3; // Reassignable\n\n// const: Block scoped & constant\nconst z = 4;\n// z = 5; // Error: Assignment to constant variable"
+  },
+  {
+    "id": 2,
+    "question": "What is 'Hoisting' in JavaScript?",
+    "answer": "Hoisting is JavaScript's default behavior of moving declarations to the top of the current scope. **Function declarations** are fully hoisted (you can call them before they are defined), while **var variables** are hoisted but initialized as 'undefined'. **let and const** are hoisted but stay in the 'Temporal Dead Zone' until their line is reached. Understanding hoisting is critical for debugging why a variable might be 'undefined' even though it appears later in your code, or why a function can be called before its definition.",
+    "counterQuestion": "Are function expressions (const myFunc = () => {}) hoisted?",
+    "counterQuestionAnswer": "No. Function expressions are treated like any other variable declaration. If you use 'const' or 'let', they are in the TDZ and cannot be accessed before the line where they are defined. Only traditional 'function foo() {}' declarations are fully hoisted.",
+    "category": "javascript",
+    "topic": "basics",
+    "difficulty": "medium",
+    "tags": [
+      "javascript",
+      "internals",
+      "hoisting"
+    ],
+    "analogy": "Hoisting is like 'Preparing your tools before starting work'. JavaScript scans the code and moves all function and variable 'labels' to the top of the desk. You can call a function before you've 'written' it because the engine already knows the label exists.",
+    "code": "// Function Hoisting\nsayHi(); // Works!\ndefine sayHi() { console.log('Hi'); }\n\n// Variable Hoisting\nconsole.log(name); // undefined (declaration hoisted, but not value)\nvar name = 'Alice';\n\n// let/const Hoisting\nconsole.log(age); // ReferenceError (TDZ)\nlet age = 30;"
+  },
+  {
+    "id": 3,
+    "question": "Explain 'Closures' with a practical example.",
+    "answer": "A closure is a function that 'remembers' the environment in which it was created, even after the outer function has finished executing. **Example**: A function 'createCounter' that returns another function that increments a private variable. The inner function has access to the variable even after 'createCounter' has returned. Closures are essential for data privacy (emulating private methods), partial application (currying), and handling asynchronous callbacks where you need to preserve the state of a variable.",
+    "counterQuestion": "Can closures cause memory leaks?",
+    "counterQuestionAnswer": "Yes. Since a closure keeps a reference to its outer scope, the memory used by that scope cannot be garbage collected as long as the closure is alive. In modern engines, this is rarely an issue unless you create thousands of closures that reference large objects which are no longer needed.",
+    "category": "javascript",
+    "topic": "advanced",
+    "difficulty": "medium",
+    "tags": [
+      "javascript",
+      "closures",
+      "advanced",
+      "#highly_asked"
+    ],
+    "analogy": "A Closure is like a 'Backpack' that a function carries around. Even when the function leaves its 'Home' (the parent function), it keeps the variables it needs inside its backpack and can use them whenever it wants.",
+    "code": "function createCounter() {\n    let count = 0; // Private state\n    return function() {\n        count++;\n        return count;\n    };\n}\n\nconst counter = createCounter();\nconsole.log(counter()); // 1\nconsole.log(counter()); // 2"
+  },
+  {
+    "id": 4,
+    "question": "What is the 'Event Loop' in JavaScript? How does it handle asynchronous code?",
+    "answer": "The Event Loop is the mechanism that allows JavaScript to perform non-blocking I/O despite being single-threaded. \n1. **Call Stack**: Executes synchronous code. \n2. **Web APIs/Node APIs**: Handle async tasks like timers or network requests. \n3. **Callback Queue**: Where async results wait. \n4. **Event Loop**: Continuously checks if the call stack is empty; if it is, it pushes the first item from the callback queue onto the stack. This architecture ensures the UI remains responsive even while complex tasks are happening in the background.",
+    "counterQuestion": "What is the difference between the 'Macro-task' and 'Micro-task' queues?",
+    "counterQuestionAnswer": "Micro-tasks (like Promises) have higher priority. The Event Loop will process all waiting micro-tasks *immediately* after the current script finishes and before moving on to the next macro-task (like a 'setTimeout' callback or a mouse click).",
+    "category": "javascript",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "event_loop",
+      "asynchronous",
+      "#highly_asked"
+    ],
+    "analogy": "The Event Loop is like a 'Conveyor Belt' at a sushi restaurant. Synchronous tasks are handled immediately by the chef (Call Stack). Asynchronous tasks are put on the belt (Callback Queue). The chef only picks up a new plate from the belt when their hands are empty.",
+    "code": "console.log('Start'); // 1. Synchronous\n\nsetTimeout(() => {\n    console.log('Timeout'); // 3. Macro-task (belt)\n}, 0);\n\nPromise.resolve().then(() => {\n    console.log('Promise'); // 2. Micro-task (priority belt)\n});\n\nconsole.log('End'); // 1. Synchronous"
+  },
+  {
+    "id": 5,
+    "question": "Explain the difference between '==' and '==='.",
+    "answer": "1. **'==' (Abstract Equality)**: Compares values for equality after performing **Type Coercion**. For example, '1 == \"1\"' is true. \n2. **'===' (Strict Equality)**: Compares both the value and the **type** without coercion. '1 === \"1\"' is false because one is a number and the other is a string. Modern best practice is to **always use '==='** to avoid the often confusing and unpredictable side effects of type coercion, leading to cleaner and more robust code.",
+    "counterQuestion": "What is the result of 'null == undefined' vs 'null === undefined'?",
+    "counterQuestionAnswer": "'null == undefined' is true because of type coercion. 'null === undefined' is false because they are different primitive types. This is one of the few places where '==' is sometimes intentionally used, though checking for both explicitly is still safer.",
+    "category": "javascript",
+    "topic": "basics",
+    "difficulty": "easy",
+    "tags": [
+      "javascript",
+      "basics",
+      "equality"
+    ],
+    "analogy": "'==' is like 'Checking if two people are from the same family' (they look similar enough). '===' is like 'Checking if they are the exact same person' (fingerprints must match, no exceptions).",
+    "code": "5 == '5';   // true (type coercion: string becomes number)\n5 === '5';  // false (types are different)\n\nnull == undefined; // true\nnull === undefined; // false\n\n0 == false; // true\n0 === false; // false"
+  },
+  {
+    "id": 6,
+    "question": "What is the difference between 'null' and 'undefined'?",
+    "answer": "1. **undefined**: Means a variable has been declared but has not yet been assigned a value. It is the default value provided by the JavaScript engine. \n2. **null**: Represents an intentional **absence of value**. It must be explicitly assigned by the developer to signify that a variable is empty. In short: 'undefined' is the system's way of saying 'I don't know what this is yet', while 'null' is the developer's way of saying 'I know this is nothing'.",
+    "counterQuestion": "What is 'typeof null' and 'typeof undefined'?",
+    "counterQuestionAnswer": "'typeof undefined' is \"undefined\". However, 'typeof null' is \"object\". This is a well-known, historical bug in JavaScript that cannot be fixed without breaking the web, so developers must be aware of it when performing type checks.",
+    "category": "javascript",
+    "topic": "basics",
+    "difficulty": "easy",
+    "tags": [
+      "javascript",
+      "basics",
+      "types"
+    ],
+    "analogy": "Undefined is like a 'Missing Label' on a box (the box exists, but we don't know what it's for). Null is an 'Empty Box' (we explicitly put a label on it that says 'Empty').",
+    "code": "let name; // undefined\nlet age = null; // null (explicitly empty)\n\nconsole.log(typeof undefined); // \"undefined\"\nconsole.log(typeof null);      // \"object\" (legacy bug)\n\nif (name == null) { } // checks for both null and undefined"
+  },
+  {
+    "id": 7,
+    "question": "Explain 'call()', 'apply()', and 'bind()'. When would you use each?",
+    "answer": "These methods are used to control the 'this' context of a function: \n1. **call()**: Invokes a function with a specific 'this' and arguments passed individually (e.g., 'func.call(context, arg1, arg2)'). \n2. **apply()**: Invokes a function with a specific 'this' and arguments passed as an array (e.g., 'func.apply(context, [arg1, arg2])'). \n3. **bind()**: Does **not** invoke the function immediately; instead, it returns a new function with the 'this' context permanently bound. Use 'call/apply' for immediate execution and 'bind' for events or callbacks where you need to preserve context for later use.",
+    "counterQuestion": "How do arrow functions handle 'this'?",
+    "counterQuestionAnswer": "Arrow functions do not have their own 'this'. Instead, they 'inherit' the 'this' from the surrounding lexical scope (the context where they were defined). This makes 'call/apply/bind' ineffective for changing the 'this' of an arrow function.",
+    "category": "javascript",
+    "topic": "functions",
+    "difficulty": "medium",
+    "tags": [
+      "javascript",
+      "context",
+      "this",
+      "#highly_asked"
+    ],
+    "analogy": "Context methods are like 'Borrowing a car'. .call() is 'Borrowing and driving right now'. .apply() is 'Borrowing and bringing a suitcase (array) of luggage'. .bind() is 'Signing a contract to borrow the car next weekend'.",
+    "code": "const user = { name: 'Alice' };\nfunction greet(greeting, punctuation) {\n    console.log(`${greeting}, I am ${this.name}${punctuation}`);\n}\n\ngreet.call(user, 'Hello', '!'); // Immediate\ngreet.apply(user, ['Hi', '.']); // Immediate with array\n\nconst greetAlice = greet.bind(user); // Returns new function\ngreetAlice('Welcome', '?');"
+  },
+  {
+    "id": 8,
+    "question": "What are 'Promises'? How do you use '.then()' vs 'async/await'?",
+    "answer": "A Promise is an object representing the eventual completion (or failure) of an asynchronous operation. \n1. **.then()**: The traditional way to handle promises using callbacks (chaining). \n2. **async/await**: Modern syntax built on top of promises that allows you to write asynchronous code that **looks and behaves like synchronous code**. It uses 'try/catch' for error handling, making it significantly more readable and easier to debug than long chains of '.then().catch()'. **Always use async/await** in modern projects for better code clarity.",
+    "counterQuestion": "What are the three states of a Promise?",
+    "counterQuestionAnswer": "1. **Pending**: Initial state, neither fulfilled nor rejected. \n2. **Fulfilled**: The operation completed successfully. \n3. **Rejected**: The operation failed. Once a promise is either fulfilled or rejected, it is 'settled' and its state can never change again.",
+    "category": "javascript",
+    "topic": "asynchronous",
+    "difficulty": "medium",
+    "tags": [
+      "javascript",
+      "promises",
+      "async_await",
+      "#highly_asked"
+    ],
+    "analogy": "A Promise is like 'Ordering a Pizza'. You get a receipt (Promise) immediately. You can go do other things (non-blocking). Eventually, the pizza arrives (Fulfilled) or they call saying they're out of dough (Rejected). async/await is like 'Waiting for the delivery person at the door'—the code looks like it stops, but you're actually free to do other things while waiting.",
+    "code": "// async/await syntax (Cleanest)\nasync function fetchData() {\n    try {\n        const response = await fetch('https://api.example.com/data');\n        const data = await response.json();\n        console.log(data);\n    } catch (error) {\n        console.error('Failed:', error);\n    }\n}"
+  },
+  {
+    "id": 9,
+    "question": "Explain the 'Spread' (...) and 'Rest' (...) operators.",
+    "answer": "Both use the same syntax (...) but serve opposite purposes: \n1. **Spread**: 'Expands' an array or object into individual elements (e.g., '[...arr1, ...arr2]' to merge arrays). \n2. **Rest**: 'Collects' multiple elements into a single array (e.g., 'function(...args)' to accept any number of arguments). Spread is used for copying, merging, and passing arguments, while Rest is used for destructuring and handling variable function parameters. They are essential tools for writing clean, functional-style JavaScript.",
+    "counterQuestion": "Does spreading an object create a deep copy or a shallow copy?",
+    "counterQuestionAnswer": "The spread operator creates a **shallow copy**. It copies the top-level properties by value, but any nested objects or arrays are still passed by reference. Modifying a nested object in the copy will also modify it in the original.",
+    "category": "javascript",
+    "topic": "basics",
+    "difficulty": "medium",
+    "tags": [
+      "javascript",
+      "es6",
+      "operators"
+    ],
+    "analogy": "Spread is like 'Unpacking a suitcase' (dumping all items onto the bed). Rest is like 'Packing a suitcase' (gathering all loose items into one container).",
+    "code": "// Spread: Expanding\nconst arr = [1, 2, 3];\nconst newArr = [...arr, 4, 5];\n\n// Rest: Collecting\nfunction sum(...numbers) {\n    return numbers.reduce((a, b) => a + b, 0);\n}\n\n// Destructuring with Rest\nconst [first, ...rest] = [1, 2, 3, 4]; // first=1, rest=[2,3,4]"
+  },
+  {
+    "id": 10,
+    "question": "Explain 'Promise.all', 'allSettled', 'any', and 'race'. When to use which?",
+    "answer": "1. **Promise.all**: Waits for all to succeed; fails immediately if any one fails. Use for parallel requests that all must finish. \n2. **Promise.allSettled**: Waits for all to finish, regardless of success/failure. Use when you need to know the result of every individual operation. \n3. **Promise.any**: Returns the first one to **succeed**. Use when you have multiple sources and only need one to work. \n4. **Promise.race**: Returns the first one to **settle** (either succeed or fail). Use for implementing timeouts on network requests.",
+    "counterQuestion": "What happens if you pass an empty array to Promise.all?",
+    "counterQuestionAnswer": "Promise.all([]) returns a promise that is already fulfilled with an empty array. It resolves immediately and synchronously.",
+    "category": "javascript",
+    "topic": "asynchronous",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "promises",
+      "concurrency"
+    ],
+    "analogy": "Concurrency is like 'Racing horses'. .all() is 'The race only counts if everyone finishes'. .race() is 'The first horse to cross the line wins (no matter what)'. .any() is 'The first horse to finish *cleanly* (without falling) wins'. .allSettled() is 'Tell me how every horse did, whether they finished or fell'.",
+    "code": "// Promise.all: Fast fail\nPromise.all([p1, p2, p3]).catch(err => 'One failed!');\n\n// Promise.allSettled: Results for all\nconst results = await Promise.allSettled([p1, p2]);\n// [{status: 'fulfilled', value: 10}, {status: 'rejected', reason: 'Error'}]"
+  },
+  {
+    "id": 11,
+    "question": "Explain 'Template Literals' and 'Destructuring' in ES6.",
+    "answer": "1. **Template Literals**: Uses backticks (`) and '${}' to allow multi-line strings and easy variable interpolation without messy concatenation. \n2. **Destructuring**: A syntax that allows you to 'unpack' values from arrays or properties from objects into distinct variables (e.g., 'const { name, age } = user'). These features make JavaScript significantly more expressive and readable, allowing for more concise data manipulation and string formatting.",
+    "counterQuestion": "Can you set default values during destructuring?",
+    "counterQuestionAnswer": "Yes. You can assign a default value like 'const { name = \"Anonymous\" } = user'. If the 'name' property is undefined in the 'user' object, the variable will take the value \"Anonymous\" instead of being undefined.",
+    "category": "javascript",
+    "topic": "es6",
+    "difficulty": "easy",
+    "tags": [
+      "javascript",
+      "es6",
+      "syntax"
+    ],
+    "analogy": "Template Literals are like 'Mad Libs' (fill in the blanks directly in the sentence). Destructuring is like 'Opening a gift' and taking exactly the parts you want out of the box instead of digging through the whole thing.",
+    "code": "// Template Literals\nconst user = 'Alice';\nconsole.log(`Hello, ${user}!`);\n\n// Destructuring\nconst settings = { theme: 'dark', fontSize: 16 };\nconst { theme, fontSize: size } = settings; // theme='dark', size=16"
+  },
+  {
+    "id": 12,
+    "question": "What is the 'this' keyword? How does its value change in different contexts?",
+    "answer": "The 'this' keyword refers to the object that is currently executing the code. Its value depends on **how the function is called**: \n1. **Global context**: 'this' is the window (or global). \n2. **Method call**: 'this' is the object the method belongs to. \n3. **Function call**: In strict mode, 'this' is 'undefined'. \n4. **Arrow functions**: 'this' is inherited from the parent scope. \n5. **Constructor/Class**: 'this' is the new instance being created. Mastering 'this' is fundamental to understanding object-oriented programming and event handling in JavaScript.",
+    "counterQuestion": "What is 'Partial Application' using .bind()?",
+    "counterQuestionAnswer": "Partial application is using '.bind()' to pre-fill some arguments of a function without calling it yet. For example, 'const add5 = add.bind(null, 5)' returns a new function that will always add 5 to whatever argument you pass it later.",
+    "category": "javascript",
+    "topic": "fundamentals",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "this",
+      "context"
+    ],
+    "analogy": "The 'this' keyword is like the word 'I' in a sentence. If I say it, I'm the subject. If you say it, you're the subject. Who 'this' is depends entirely on who is 'speaking' (which object is calling the function).",
+    "code": "const obj = {\n    name: 'MyObj',\n    sayHi() { console.log(this.name); } // 'this' is obj\n};\n\nobj.sayHi(); // 'MyObj'\nconst detached = obj.sayHi;\ndetached(); // undefined (global context)"
+  },
+  {
+    "id": 13,
+    "question": "Explain 'Arrow Functions'. How do they differ from regular functions regarding 'this'?",
+    "answer": "Arrow functions ('() => {}') provide a shorter syntax and have two major differences: \n1. **Lexical 'this'**: They do not have their own 'this'; they inherit it from the surrounding code. \n2. **No 'arguments' object**: They do not have their own 'arguments' local variable (you must use Rest parameters instead). They are ideal for callbacks and functional programming where you want to preserve the 'this' of the parent class or method without using '.bind(this)' everywhere.",
+    "counterQuestion": "Can arrow functions be used as constructors?",
+    "counterQuestionAnswer": "No. Arrow functions cannot be used with the 'new' keyword. They lack a '[[Construct]]' method and do not have a 'prototype' property, so trying to instantiate them will throw a TypeError.",
+    "category": "javascript",
+    "topic": "es6",
+    "difficulty": "medium",
+    "tags": [
+      "javascript",
+      "es6",
+      "functions",
+      "#highly_asked"
+    ],
+    "analogy": "Arrow Functions are like 'Self-driving Cars'. They don't have their own 'steering wheel' (this); they just go where the parent context tells them to. Regular functions are like 'Traditional Cars' where the driver (this) changes depending on who gets in the seat.",
+    "code": "const group = {\n    members: ['Alice'],\n    logMembers() {\n        this.members.forEach((m) => {\n            console.log(`${m} is in ${this.name}`); // Works! 'this' inherited\n        });\n    }\n};"
+  },
+  {
+    "id": 14,
+    "question": "What is the 'Prototype' chain in JavaScript?",
+    "answer": "Every object in JavaScript has a 'prototype'\u2014a link to another object from which it inherits properties and methods. When you access a property, JavaScript first looks at the object itself; if not found, it follows the chain to the object's prototype, and so on, until it reaches 'null'. This is how inheritance works in JavaScript. For example, all arrays inherit from 'Array.prototype', which is where methods like '.map()' and '.filter()' are defined.",
+    "counterQuestion": "What is the difference between '__proto__' and 'prototype'?",
+    "counterQuestionAnswer": "'prototype' is a property of constructor functions used to define what properties instances will inherit. '__proto__' (or 'Object.getPrototypeOf') is the actual internal link on an instance that points to its prototype. In short: functions have 'prototype', and instances have '__proto__'.",
+    "category": "javascript",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "prototypes",
+      "inheritance"
+    ],
+    "analogy": "The Prototype Chain is like 'Looking up a word in a multi-volume encyclopedia'. If Volume 1 doesn't have the word, you check Volume 2, then Volume 3, until you find it or run out of books.",
+    "code": "const animal = { eats: true };\nconst rabbit = Object.create(animal);\n\nconsole.log(rabbit.eats); // true (found on prototype)\nconsole.log(rabbit.jumps); // undefined (not found in chain)"
+  },
+  {
+    "id": 15,
+    "question": "Explain 'Event Bubbling' vs 'Event Capturing'. What is 'Event Delegation'?",
+    "answer": "1. **Event Bubbling**: The event starts at the target element and 'bubbles up' to the root (default behavior). \n2. **Event Capturing**: The event starts at the root and goes down to the target. \n3. **Event Delegation**: Instead of adding an event listener to every individual element (e.g., every list item), you add a single listener to the **parent** and use the 'event.target' to identify which child was clicked. This is much more efficient for performance and automatically handles elements added to the DOM dynamically.",
+    "counterQuestion": "How do you stop an event from bubbling?",
+    "counterQuestionAnswer": "You use 'event.stopPropagation()'. This prevents the event from moving further up the DOM tree, ensuring that parent event handlers are not triggered by an action on a child element.",
+    "category": "javascript",
+    "topic": "dom",
+    "difficulty": "medium",
+    "tags": [
+      "javascript",
+      "dom",
+      "events",
+      "#highly_asked"
+    ],
+    "analogy": "Event Bubbling is like 'A ripple in a pond' moving outwards. Delegation is like 'A security guard at the gate' who handles all visitors instead of having a guard at every single door inside the building.",
+    "code": "// Event Delegation\ndocument.querySelector('#parent').addEventListener('click', (e) => {\n    if (e.target.matches('.child-button')) {\n        console.log('Button clicked:', e.target.textContent);\n    }\n});"
+  },
+  {
+    "id": 16,
+    "question": "What is the difference between 'CommonJS' (require) and 'ES Modules' (import)?",
+    "answer": "1. **CommonJS (CJS)**: The traditional Node.js format. Uses 'require()' and 'module.exports'. It is synchronous and loads modules at runtime. \n2. **ES Modules (ESM)**: The official JavaScript standard. Uses 'import' and 'export'. It is asynchronous and allows for 'Tree Shaking' (removing unused code during build). Modern Node.js and browsers favor ESM because it is more efficient and standardized, though CJS is still widely used in older backend projects.",
+    "counterQuestion": "Can you use 'require' inside an ES Module?",
+    "counterQuestionAnswer": "No, 'require' is not defined in ES Modules. If you need to import a CommonJS module into an ESM file, you can use the 'import' statement, or in Node.js, you can use the 'createRequire' utility if absolutely necessary.",
+    "category": "javascript",
+    "topic": "modules",
+    "difficulty": "medium",
+    "tags": [
+      "javascript",
+      "modules",
+      "node"
+    ],
+    "analogy": "CommonJS is like 'Buying a completed Lego set' (you get the whole thing at once). ES Modules are like 'Building with Lego instructions' (you only open the bags you need, and you can see exactly which pieces go where before you start).",
+    "code": "// CommonJS (CJS)\nconst fs = require('fs');\nmodule.exports = { data: 123 };\n\n// ES Modules (ESM)\nimport { readFile } from 'fs';\nexport const data = 123;"
+  },
+  {
+    "id": 17,
+    "question": "Explain 'Prototypal Inheritance'. How does it differ from Class-based inheritance?",
+    "answer": "In **Class-based** inheritance (like Java/C++), classes are blueprints and objects are instances of those blueprints. In **Prototypal** inheritance, objects inherit directly from other objects. JavaScript's 'class' keyword is actually 'syntactic sugar' over prototypes. This means JavaScript is more flexible; you can add methods to a prototype at runtime and have all existing instances immediately inherit them, which is not possible in most traditional class-based languages.",
+    "counterQuestion": "What is 'Shadowing' in prototypal inheritance?",
+    "counterQuestionAnswer": "Shadowing occurs when an object has a property with the same name as one in its prototype. JavaScript will find and use the object's own property first, effectively 'shadowing' or overriding the one from the prototype.",
+    "category": "javascript",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "inheritance",
+      "prototypes"
+    ],
+    "analogy": "Prototypal Inheritance is like 'Hand-me-down clothes'. You wear your brother's jacket, but you can sew on your own patches (shadowing). Class-based inheritance is like 'Building from a blueprint'—every house looks the same because they followed the same plan.",
+    "code": "function Animal() {}\nAnimal.prototype.speak = () => 'hi';\n\nconst dog = new Animal();\ndog.speak = () => 'woof'; // Shadowing the prototype method"
+  },
+  {
+    "id": 18,
+    "question": "What is 'Currying' in JavaScript? Why is it useful?",
+    "answer": "Currying is a functional programming technique where a function with multiple arguments is transformed into a sequence of functions that each take a single argument. **Example**: 'f(a, b, c)' becomes 'f(a)(b)(c)'. It is useful for **Partial Application**, where you want to fix some arguments of a function and reuse the resulting function elsewhere (e.g., creating a reusable 'logger' function that already has a specific 'prefix' set). It leads to cleaner, more modular, and highly reusable code.",
+    "counterQuestion": "How do you implement a simple curry function?",
+    "counterQuestionAnswer": "A simple curry function uses closures: 'const curry = (f) => (a) => (b) => f(a, b)'. This returns a function that takes 'a', which then returns a function that takes 'b' and finally executes the original function 'f'.",
+    "category": "javascript",
+    "topic": "functional",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "functional_programming",
+      "currying"
+    ],
+    "analogy": "Currying is like 'A multi-step checkout process'. Instead of asking for your Name, Address, and Credit Card all at once, the store asks for your Name, then your Address, then your Card, giving you a custom 'Receipt' at every step.",
+    "code": "const multiply = (a) => (b) => a * b;\nconst double = multiply(2);\nconst triple = multiply(3);\n\nconsole.log(double(5)); // 10\nconsole.log(triple(5)); // 15"
+  },
+  {
+    "id": 19,
+    "question": "Explain 'Debouncing' vs 'Throttling' in JavaScript. Provide use cases for each.",
+    "answer": "1. **Debouncing**: Ensures a function is only called once after a certain amount of time has passed since the last event (e.g., waiting for a user to stop typing before searching). \n2. **Throttling**: Ensures a function is called at most once every X milliseconds (e.g., updating a scroll position at a steady rate). **Use Debouncing** for search bars and window resizing. **Use Throttling** for scroll events, mouse movements, or game loops where you need a steady but limited execution rate.",
+    "counterQuestion": "What is the 'Leading' vs 'Trailing' edge in debouncing?",
+    "counterQuestionAnswer": "A 'Leading' debounce executes the function immediately on the first call and then ignores subsequent calls until the timer resets. A 'Trailing' debounce (default) waits for the timer to finish before executing. Some implementations allow for both, which can be useful for things like button clicks where you want immediate feedback but also want to prevent spamming.",
+    "category": "javascript",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "performance",
+      "optimization",
+      "#highly_asked"
+    ],
+    "analogy": "Debouncing is like 'An elevator door'. It waits for the last person to walk in before closing. If someone keeps walking in, it never closes. Throttling is like 'A metered faucet'—no matter how many times you hit the button, water only comes out once every 5 seconds.",
+    "code": "// Debounce Example\nfunction debounce(func, delay) {\n    let timer;\n    return (...args) => {\n        clearTimeout(timer);\n        timer = setTimeout(() => func(...args), delay);\n    };\n}"
+  },
+  {
+    "id": 20,
+    "question": "What is 'Scope' and 'Execution Context'?",
+    "answer": "1. **Execution Context**: The environment in which JavaScript code is evaluated and executed. It contains the code's scope, variables, and the 'this' value. \n2. **Scope**: Determines the visibility or lifetime of variables. JavaScript has **Global**, **Function**, and **Block** scope. **Scope Chain** is the mechanism the engine uses to find variables: it looks in the current scope, then the outer scope, and so on up to the global scope. Every time a function is called, a new Execution Context is created and pushed onto the 'Call Stack', ensuring that variables remain isolated and correctly scoped.",
+    "counterQuestion": "What is 'Lexical Scope'?",
+    "counterQuestionAnswer": "Lexical Scope (or static scope) means that the scope of a variable is determined by its position in the source code. A function has access to the variables defined in its parent scope at the time it was *written*, not when it was *called*. This is what makes closures possible.",
+    "category": "javascript",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "scope",
+      "execution_context"
+    ],
+    "analogy": "Scope is like 'What you can see from your window'. Execution Context is 'The room you are currently standing in'. Different rooms have different windows, and some rooms are inside other rooms.",
+    "code": "const globalVar = 'I am global';\n\nfunction outer() {\n    const outerVar = 'I am outer';\n    function inner() {\n        const innerVar = 'I am inner';\n        console.log(globalVar, outerVar, innerVar); // Accesses all\n    }\n    inner();\n}"
+  },
+  {
+    "id": 21,
+    "question": "Explain 'Memory Management' and 'Garbage Collection' in V8.",
+    "answer": "V8 (the engine behind Chrome and Node.js) manages memory automatically using a 'Mark-and-Sweep' garbage collector. \n1. **Memory Heap**: Where objects are stored. \n2. **Stack**: Where primitive values and execution contexts are stored. The garbage collector periodically identifies 'unreachable' objects (those with no references from the root) and frees up their memory. V8 uses a generational approach: **Young Generation** (new objects, frequent small GC) and **Old Generation** (surviving objects, less frequent major GC), which optimizes performance for the high turnover of objects in typical JS apps.",
+    "counterQuestion": "What is a 'Root' in garbage collection?",
+    "counterQuestionAnswer": "A Root is a global variable or a local variable in the current call stack that the garbage collector assumes is always reachable. Any object that can be traced back to a Root is kept; anything else is considered garbage and collected.",
+    "category": "javascript",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "memory",
+      "v8"
+    ],
+    "analogy": "Garbage Collection is like 'A landlord cleaning out an abandoned apartment'. If no one has a key (reference) to the apartment, the landlord assumes no one lives there and throws away all the furniture (frees memory) to make room for a new tenant.",
+    "code": "// Potential Memory Leak: Unset interval\nconst intervalId = setInterval(() => {\n    console.log('Running...');\n}, 1000);\n\n// Correct: Clear it when done\nclearInterval(intervalId);"
+  },
+  {
+    "id": 22,
+    "question": "What is a WeakMap or WeakSet in JavaScript, and when would you use it to prevent memory leaks?",
+    "answer": "WeakMap and WeakSet are collections that hold **'weak' references** to objects. Unlike a regular Map or Set, if an object is only referenced in a WeakMap/WeakSet, the garbage collector can still reclaim its memory. This is critical for preventing memory leaks when associating data with DOM elements or objects that might be deleted later. Once the object is garbage collected, its entry in the WeakMap/WeakSet is automatically removed. They are essentially 'self-cleaning' collections for object-related metadata.",
+    "counterQuestion": "Can you use a primitive (like a string or number) as a key in a WeakMap?",
+    "counterQuestionAnswer": "No. Keys in a WeakMap and values in a WeakSet must be **objects**. This is because primitives are passed by value and don't have a unique reference that can be 'weakly' tracked by the garbage collector.",
+    "category": "javascript",
+    "topic": "advanced",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "memory",
+      "weakmap"
+    ],
+    "analogy": "A WeakMap is like 'A post-it note on a balloon'. If the balloon (object) pops or flies away (is garbage collected), the post-it note also disappears automatically. A regular Map is like 'A heavy brick tied to the balloon'—the balloon can't fly away as long as the brick is holding it.",
+    "code": "let user = { name: 'Alice' };\nconst metadata = new WeakMap();\n\nmetadata.set(user, { lastLogin: Date.now() });\n\nuser = null; // 'user' object is now eligible for GC,\n             // and its metadata will be automatically removed."
+  },
+  {
+    "id": 23,
+    "question": "How do 'Web Workers' work? When should you use them?",
+    "answer": "Web Workers allow you to run JavaScript in a **background thread**, separate from the main UI thread. This is the only way to perform heavy computations (like image processing, large data sorting, or complex math) without 'freezing' the browser's UI. Workers communicate with the main thread using 'postMessage()' and cannot access the DOM directly. **Use them** when you have tasks that take more than a few milliseconds to ensure your animations remain smooth and the page remains responsive to user input.",
+    "counterQuestion": "What is the 'Structured Clone Algorithm'?",
+    "counterQuestionAnswer": "When you send data to a Web Worker via 'postMessage', it isn't shared by reference. Instead, it is copied using the Structured Clone Algorithm. This ensures that the main thread and the worker don't accidentally modify the same memory, which would lead to race conditions (though 'SharedArrayBuffer' is an exception for advanced use cases).",
+    "category": "javascript",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "web_workers",
+      "concurrency"
+    ],
+    "analogy": "Web Workers are like 'Hiring a personal assistant' to do your taxes while you focus on driving. You can't both use the same pen at the same time (shared memory), but you can send messages back and forth to stay coordinated.",
+    "code": "// main.js\nconst worker = new Worker('worker.js');\nworker.postMessage({ type: 'start', data: 1000 });\n\n// worker.js\nself.onmessage = (e) => {\n    const result = performHeavyMath(e.data);\n    self.postMessage(result);\n};"
+  },
+  {
+    "id": 24,
+    "question": "Explain 'CORS' (Cross-Origin Resource Sharing). What are 'Pre-flight' requests (OPTIONS) and why do they happen?",
+    "answer": "CORS is a security mechanism that allows a server to specify which origins are allowed to access its resources. A **Pre-flight request** is an 'OPTIONS' call sent by the browser before the actual request to check if the server approves the cross-origin call. It happens when the request is 'non-simple' (e.g., using custom headers like 'Authorization', or methods other than GET/POST/HEAD). This ensures that the browser doesn't send sensitive data or perform potentially destructive actions (like a DELETE) unless the server explicitly confirms it trusts the requesting origin.",
+    "counterQuestion": "How do you 'fix' a CORS error on the backend?",
+    "counterQuestionAnswer": "You configure the server to return the correct 'Access-Control-Allow-Origin' header (matching the client's origin or '*' for public APIs) along with 'Access-Control-Allow-Methods' and 'Access-Control-Allow-Headers' during the OPTIONS pre-flight check.",
+    "category": "javascript",
+    "topic": "security",
+    "difficulty": "medium",
+    "tags": [
+      "javascript",
+      "security",
+      "cors"
+    ],
+    "analogy": "CORS is like 'The bouncer at a club'. The bouncer checks your ID (Origin) against a guest list. A Pre-flight request is like 'Calling the club ahead of time' to ask if you're even allowed to wear sneakers (custom headers) before you drive all the way there.",
+    "code": "fetch('https://api.example.com/data', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ key: 'value' })\n});\n// Browser automatically sends an OPTIONS request first if needed."
+  },
+  {
+    "id": 25,
+    "question": "Discuss modern JS runtimes: Node.js vs Deno vs Bun. What are the key differences in security and performance?",
+    "answer": "1. **Node.js**: The established giant; huge ecosystem (NPM) but has legacy 'CommonJS' and complex security defaults. \n2. **Deno**: Built by Node's creator to fix its flaws. Secure by default (no file/network access unless permitted) and has native TypeScript/ESM support. \n3. **Bun**: The newcomer focused on extreme speed. It uses 'JavaScriptCore' (from Safari) instead of V8 and includes a built-in bundler, test runner, and package manager. **Choose Node.js** for stability and ecosystem. **Choose Deno** for security-sensitive or TS-first projects. **Choose Bun** for maximum performance and a streamlined developer experience.",
+    "counterQuestion": "What is the 'Zig' language's role in Bun?",
+    "counterQuestionAnswer": "Bun is written in **Zig**, a low-level systems programming language. This choice, combined with the use of the JavaScriptCore engine, is a primary reason why Bun is significantly faster than Node.js and Deno for many I/O and startup tasks.",
+    "category": "javascript",
+    "topic": "runtimes",
+    "difficulty": "hard",
+    "tags": [
+      "node",
+      "deno",
+      "bun",
+      "performance"
+    ],
+    "analogy": "Node.js is like 'An old, reliable steam engine' (everyone knows how it works). Deno is like 'A modern electric car' (built-in safety, very clean). Bun is like 'A rocket ship' (designed specifically for incredible speed, skipping some old rules to get there).",
+    "code": "// Bun: Extremely fast package installation\n// bun install\n\n// Deno: No node_modules, import directly from URL\n// import { serve } from \"https://deno.land/std/http/server.ts\";"
+  },
+  {
+    "id": 26,
+    "question": "How do 'Generators' (function*) and 'Iterators' work in JS?",
+    "answer": "A **Generator** is a special function that can be paused and resumed, yielding values one at a time. It uses the 'function*' syntax and the 'yield' keyword. An **Iterator** is an object that provides a 'next()' method to traverse a collection. Generators are a powerful way to implement custom iteration logic, handle large data streams lazily (without loading everything into memory), and manage complex asynchronous workflows (like those in 'redux-saga') in a more synchronous-looking style.",
+    "counterQuestion": "What does a Generator return when you call it?",
+    "counterQuestionAnswer": "Calling a generator function does not execute its body. Instead, it returns a **Generator Object**, which is both an iterator and an iterable. You must call '.next()' on this object to begin or continue execution until the next 'yield' or 'return'.",
+    "category": "javascript",
+    "topic": "advanced",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "generators",
+      "iterators"
+    ],
+    "analogy": "A Generator is like 'A DVD player with a Pause button'. Instead of watching the whole movie at once, you can watch 5 minutes (yield), go get snacks, and then come back to exactly where you left off.",
+    "code": "function* idMaker() {\n    let index = 0;\n    while (true) yield index++;\n}\n\nconst gen = idMaker();\nconsole.log(gen.next().value); // 0\nconsole.log(gen.next().value); // 1"
+  },
+  {
+    "id": 27,
+    "question": "What is the 'Proxy' and 'Reflect' API in modern JS?",
+    "answer": "The **Proxy** object allows you to 'intercept' and redefine fundamental operations for another object (e.g., getting/setting properties, function calls). The **Reflect** API provides methods for these same operations, making it easier to forward the default behavior from inside a proxy trap. Together, they are essential for building reactive frameworks (like Vue 3), validation layers, logging systems, and 'smart' objects that can dynamically handle missing properties or enforce strict constraints.",
+    "counterQuestion": "What is a 'Trap' in the context of Proxy?",
+    "counterQuestionAnswer": "A 'Trap' is a method (like 'get', 'set', 'has', 'deleteProperty') that you define in the Proxy's handler object. It 'traps' the corresponding operation on the target object and allows you to execute your own custom logic instead.",
+    "category": "javascript",
+    "topic": "advanced",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "proxy",
+      "reflect"
+    ],
+    "analogy": "A Proxy is like 'A personal assistant who screens your calls'. They can answer simple questions (get), take messages (set), or even tell people you're not home (has) based on rules you give them.",
+    "code": "const user = { name: 'Alice' };\nconst proxy = new Proxy(user, {\n    get(target, prop) {\n        console.log(`Accessing ${prop}...`);\n        return Reflect.get(target, prop);\n    }\n});\n\nconsole.log(proxy.name); // Logs: Accessing name... Alice"
+  },
+  {
+    "id": 28,
+    "question": "What is 'Strict Mode' in JS?",
+    "answer": "Strict Mode ('use strict';) is a way to opt into a restricted variant of JavaScript that eliminates some silent errors and makes the engine run faster. It: \n1. **Prevents accidental globals** (throws an error if you assign to an undeclared variable). \n2. **Sets 'this' to undefined** in global functions (preventing window object leakage). \n3. **Throws errors** for invalid actions (like deleting non-deletable properties) that would normally fail silently. It is a standard best practice for modern codebases to ensure better security and fewer bugs.",
+    "counterQuestion": "Do ES Modules use strict mode by default?",
+    "counterQuestionAnswer": "Yes. All code inside an ES Module (import/export) is automatically in 'strict mode' by default, even if you don't explicitly include the 'use strict'; directive.",
+    "category": "javascript",
+    "topic": "basics",
+    "difficulty": "easy",
+    "tags": [
+      "javascript",
+      "strict_mode",
+      "best_practices"
+    ],
+    "analogy": "Strict Mode is like 'Enabling the safety on a power tool'. It stops you from doing dangerous things that might accidentally hurt your project, and it alerts you immediately when you're using the tool incorrectly.",
+    "code": "\"use strict\";\n\n// Error: Assignment to undeclared variable\n// x = 10; \n\nfunction myFunc() {\n    // Error: 'this' is undefined in strict mode\n    // console.log(this); \n}"
+  },
+  {
+    "id": 29,
+    "question": "How do you optimize JS performance for smooth 60fps animations?",
+    "answer": "To achieve 60fps, you have only ~16ms per frame. \n1. **requestAnimationFrame**: Use this instead of 'setTimeout' to sync your code with the browser's refresh rate. \n2. **Avoid Layout Thrashing**: Don't read and write DOM properties (like offsetWidth) in the same frame, as it forces the browser to recalculate the layout multiple times. \n3. **CSS over JS**: Use CSS transitions/animations and 'transform/opacity' wherever possible, as these can be handled by the GPU (Compositor thread) rather than the main JS thread, ensuring much smoother motion.",
+    "counterQuestion": "What is the 'will-change' property in CSS?",
+    "counterQuestionAnswer": "'will-change' tells the browser which properties are likely to change in the near future. This allows the browser to perform optimizations (like creating a new layer for the element) *before* the animation starts, reducing the chance of 'jank' or stuttering during the first frame.",
+    "category": "javascript",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "performance",
+      "animations"
+    ],
+    "analogy": "60fps is like 'A flipbook'. To make the motion look smooth, you need to flip 60 pages every second. If you spend too much time drawing on one page (blocking the main thread), the animation will stutter (jank).",
+    "code": "// Correct: Use requestAnimationFrame\nfunction animate() {\n    updateBoxPosition();\n    requestAnimationFrame(animate);\n}\nrequestAnimationFrame(animate);"
+  },
+  {
+    "id": 30,
+    "question": "Discuss 'Design Patterns' in JS (Module, Observer, Singleton, Factory).",
+    "answer": "1. **Module**: Encapsulates code using closures or ESM to keep the global scope clean. \n2. **Observer**: A subscription model where objects ('observers') are notified of state changes in a 'subject' (foundation of event handling). \n3. **Singleton**: Ensures a class has only one instance (e.g., a global database connection). \n4. **Factory**: A function that creates objects without specifying the exact class, allowing for more flexible and decoupled code. Using these patterns leads to more maintainable, scalable, and professional-grade JavaScript applications.",
+    "counterQuestion": "What is the 'Revealing Module Pattern'?",
+    "counterQuestionAnswer": "The Revealing Module Pattern is a variation where you define all your variables and functions in the private scope and return an object with pointers to only the functionality you want to make public. This provides a clear and consistent way to manage your module's public API.",
+    "category": "javascript",
+    "topic": "design_patterns",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "design_patterns",
+      "architecture"
+    ],
+    "analogy": "Design Patterns are like 'Standard blueprints for a house'. You don't need to reinvent how a bathroom is built every time; you just follow the standard pattern for plumbing and tiles, so any other plumber can understand your work.",
+    "code": "// Observer Pattern Example (Simplified)\nconst observers = [];\nconst notify = (data) => observers.forEach(o => o(data));\n\nconst sub1 = (d) => console.log('Sub 1 got:', d);\nobservers.push(sub1);\nnotify('Hello!');"
+  },
+  {
+    "id": 31,
+    "question": "How do you implement a custom 'Promise' from scratch?",
+    "answer": "Implementing a Promise requires: \n1. **State management** (pending, fulfilled, rejected). \n2. **Value storage**. \n3. **Callback queues** (onFulfilled, onRejected). \n4. **A 'then' method** that returns a new Promise (for chaining). The core logic involves ensuring that callbacks are executed asynchronously (using microtasks like 'queueMicrotask') and handling both success and error cases correctly according to the Promises/A+ specification. This exercise is the ultimate test of understanding closures, asynchronous execution, and state machines in JavaScript.",
+    "counterQuestion": "Why must 'then' always return a new Promise?",
+    "counterQuestionAnswer": "'then' must return a new Promise to enable 'Chaining'. If it returned the original promise, you couldn't transform the result or handle sequential asynchronous operations cleanly, as every 'then' in the chain would be fighting over the same resolution state.",
+    "category": "javascript",
+    "topic": "asynchronous",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "promises",
+      "internals"
+    ],
+    "analogy": "Building a Promise is like 'Building a Vending Machine'. You need a state (vending/dispensed), a way to accept money (executor), and a way to deliver the snack (resolve) or return an error if it's stuck (reject).",
+    "code": "class MyPromise {\n    constructor(executor) {\n        this.state = 'pending';\n        this.value = null;\n        this.callbacks = [];\n        const resolve = (val) => {\n            this.state = 'fulfilled';\n            this.value = val;\n            this.callbacks.forEach(cb => cb(val));\n        };\n        executor(resolve);\n    }\n    then(cb) { this.callbacks.push(cb); }\n}"
+  },
+  {
+    "id": 32,
+    "question": "Discuss 'Memory Leaks' in JS and how to profile them using Chrome DevTools.",
+    "answer": "Common memory leaks include: \n1. **Accidental Globals**. \n2. **Forgotten Timers/Callbacks** (setInterval never cleared). \n3. **Out-of-DOM references** (holding a JS variable to a deleted DOM element). \n4. **Closures** holding large objects. **Profiling**: Use the 'Memory' tab in Chrome DevTools. Take 'Heap Snapshots' to see what objects are taking up space, use 'Allocation Instrumentation' to see memory growth over time, and look for 'Detached DOM nodes' which are a common source of leaks in single-page applications.",
+    "counterQuestion": "What is the 'Shallow Size' vs 'Retained Size' of an object?",
+    "counterQuestionAnswer": "'Shallow Size' is the memory held by the object itself. 'Retained Size' is the total memory that would be freed if the object and all its dependents were garbage collected. When debugging leaks, the 'Retained Size' is the most important metric.",
+    "category": "javascript",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "memory_leaks",
+      "debugging"
+    ],
+    "analogy": "Profiling memory is like 'Checking for water leaks in a house'. You turn off all the faucets (stop the app) and look at the meter (Heap Snapshot). If the meter is still spinning, you know there's a hidden leak somewhere in the pipes (code).",
+    "code": "// Memory Leak: Detached DOM Node\nlet detachedNode;\nfunction createLeak() {\n    detachedNode = document.createElement('div');\n    // Node is created but never appended to DOM,\n    // yet 'detachedNode' global variable keeps it alive.\n}"
+  },
+  {
+    "id": 33,
+    "question": "Explain 'Tail Call Optimization' (TCO) in JS.",
+    "answer": "TCO is a feature where the engine can execute a recursive function call without adding a new frame to the call stack, provided the recursive call is the very last action ('tail position') in the function. This prevents 'Stack Overflow' errors and allows for infinite recursion in a constant memory space. While part of the ES6 specification, it is currently **only implemented in Safari (WebKit)**. Most other engines (V8, SpiderMonkey) chose not to implement it due to debugging difficulties and the complexity of preserving stack traces.",
+    "counterQuestion": "What is 'Proper Tail Calls' vs 'Syntactic Tail Calls'?",
+    "counterQuestionAnswer": "'Proper Tail Calls' (PTC) is the automatic optimization defined in ES\n6. 'Syntactic Tail Calls' (STC) was a proposed alternative where developers would explicitly mark tail calls (e.g., 'return continue f()'), but the proposal was eventually withdrawn.",
+    "category": "javascript",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "performance",
+      "recursion"
+    ],
+    "analogy": "Tail Call Optimization is like 'A relay race where the runner hands off the baton and leaves the track'. Instead of having all runners stay on the track (stack frames), each runner leaves as soon as they pass the baton to the next one.",
+    "code": "// TCO-compatible recursion (Safari only)\nfunction factorial(n, acc = 1) {\n    if (n <= 1) return acc;\n    return factorial(n - 1, n * acc); // Tail call\n}"
+  },
+  {
+    "id": 34,
+    "question": "How do you architect a 'Modular JS' application using ESM or Webpack/Rollup?",
+    "answer": "A modern modular architecture involves: \n1. **ESM (import/export)**: Using the standard module system for clean, static dependency tracking. \n2. **Bundlers (Webpack/Rollup/Vite)**: To combine hundreds of small modules into optimized production files, performing 'Tree Shaking' to remove dead code. \n3. **Code Splitting**: Using 'dynamic imports' ('import()') to load specific modules only when needed (e.g., a specific route or modal), which significantly improves the 'Time to Interactive' (TTI) and initial load speed of large applications.",
+    "counterQuestion": "What is 'Tree Shaking' and how does it work?",
+    "counterQuestionAnswer": "Tree Shaking is a build-step optimization that uses the static structure of ES Modules to identify which exports are never used in the application. The bundler then 'shakes off' the unused code, ensuring the final bundle is as small as possible.",
+    "category": "javascript",
+    "topic": "architecture",
+    "difficulty": "hard",
+    "tags": [
+      "javascript",
+      "modules",
+      "bundling"
+    ],
+    "analogy": "Modern bundling is like 'A shipping logistics center'. Thousands of small packages (modules) come in, they are sorted, combined into larger crates (bundles), and the empty boxes (dead code) are thrown away (Tree Shaking) to save space.",
+    "code": "// vite.config.js (Simplified)\nexport default {\n    build: {\n        rollupOptions: {\n            output: {\n                manualChunks: { vendor: ['react', 'react-dom'] }\n            }\n        }\n    }\n};"
+  },
+  {
+    "id": 35,
+    "question": "What is WebAssembly (Wasm) and how does it integrate with JavaScript to run high-performance code in the browser?",
+    "answer": "WebAssembly (Wasm) is a binary instruction format for a stack-based virtual machine, designed to run in the browser at near-native speed. \n1. **High Performance**: It allows languages like C++, Rust, and Go to run on the web alongside JavaScript. \n2. **Integration**: JS and Wasm work together; JS handles the UI and DOM manipulation, while Wasm handles the 'heavy lifting' like video encoding, physics engines, or complex image manipulation. This partnership enables a new class of high-performance web applications that were previously impossible with just JavaScript.",
+    "counterQuestion": "Can WebAssembly access the DOM directly?",
+    "counterQuestionAnswer": "No. WebAssembly currently does not have direct access to the DOM. To modify the page, it must call into JavaScript functions, which then perform the actual DOM updates. This maintains the browser's security model and ensures a clear separation of concerns.",
+    "category": "javascript",
+    "topic": "advanced",
+    "difficulty": "hard",
+    "tags": [
+      "wasm",
+      "webassembly",
+      "performance"
+    ],
+    "analogy": "WebAssembly is like 'A high-speed foreign language translator' in the browser. JavaScript speaks English (easy to read, slower), while Wasm speaks a specialized binary code (hard to read, extremely fast). They work together to build complex machines (apps) that neither could build alone.",
+    "code": "// Loading Wasm in JS\nWebAssembly.instantiateStreaming(fetch('module.wasm'), importObject)\n    .then(result => {\n        const sum = result.instance.exports.add(5, 10);\n        console.log(sum);\n    });"
+  },
+  {
+    "id": 36,
+    "question": "What is the difference between an 'Interface' and a 'Type' alias in TypeScript?",
+    "answer": "1. **Interface**: Primarily for defining the shape of objects. They support **'Declaration Merging'** (you can define the same interface multiple times and they will merge), which is great for design systems and libraries. \n2. **Type**: More flexible; can define primitives, unions, tuples, and intersections. They cannot be merged. **Use Interface** for object structures and public APIs. **Use Type** for complex types like unions ('string | number') or when you need to use advanced type transformations. In most modern TS code, they are often interchangeable, but interfaces are slightly more performant for the compiler.",
+    "counterQuestion": "What is 'Declaration Merging' in interfaces?",
+    "counterQuestionAnswer": "If you declare two interfaces with the same name in the same scope, TypeScript automatically combines their properties into a single interface. This is widely used in global scope augmentation, such as adding custom properties to the 'window' object or extending external library types.",
+    "category": "typescript",
+    "topic": "basics",
+    "difficulty": "medium",
+    "tags": [
+      "typescript",
+      "interfaces",
+      "types",
+      "#highly_asked"
+    ],
+    "analogy": "An Interface is like 'A club membership' (you can always add new rules to the same club). A Type is like 'A nickname' (once you say 'Bob is the name for Robert', you can't later say 'Bob is also the name for Richard' in the same context).",
+    "code": "interface User { name: string; }\ninterface User { age: number; } // Merged: { name, age }\n\ntype Point = { x: number; y: number };\n// type Point = { z: number }; // Error: Duplicate identifier"
+  },
+  {
+    "id": 37,
+    "question": "Explain 'Generics' and how they provide type safety for reusable components.",
+    "answer": "Generics allow you to create components that work over a variety of types rather than a single one. Using a type variable (like '<T>'), you can capture the type of the argument provided and ensure that same type is used for the return value or internal logic. This provides **strong type safety** while maintaining maximum flexibility, allowing you to build reusable data structures like 'Lists', 'Queues', or 'API Wrappers' that the compiler can strictly validate based on the specific type they are instantiated with.",
+    "counterQuestion": "What is a 'Generic Constraint'?",
+    "counterQuestionAnswer": "A generic constraint (using the 'extends' keyword) limits the types that can be passed to a generic. For example, '<T extends { length: number }>' ensures that the type 'T' must have a 'length' property, allowing you to safely access 'arg.length' inside the generic function without causing a compiler error.",
+    "category": "typescript",
+    "topic": "generics",
+    "difficulty": "hard",
+    "tags": [
+      "typescript",
+      "generics",
+      "reusability",
+      "#highly_asked"
+    ],
+    "analogy": "Generics are like 'A shipping container'. The container doesn't care if it's holding cars, toys, or electronics (types); it handles all of them the same way, and you know exactly what's inside when you open it at the destination.",
+    "code": "function identity<T>(arg: T): T {\n    return arg;\n}\n\nconst str = identity<string>(\"Hello\");\nconst num = identity<number>(123);"
+  },
+  {
+    "id": 38,
+    "question": "What are 'Union Types' and 'Intersection Types'?",
+    "answer": "1. **Union Types** ('|'): Allow a value to be one of several types (e.g., 'string | number'). This is 'OR' logic. \n2. **Intersection Types** ('&'): Combine multiple types into one, requiring the value to satisfy ALL the combined types (e.g., 'User & Admin'). This is 'AND' logic. Union types are essential for handling flexible data (like API responses), while intersection types are powerful for composing complex objects and enforcing that an object has properties from multiple different interfaces.",
+    "counterQuestion": "How do you 'Narrow' a Union Type?",
+    "counterQuestionAnswer": "You use **Type Guards** (like 'typeof', 'instanceof', or a property check) to narrow a union type down to a single specific type inside a block. This allows you to safely access type-specific properties (like '.toUpperCase()' only if the variable is a string).",
+    "category": "typescript",
+    "topic": "basics",
+    "difficulty": "medium",
+    "tags": [
+      "typescript",
+      "types",
+      "logic"
+    ],
+    "analogy": "Union Types are like 'A hybrid car' (it can run on gas OR electricity). Intersection Types are like 'A smartphone' (it MUST be a camera AND a phone AND a computer all at once).",
+    "code": "// Union\ntype ID = string | number;\n\n// Intersection\ntype AdminUser = User & { role: 'admin' };"
+  },
+  {
+    "id": 39,
+    "question": "Explain 'Utility Types' in TypeScript (Partial, Pick, Omit, Readonly).",
+    "answer": "Utility types are built-in transformations that help you create new types from existing ones: \n1. **Partial<T>**: Makes all properties optional. \n2. **Pick<T, K>**: Creates a type by selecting a set of properties 'K' from 'T'. \n3. **Omit<T, K>**: Creates a type by removing a set of properties 'K' from 'T'. \n4. **Readonly<T>**: Makes all properties read-only, preventing reassignment. These utilities are essential for following the DRY (Don't Repeat Yourself) principle, allowing you to derive specialized types (like 'UserUpdate' from a 'User' interface) without manually redefining every field.",
+    "counterQuestion": "What is 'Record<K, T>'?",
+    "counterQuestionAnswer": "Record<K, T> is a utility type used to map the properties of one type to another. It's commonly used to define dictionaries or 'lookup' objects where the keys 'K' belong to a specific set (like a union of strings) and all values have the same type 'T'.",
+    "category": "typescript",
+    "topic": "utilities",
+    "difficulty": "medium",
+    "tags": [
+      "typescript",
+      "utilities",
+      "best_practices"
+    ],
+    "analogy": "Utility Types are like 'Instagram filters' for your data shapes. You can take a standard photo (interface) and apply a 'Black and White' filter (Readonly) or a 'Crop' filter (Pick) to get exactly the look you want.",
+    "code": "interface Todo { title: string; desc: string; }\n\ntype TodoPreview = Pick<Todo, 'title'>;\ntype OptionalTodo = Partial<Todo>;\nconst myTodo: Readonly<Todo> = { title: 'JS', desc: 'Done' };"
+  },
+  {
+    "id": 40,
+    "question": "What are 'Utility Types' (Partial, Pick, Omit, Record)?",
+    "answer": "1. **Partial<T>**: Makes all properties optional. \n2. **Pick<T, K>**: Selects specific properties. \n3. **Omit<T, K>**: Removes specific properties. \n4. **Record<K, T>**: Creates a dictionary type with keys 'K' and values 'T'. These utilities allow you to transform and reuse existing interfaces without duplication, ensuring your type definitions remain DRY (Don't Repeat Yourself) and easy to maintain as your data models evolve.",
+    "counterQuestion": "What is the difference between 'Required<T>' and 'Partial<T>'?",
+    "counterQuestionAnswer": "'Required<T>' is the opposite of 'Partial<T>'. It takes an interface and makes every single property mandatory, even if they were originally defined as optional. This is useful for ensuring that a fully-formed object is passed to a specific function.",
+    "category": "typescript",
+    "topic": "utilities",
+    "difficulty": "medium",
+    "tags": [
+      "typescript",
+      "utilities",
+      "best_practices"
+    ],
+    "analogy": "Record is like 'A custom-built shelf' where every slot is labeled with a specific key and can only hold a specific type of item. It ensures you never put a shoe (wrong type) in a hat slot (key).",
+    "code": "type Page = 'home' | 'about' | 'contact';\ninterface PageInfo { title: string; }\n\nconst nav: Record<Page, PageInfo> = {\n    home: { title: 'Home' },\n    about: { title: 'About' },\n    contact: { title: 'Contact' }\n};"
+  },
+  {
+    "id": 41,
+    "question": "Explain 'Discriminated Unions' and 'Exhaustive Type Checking'.",
+    "answer": "A **Discriminated Union** is a pattern where several interfaces share a single 'tag' or 'type' field with literal values (e.g., '{ type: \"success\", data: string } | { type: \"error\", message: string }'). **Exhaustive Type Checking** is using the 'never' type in a 'default' case of a switch statement to ensure that every possible case in the union is handled. If you add a new type to the union later, the compiler will throw an error if you haven't updated the switch, providing powerful safety for complex state management.",
+    "counterQuestion": "How do you implement the 'never' check for exhaustive checking?",
+    "counterQuestionAnswer": "You assign the variable to a constant of type 'never' in the default block: 'const _exhaustiveCheck: never = myVar; return _exhaustiveCheck;'. If 'myVar' has any remaining possible types (meaning you didn't handle all cases), the compiler will throw a type error because those types cannot be assigned to 'never'.",
+    "category": "typescript",
+    "topic": "advanced_types",
+    "difficulty": "hard",
+    "tags": [
+      "typescript",
+      "logic",
+      "safety"
+    ],
+    "analogy": "A Discriminated Union is like 'A shape-sorter toy'. Each piece (interface) has a unique shape (tag). Exhaustive checking is like 'Checking every hole in the box' to make sure you didn't leave any pieces on the floor.",
+    "code": "type Shape = { type: 'circle', r: number } | { type: 'square', s: number };\n\nfunction area(s: Shape) {\n    switch(s.type) {\n        case 'circle': return Math.PI * s.r ** 2;\n        case 'square': return s.s ** 2;\n        default: const _exhaustive: never = s; return _exhaustive;\n    }\n}"
+  },
+  {
+    "id": 42,
+    "question": "What is 'Type Narrowing' and 'Type Guards'?",
+    "answer": "Type Narrowing is the process of refining a broader type into a more specific one. **Type Guards** are expressions that perform runtime checks to trigger narrowing (e.g., 'typeof x === \"string\"' or '\"id\" in user'). You can also create **User-Defined Type Guards** using the 'is' keyword (e.g., 'function isFish(pet: Fish | Bird): pet is Fish'). This allows TypeScript to safely access type-specific properties inside conditional blocks, ensuring that your logic is always based on the actual runtime type of the data.",
+    "counterQuestion": "What is 'Control Flow Analysis' in TypeScript?",
+    "counterQuestionAnswer": "Control Flow Analysis is the engine's ability to track the type of a variable through your code's logic (if/else, switch, returns). For example, if you check 'if (x === null) return;', TypeScript knows that for the rest of the function, 'x' is definitely not null, a process called 'null-checking'.",
+    "category": "typescript",
+    "topic": "basics",
+    "difficulty": "medium",
+    "tags": [
+      "typescript",
+      "logic",
+      "guards"
+    ],
+    "analogy": "Type Guards are like 'Security checkpoints'. Once you show your passport (check the type), the guard (TypeScript) lets you through to the specific area (type-specific methods) that only people with that passport can access.",
+    "code": "function isString(val: unknown): val is string {\n    return typeof val === 'string';\n}\n\nif (isString(x)) {\n    console.log(x.toUpperCase()); // x is narrowed to string\n}"
+  },
+  {
+    "id": 43,
+    "question": "Explain the 'unknown' type vs the 'any' type.",
+    "answer": "1. **any**: The 'escape hatch'. It disables all type checking. You can do anything with an 'any' variable, but it's unsafe and hides bugs. \n2. **unknown**: The type-safe counterpart. Like 'any', it can hold any value, but you **cannot perform any operations** on it until you first 'narrow' its type using a type guard. **Always prefer 'unknown' over 'any'** for values from external sources (like APIs) because it forces you to validate the data before using it, preserving the safety of your application.",
+    "counterQuestion": "When is 'any' actually useful?",
+    "counterQuestionAnswer": "'any' is mostly used during the migration of a legacy JavaScript project to TypeScript, or for extremely complex dynamic logic where the type system becomes a hindrance rather than a help. However, even in these cases, 'unknown' or 'generics' are almost always a better choice.",
+    "category": "typescript",
+    "topic": "basics",
+    "difficulty": "medium",
+    "tags": [
+      "typescript",
+      "safety",
+      "types",
+      "#highly_asked"
+    ],
+    "analogy": "'any' is like 'A master key' that opens every door but bypasses all security. 'unknown' is like 'A mysterious locked box'. You can carry it around, but you're not allowed to open it or use what's inside until you verify what it is.",
+    "code": "let value: unknown = \"Hello\";\n// value.toUpperCase(); // Error!\n\nif (typeof value === \"string\") {\n    console.log(value.toUpperCase()); // OK!\n}"
+  },
+  {
+    "id": 44,
+    "question": "What is 'Decorator' support in TypeScript?",
+    "answer": "Decorators are a special kind of declaration that can be attached to a class, method, property, or parameter. They allow you to 'annotate' or modify the behavior of these elements at design time (similar to annotations in Java or Python decorators). Common use cases include **Dependency Injection** (in frameworks like Angular or NestJS), logging, and validation. In TypeScript, you must enable the 'experimentalDecorators' flag in your 'tsconfig.json' to use them, as the ECMAScript proposal is still evolving.",
+    "counterQuestion": "What is the order of execution for decorators?",
+    "counterQuestionAnswer": "Decorators are executed in a specific order: \n1. Instance/Static Property/Method/Parameter decorators (from bottom to top). \n2. Constructor decorators. Within a single property or method, multiple decorators are applied in the order they are listed, but their 'factory' functions are called in reverse order.",
+    "category": "typescript",
+    "topic": "advanced",
+    "difficulty": "hard",
+    "tags": [
+      "typescript",
+      "decorators",
+      "meta_programming"
+    ],
+    "analogy": "A Decorator is like 'A customized sticker' you put on a notebook. The sticker can say 'Private' (validation) or 'Important' (logging), and it changes how people treat the notebook without changing the paper inside.",
+    "code": "function Log(target: any, key: string) {\n    console.log(`${key} was called`);\n}\n\nclass User {\n    @Log\n    save() { /* ... */ }\n}"
+  },
+  {
+    "id": 45,
+    "question": "How do you handle 'External Libraries' that don't have types (@types)?",
+    "answer": "If a library lacks types: \n1. **Check DefinitelyTyped**: Try installing '@types/library-name'. \n2. **Declaration File**: Create a '.d.ts' file and use 'declare module \"library-name\"' to give it basic 'any' types so the compiler stops complaining. \n3. **Custom Typings**: Write your own interfaces for the specific parts of the library you are using inside that declaration file. This allows you to slowly add type safety to untyped legacy libraries without being blocked by the lack of official support.",
+    "counterQuestion": "What is 'allowJs' in tsconfig.json?",
+    "counterQuestionAnswer": "'allowJs' allows you to import JavaScript files into your TypeScript project. This is a key flag for 'incremental migration', where you can have a mixed codebase of JS and TS files while you slowly convert the project to full TypeScript.",
+    "category": "typescript",
+    "topic": "ecosystem",
+    "difficulty": "medium",
+    "tags": [
+      "typescript",
+      "typings",
+      "migration"
+    ],
+    "analogy": "External typings are like 'Instruction manuals for a generic toy'. Even if the toy (library) didn't come with instructions, someone else wrote a manual (@types) so you know exactly how to play with it safely.",
+    "code": "// custom-types.d.ts\ndeclare module 'legacy-lib' {\n    export function doSomething(val: string): void;\n}"
+  },
+  {
+    "id": 46,
+    "question": "Explain 'Mapped Types' and 'Conditional Types'.",
+    "answer": "1. **Mapped Types**: Allow you to create new types based on the keys of an existing type (e.g., '{ [P in keyof T]: T[P] }'). This is how utility types like 'Partial' and 'Readonly' are implemented. \n2. **Conditional Types**: Allow you to select one of two types based on a condition ('T extends U ? X : Y'). This is like a 'ternary operator' for types. Together, they allow for extremely powerful and dynamic type transformations that can respond to the structure of your data in real-time.",
+    "counterQuestion": "What is the 'infer' keyword used for in conditional types?",
+    "counterQuestionAnswer": "The 'infer' keyword allows you to 'extract' a type from another type within a conditional. For example, you can use it to extract the return type of a function or the element type of an array, enabling high-level meta-programming in the type system.",
+    "category": "typescript",
+    "topic": "advanced_types",
+    "difficulty": "hard",
+    "tags": [
+      "typescript",
+      "logic",
+      "meta_programming"
+    ],
+    "analogy": "Conditional Types are like 'A factory machine with a sensor'. If the sensor detects 'Metal', it sends the item to the 'Welding' station. If it detects 'Plastic', it sends it to the 'Molding' station.",
+    "code": "type IsString<T> = T extends string ? \"Yes\" : \"No\";\n\ntype A = IsString<string>; // \"Yes\"\ntype B = IsString<number>; // \"No\""
+  },
+  {
+    "id": 47,
+    "question": "How do you configure 'tsconfig.json' for strict type checking?",
+    "answer": "You should set **'strict: true'** in your tsconfig.json. This is a 'master flag' that enables several critical checks, including: \n1. **strictNullChecks**: Prevents 'null' and 'undefined' from being assigned to other types. \n2. **noImplicitAny**: Requires explicit types for all variables. \n3. **strictFunctionTypes**: Ensures more accurate checking of function parameters. Enabling strict mode is the single most important step you can take to ensure your TypeScript project actually provides the safety it promises.",
+    "counterQuestion": "What is 'skipLibCheck' and why is it often set to true?",
+    "counterQuestionAnswer": "'skipLibCheck' tells the compiler not to check the type definitions of your dependencies (inside node_modules). This significantly speeds up build times and prevents your project from failing to compile due to minor type errors in third-party libraries that you cannot control.",
+    "category": "typescript",
+    "topic": "configuration",
+    "difficulty": "medium",
+    "tags": [
+      "typescript",
+      "configuration",
+      "best_practices"
+    ],
+    "analogy": "Strict mode in tsconfig is like 'Turning on the high-difficulty setting' in a video game. It's much harder to win, but you become a significantly better player because you're forced to master all the mechanics perfectly.",
+    "code": "{\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"noImplicitAny\": true,\n    \"strictNullChecks\": true\n  }\n}"
+  },
+  {
+    "id": 48,
+    "question": "What is 'Zod' and how do you use it for runtime schema validation in TypeScript applications?",
+    "answer": "Zod is a TypeScript-first schema declaration and validation library. While TypeScript only provides **design-time** safety, Zod provides **runtime** safety by validating that data (e.g., from an API or form) actually matches your expected schema. You define a schema (e.g., 'z.object({ id: z.string() })') and use it to 'parse' raw data. If the data is invalid, Zod throws a detailed error. It also allows you to 'infer' TypeScript types directly from your schemas, ensuring that your runtime validation and compile-time types are always in perfect sync.",
+    "counterQuestion": "What is the difference between '.parse()' and '.safeParse()' in Zod?",
+    "counterQuestionAnswer": "'.parse()' throws an error if the data is invalid, which is good for mandatory validation. '.safeParse()' returns an object indicating success or failure along with the error data, which is better for 'soft' validation where you want to handle the error gracefully without crashing the app.",
+    "category": "typescript",
+    "topic": "validation",
+    "difficulty": "medium",
+    "tags": [
+      "typescript",
+      "validation",
+      "zod"
+    ],
+    "analogy": "Zod is like 'A security guard with a scanner' at the entrance of a building. TypeScript checks your ID card at the gate, but Zod scans your bags (runtime data) to make sure you're not carrying anything dangerous before you enter the lobby.",
+    "code": "const UserSchema = z.object({ id: z.string(), age: z.number() });\ntype User = z.infer<typeof UserSchema>;\n\nconst rawData = await fetchUser();\nconst user = UserSchema.parse(rawData); // Throws if invalid"
+  },
+  {
+    "id": 49,
+    "question": "What is the 'Virtual DOM' and how does it work?",
+    "answer": "The Virtual DOM is a lightweight, in-memory representation of the real DOM. When a component's state changes, React first updates the Virtual DOM. It then compares this new Virtual DOM with the previous version (a process called **'Diffing'**) to identify exactly what changed. Finally, it updates **only the changed parts** of the real DOM (a process called **'Reconciliation'**). This is significantly faster than re-rendering the entire page or manually updating the DOM, making React highly efficient even for complex and frequently updating user interfaces.",
+    "counterQuestion": "Why is direct DOM manipulation discouraged in React?",
+    "counterQuestionAnswer": "Directly modifying the DOM bypasses React's state management and diffing engine. This can lead to the 'Real DOM' and 'Virtual DOM' getting out of sync, causing unpredictable UI bugs, broken event listeners, and performance issues as React tries to reconcile state against a DOM it no longer fully controls.",
+    "category": "react",
+    "topic": "fundamentals",
+    "difficulty": "medium",
+    "tags": [
+      "react",
+      "virtual_dom",
+      "performance",
+      "#highly_asked"
+    ],
+    "analogy": "The Virtual DOM is like 'A blueprint for a renovation'. Instead of tearing down and rebuilding the whole house every time you want to move a chair, you mark the change on the blueprint first, then you only go into the real house and move that one chair.",
+    "code": "// React compares VDOM nodes\nconst oldNode = <div className=\"red\">Hi</div>;\nconst newNode = <div className=\"blue\">Hi</div>;\n// React only updates the 'className' attribute in the real DOM."
+  },
+  {
+    "id": 50,
+    "question": "Explain the difference between 'Functional Components' and 'Class Components'.",
+    "answer": "1. **Class Components**: The older way, using ES6 classes. They have a more verbose syntax and manage state/lifecycle methods (like 'componentDidMount') through the 'this' keyword. \n2. **Functional Components**: The modern way, using plain JS functions. They are simpler, easier to test, and use **Hooks** (like 'useState') to manage state and side effects. Functional components are now the standard in the React ecosystem, offering better performance and more concise code than their class-based counterparts.",
+    "counterQuestion": "Can you use Hooks inside Class Components?",
+    "counterQuestionAnswer": "No. Hooks can only be used inside Functional Components. If you have a legacy Class Component and need Hook functionality, you either have to refactor it to a function or wrap it in a higher-order component that uses the hook and passes the data down as props.",
+    "category": "react",
+    "topic": "fundamentals",
+    "difficulty": "easy",
+    "tags": [
+      "react",
+      "components",
+      "hooks",
+      "#highly_asked"
+    ],
+    "analogy": "Class Components are like 'A heavy, formal business suit' (lots of rules, hard to change). Functional Components are like 'A comfortable t-shirt and jeans' (flexible, easy to move in, and you can add gadgets like Hooks to do anything you need).",
+    "code": "// Functional Component with Hook\nfunction Counter() {\n    const [count, setCount] = useState(0);\n    return <button onClick={() => setCount(count + 1)}>{count}</button>;\n}"
+  },
+  {
+    "id": 51,
+    "question": "What are 'Props' vs 'State' in React?",
+    "answer": "1. **Props** (Properties): External data passed into a component by its parent. They are **read-only** (immutable) from the component's perspective. \n2. **State**: Internal data managed **within** the component itself. It is mutable (via 'setState' or 'useState') and causes the component to re-render whenever it changes. In short: Props are like 'function arguments', while State is like 'local variables' that trigger UI updates when modified.",
+    "counterQuestion": "What is 'Prop Drilling'?",
+    "counterQuestionAnswer": "Prop Drilling is the process of passing data through many layers of intermediate components that don't need the data themselves, just to get it to a deeply nested child. This can make code hard to maintain and is usually solved using 'Context API' or state management libraries like Redux.",
+    "category": "react",
+    "topic": "fundamentals",
+    "difficulty": "easy",
+    "tags": [
+      "react",
+      "props",
+      "state"
+    ],
+    "analogy": "Props are like 'Mail delivered to your house' (it's sent from the outside, and you can't change what's in the letter). State is like 'The furniture inside your house' (you can move it, change it, or buy new things whenever you want).",
+    "code": "// Props (external)\nfunction Welcome({ name }) { return <h1>Hi {name}</h1>; }\n\n// State (internal)\nfunction Counter() {\n    const [count, setCount] = useState(0);\n    return <div onClick={() => setCount(count + 1)}>{count}</div>;\n}"
+  },
+  {
+    "id": 52,
+    "question": "Explain the 'useState' and 'useEffect' hooks.",
+    "answer": "1. **useState**: Allows you to add state to a functional component. It returns a pair: the current state value and a function to update it. \n2. **useEffect**: Handles 'side effects' like data fetching, subscriptions, or manually changing the DOM. It runs after every render by default, but you can control when it runs by providing a **'dependency array'**. These two hooks replace almost all the functionality of traditional class-based state and lifecycle methods in a much more readable way.",
+    "counterQuestion": "What happens if you leave the dependency array empty ([]) in useEffect?",
+    "counterQuestionAnswer": "If the dependency array is empty, the effect will only run **once**, immediately after the initial mount of the component. This is the functional equivalent of 'componentDidMount' in class components.",
+    "category": "react",
+    "topic": "hooks",
+    "difficulty": "medium",
+    "tags": [
+      "react",
+      "hooks",
+      "state_management",
+      "#highly_asked"
+    ],
+    "analogy": "useState is like 'A remote control for your TV' (it changes what's on the screen). useEffect is like 'A sensor that turns on the lights when you enter the room' (it performs an action automatically based on something else happening).",
+    "code": "useEffect(() => {\n    const timer = setInterval(() => console.log('Tick'), 1000);\n    return () => clearInterval(timer); // Cleanup\n}, []); // Runs once on mount"
+  },
+  {
+    "id": 53,
+    "question": "What are 'Keys' in React and why are they important for lists?",
+    "answer": "Keys are unique identifiers used by React during the **Reconciliation** process to track which items in a list have changed, been added, or been removed. Without stable keys, React might unnecessarily re-render every item in a list or lose the state of individual items (like text in an input field) when the list order changes. Using a unique ID from your data is the best practice; using the 'index' as a key is discouraged if the list can be reordered, as it can lead to subtle UI bugs.",
+    "counterQuestion": "What happens if you don't provide a key at all?",
+    "counterQuestionAnswer": "React will default to using the 'index' of the item as its key and will show a warning in the console. While the list will still render, performance will be degraded, and you may encounter bugs if the items are interactive or the list is sorted/filtered.",
+    "category": "react",
+    "topic": "lists",
+    "difficulty": "medium",
+    "tags": [
+      "react",
+      "reconciliation",
+      "performance"
+    ],
+    "analogy": "Keys are like 'Name tags at a large party'. If everyone has a unique name tag, you can quickly find your friends even if they move around. If no one has a tag, you have to look at everyone's face again every time someone moves.",
+    "code": "<ul>\n    {items.map(item => (\n        <li key={item.id}>{item.text}</li>\n    ))}\n</ul>"
+  },
+  {
+    "id": 54,
+    "question": "Explain the 'Lifting State Up' pattern.",
+    "answer": "Lifting State Up is a pattern where you move the state from a child component to its **nearest common ancestor** so that multiple children can share and stay in sync with that same data. The parent then passes the state down as props and provides 'callback functions' (like 'onValueChange') to the children so they can request updates to that shared state. This ensures a **Single Source of Truth** for your data and prevents inconsistent UI states between sibling components.",
+    "counterQuestion": "When should you NOT lift state up?",
+    "counterQuestionAnswer": "You should not lift state up if the state is only relevant to a single component and doesn't need to be shared. Over-lifting state can lead to 'Prop Drilling' and make the parent component unnecessarily complex, reducing the modularity of your application.",
+    "category": "react",
+    "topic": "architecture",
+    "difficulty": "medium",
+    "tags": [
+      "react",
+      "state_management",
+      "patterns"
+    ],
+    "analogy": "Lifting State Up is like 'Giving the car keys to the parent'. Instead of the two siblings fighting over who gets the keys (local state), the parent holds the keys (parent state) and decides who gets to drive (passes props down).",
+    "code": "function Parent() {\n    const [val, setVal] = useState('');\n    return (\n        <>\n            <Input value={val} onChange={setVal} />\n            <Display value={val} />\n        </>\n    );\n}"
+  },
+  {
+    "id": 55,
+    "question": "What is 'JSX'? Is it required for React?",
+    "answer": "JSX (JavaScript XML) is a syntax extension for JavaScript that allows you to write HTML-like code directly inside your JavaScript. It's not required for React (you could use 'React.createElement'), but it's highly recommended because it makes the UI logic more readable and easier to debug. JSX is eventually compiled into standard JavaScript calls by tools like Babel before being executed in the browser.",
+    "counterQuestion": "Can you use JavaScript expressions inside JSX?",
+    "counterQuestionAnswer": "Yes. You can embed any valid JavaScript expression (like variables, function calls, or math) inside JSX by wrapping it in curly braces: '{ expression }'.",
+    "category": "react",
+    "topic": "fundamentals",
+    "difficulty": "easy",
+    "tags": [
+      "react",
+      "jsx",
+      "syntax"
+    ],
+    "analogy": "JSX is like 'Writing a movie script with stage directions included'. Instead of having one file for the dialogue (HTML) and another for the lighting/action (JS), you combine them so you can see exactly how the scene will look and behave in one place.",
+    "code": "const element = <h1 className=\"title\">Hello, {name}!</h1>;\n// Compiles to: React.createElement('h1', { className: 'title' }, 'Hello, ', name);"
+  },
+  {
+    "id": 56,
+    "question": "Explain 'React Portals'. When would you use 'ReactDOM.createPortal'?",
+    "answer": "Portals allow you to render a component's children into a different part of the DOM tree (like the very end of the '<body>'), while still keeping them logically inside the component's React hierarchy. This is essential for components like **Modals, Tooltips, and Loaders** that need to break out of their parent's 'overflow: hidden' or 'z-index' constraints to ensure they appear correctly on top of all other page elements.",
+    "counterQuestion": "Does an event in a Portal bubble up to its React parent?",
+    "counterQuestionAnswer": "Yes. Even though a portal is rendered into a different part of the DOM, React's event system treats it as part of the logical React tree. An event fired from inside a portal will still bubble up to its React parent, allowing you to use standard event delegation and state management.",
+    "category": "react",
+    "topic": "advanced",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "portals",
+      "dom"
+    ],
+    "analogy": "A Portal is like 'A remote-controlled projection'. You are standing in the living room (React hierarchy), but your image is projected onto a screen in the backyard (DOM body). You can still hear and talk to people in the living room, even though you look like you're outside.",
+    "code": "function Modal({ children }) {\n    return ReactDOM.createPortal(\n        <div className=\"modal\">{children}</div>,\n        document.getElementById('modal-root')\n    );\n}"
+  },
+  {
+    "id": 57,
+    "question": "What are 'Synthetic Events' in React? How do they differ from native DOM events?",
+    "answer": "Synthetic Events are React's cross-browser wrapper around the browser's native events. They ensure that events behave consistently across all browsers (like Chrome, Safari, and Firefox). React pools these events for performance, meaning they are reused and nullified after the callback has finished. They follow the same API as native events (like 'stopPropagation' and 'preventDefault'), making them easy to use while providing a more robust and predictable event handling system.",
+    "counterQuestion": "What is 'Event Pooling' in React (pre-v17)?",
+    "counterQuestionAnswer": "In React versions before 17, event objects were 'pooled'. This meant that you couldn't access event properties asynchronously (like inside a 'setTimeout') because the event object would have been cleared and returned to the pool by the time the callback ran. React 17 removed event pooling to simplify this behavior.",
+    "category": "react",
+    "topic": "events",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "events",
+      "performance"
+    ],
+    "analogy": "Synthetic Events are like 'Standardized power adapters'. No matter which country's outlet (browser) you plug into, React gives you the same standard plug (SyntheticEvent) that works exactly the same everywhere.",
+    "code": "function handleClick(e) {\n    e.preventDefault();\n    console.log('Clicked!', e.nativeEvent); // Access original DOM event if needed\n}"
+  },
+  {
+    "id": 58,
+    "question": "How do you handle 'Lists and Keys' in React? Why is 'index' a bad key?",
+    "answer": "When rendering lists, you must provide a unique 'key' prop to each item. React uses these keys to track which items changed, ensuring efficient DOM updates. Using the **'index'** as a key is a bad practice because if the list is reordered or filtered, the index for an item will change. This can lead to serious UI bugs, such as input fields losing their focus or the wrong values being displayed in the wrong items because React thinks the item at index 0 is still the same item even if its data has changed.",
+    "counterQuestion": "When is it actually OK to use the index as a key?",
+    "counterQuestionAnswer": "It is generally safe to use the index only if the list is static (it never changes, reorders, or filters) and the items don't have their own internal state (like a controlled input). In all other cases, you should use a unique ID from your database.",
+    "category": "react",
+    "topic": "lists",
+    "difficulty": "medium",
+    "tags": [
+      "react",
+      "lists",
+      "keys"
+    ],
+    "analogy": "Keys are like 'Name tags at a large party'. If everyone has a unique name tag, you can quickly find your friends even if they move around. If no one has a tag, you have to look at everyone's face again every time someone moves.",
+    "code": "<ul>\n    {items.map(item => (\n        <li key={item.id}>{item.text}</li>\n    ))}\n</ul>"
+  },
+  {
+    "id": 59,
+    "question": "Explain 'Conditional Rendering' in React.",
+    "answer": "Conditional rendering allows you to show or hide parts of your UI based on specific conditions. Common patterns include: \n1. **If/Else** (outside the return). \n2. **Ternary Operator** ('condition ? <A /> : <B />') inside the JSX. \n3. **Logical AND (&&)** ('condition && <Component />') to show something only if the condition is true. This makes it easy to handle loading states, empty lists, and complex user-specific UI logic directly within your component's render function.",
+    "counterQuestion": "What is a common pitfall when using '&&' for conditional rendering?",
+    "counterQuestionAnswer": "A common pitfall is using a number like '0'. If 'count' is 0, '{count && <div />}' will actually render '0' onto the screen because 0 is a falsy value but is still a valid React node. To avoid this, always use a boolean: '{count > 0 && <div />}'.",
+    "category": "react",
+    "topic": "fundamentals",
+    "difficulty": "medium",
+    "tags": [
+      "react",
+      "rendering",
+      "logic"
+    ],
+    "analogy": "Conditional Rendering is like 'A reversible sign on a shop door'. If the shop is open (state=true), the sign says 'Come In' (<Welcome />). If it's closed (state=false), you flip the sign to say 'Closed' (<Closed />).",
+    "code": "function Auth({ isLoggedIn }) {\n    return (\n        <div>\n            {isLoggedIn ? <LogoutButton /> : <LoginButton />}\n            {isLoggedIn && <Dashboard />}\n        </div>\n    );\n}"
+  },
+  {
+    "id": 60,
+    "question": "What is the 'Context API'? When should you use it over Props?",
+    "answer": "The Context API is a way to share data across the entire component tree without having to pass props down manually through every level (solving 'Prop Drilling'). You should use it for **Global Data** that many components need, such as the current authenticated user, a UI theme (dark/light mode), or preferred language. However, avoid using it for frequently changing data, as any update to the context value will cause all consuming components to re-render, which can lead to performance issues if not managed carefully.",
+    "counterQuestion": "What is 'Component Composition' as an alternative to Context?",
+    "counterQuestionAnswer": "Component Composition is the practice of passing a component as a prop (often via 'children') to another component. This allows you to 'hoist' the data-needy component closer to the data source, often eliminating the need for context or deep prop drilling entirely.",
+    "category": "react",
+    "topic": "state_management",
+    "difficulty": "medium",
+    "tags": [
+      "react",
+      "context",
+      "architecture",
+      "#highly_asked"
+    ],
+    "analogy": "The Context API is like 'A Wi-Fi signal in a house'. You don't need to run a physical cable (prop drilling) to every single device; any device in the house can just connect to the signal (useContext) and get the data it needs.",
+    "code": "const ThemeContext = createContext('light');\n\nfunction App() {\n    return (\n        <ThemeContext.Provider value=\"dark\">\n            <Toolbar />\n        </ThemeContext.Provider>\n    );\n}\n\nfunction Button() {\n    const theme = useContext(ThemeContext);\n    return <button className={theme}>Click Me</button>;\n}"
+  },
+  {
+    "id": 61,
+    "question": "How do you handle 'Forms' in React (Controlled vs Uncontrolled components)?",
+    "answer": "1. **Controlled Components**: The 'React way'. Form data is handled by a React component's state. The input's 'value' is driven by state, and 'onChange' updates that state. This gives you full control for validation and dynamic UI. \n2. **Uncontrolled Components**: The data is handled by the DOM itself. You use a 'ref' to pull the value from the field when needed (e.g., on submit). Controlled components are generally preferred for most use cases, while uncontrolled ones can be faster to implement for very simple forms or when integrating with non-React libraries.",
+    "counterQuestion": "What is the 'defaultValue' prop in uncontrolled components?",
+    "counterQuestionAnswer": "In an uncontrolled component, you use 'defaultValue' instead of 'value' to set the initial value of an input. This allows the input to start with a specific value while still letting the DOM manage the user's subsequent changes without React's intervention.",
+    "category": "react",
+    "topic": "forms",
+    "difficulty": "medium",
+    "tags": [
+      "react",
+      "forms",
+      "refs"
+    ],
+    "analogy": "A Controlled component is like 'A student who asks the teacher for permission before every move'. An Uncontrolled component is like 'A student who does whatever they want and the teacher only checks their work at the end of class'.",
+    "code": "// Controlled\n<input value={val} onChange={(e) => setVal(e.target.value)} />\n\n// Uncontrolled\nconst inputRef = useRef();\n<input ref={inputRef} />"
+  },
+  {
+    "id": 62,
+    "question": "What is 'React Router' and how do you handle navigation?",
+    "answer": "React Router is the standard library for routing in React. It allows you to define different 'routes' (URL paths) and map them to specific components. It uses a **Declarative** approach: you define your routes inside a '<Routes>' component and use the '<Link>' or 'useNavigate' hook to move between pages. This allows you to build single-page applications (SPAs) that feel like multi-page sites, with working browser history and bookmarks, without ever actually refreshing the entire page.",
+    "counterQuestion": "What is the difference between 'Link' and 'NavLink'?",
+    "counterQuestionAnswer": "'NavLink' is a special version of 'Link' that automatically adds an 'active' class to the element when its route matches the current URL. This is perfect for building navigation bars where you want to highlight the current page for the user.",
+    "category": "react",
+    "topic": "routing",
+    "difficulty": "medium",
+    "tags": [
+      "react",
+      "routing",
+      "spa"
+    ],
+    "analogy": "React Router is like 'The GPS in your car'. You tell it where you want to go (the URL), and it figures out which component (the view) to show on your screen, all without you ever having to get out of the car (refresh the page).",
+    "code": "<BrowserRouter>\n    <Routes>\n        <Route path=\"/\" element={<Home />} />\n        <Route path=\"/about\" element={<About />} />\n    </Routes>\n</BrowserRouter>"
+  },
+  {
+    "id": 63,
+    "question": "Explain 'React Hooks' rules. Why can't they be used inside loops or conditions?",
+    "answer": "React Hooks have two main rules: \n1. **Only call hooks at the top level** (not inside loops, conditions, or nested functions). \n2. **Only call hooks from React functions**. These rules exist because React relies on the **order** in which Hooks are called to keep track of their state between renders. If you put a hook inside a condition that sometimes doesn't run, the order of hooks would change, causing React to return the wrong state for subsequent hooks and breaking your component entirely.",
+    "counterQuestion": "How does the 'eslint-plugin-react-hooks' help?",
+    "counterQuestionAnswer": "This plugin provides ESLint rules (like 'rules-of-hooks' and 'exhaustive-deps') that automatically detect and warn you if you've broken these rules during development. It's a critical tool for ensuring your hooks are stable and bug-free.",
+    "category": "react",
+    "topic": "hooks",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "hooks",
+      "internals"
+    ],
+    "analogy": "Rules of Hooks are like 'Following a recipe exactly'. If the recipe says 'Add sugar, then salt, then flour', and you decide to skip the sugar because you don't feel like it (putting a hook in a condition), the whole cake (component) will be ruined because the chemistry (hook order) is broken.",
+    "code": "// Bad: Hook in condition\nif (test) { useEffect(...) }\n\n// Good: Move condition inside hook\nuseEffect(() => {\n    if (test) { ... }\n}, [test]);"
+  },
+  {
+    "id": 64,
+    "question": "What is 'useMemo' vs 'useCallback'? When should you optimize with them?",
+    "answer": "Both are used for performance optimization through memoization: \n1. **useMemo**: Returns a memoized **value** (e.g., the result of a complex calculation). It only recalculates when dependencies change. \n2. **useCallback**: Returns a memoized **function** instance. It ensures the function's reference stays the same between renders. **Use them** only when you have a performance bottleneck (like a heavy calculation) or when passing callbacks to children wrapped in 'React.memo' to prevent unnecessary re-renders. Premature optimization with these hooks can actually slow down your app due to the overhead of the dependency checks.",
+    "counterQuestion": "What is 'React.memo'?",
+    "counterQuestionAnswer": "'React.memo' is a higher-order component that wraps a functional component. It performs a shallow comparison of props and prevents the component from re-rendering if the props haven't changed. It works perfectly in tandem with 'useCallback' to optimize child component performance.",
+    "category": "react",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "optimization",
+      "memoization",
+      "#highly_asked"
+    ],
+    "analogy": "useMemo is like 'A chef prepping ingredients' (saving the result of work). useCallback is like 'A chef keeping their favorite knife' (saving the tool itself). You only do it if the prep work is slow or the knife is special, otherwise it's faster to just grab a new one.",
+    "code": "const value = useMemo(() => heavyTask(count), [count]);\nconst handler = useCallback(() => doWork(), []);"
+  },
+  {
+    "id": 65,
+    "question": "Explain 'useRef' and when to use it (DOM access vs mutable state).",
+    "answer": "1. **DOM Access**: The primary use case; it gives you a reference to a DOM node (e.g., focusing an input or measuring an element's size). \n2. **Mutable State**: Storing a value that persists between renders but **does not trigger a re-render** when changed. This is perfect for tracking things like timer IDs, previous prop values, or the 'isMounted' status. Unlike 'useState', updating a ref's '.current' property is synchronous and invisible to React's rendering engine.",
+    "counterQuestion": "What happens if you try to use a ref value during the render phase?",
+    "counterQuestionAnswer": "You should never read or write to 'ref.current' during the render phase. This is because React assumes the render function is pure. Refs should only be accessed inside 'useEffect' or event handlers to ensure your component remains predictable and doesn't suffer from inconsistent UI states.",
+    "category": "react",
+    "topic": "hooks",
+    "difficulty": "medium",
+    "tags": [
+      "react",
+      "hooks",
+      "dom"
+    ],
+    "analogy": "useRef is like 'A personal locker in a gym'. You can put your stuff in there, and it will be there the next time you come back, but changing what's in the locker doesn't mean you've changed the workout routine (re-rendered the UI).",
+    "code": "const inputRef = useRef(null);\nconst focusInput = () => inputRef.current.focus();\n\nreturn <input ref={inputRef} />;"
+  },
+  {
+    "id": 66,
+    "question": "How do you implement 'Custom Hooks'?",
+    "answer": "A custom hook is a JavaScript function whose name starts with **'use'** and that may call other hooks. You implement them to extract component logic into reusable functions (e.g., 'useFetch', 'useLocalStorage', 'useWindowSize'). They allow you to share stateful logic between components without adding extra nodes to the DOM tree (unlike HOCs or Render Props). Custom hooks are the primary way to keep your React components clean, focused, and DRY.",
+    "counterQuestion": "Does every component that uses a custom hook share the same state?",
+    "counterQuestionAnswer": "No. Each time you call a custom hook, it gets its own isolated state and effects. Custom hooks share **logic**, not data. If you need to share data between components, you would use a custom hook in combination with Context or a state management library.",
+    "category": "react",
+    "topic": "hooks",
+    "difficulty": "medium",
+    "tags": [
+      "react",
+      "hooks",
+      "reusability"
+    ],
+    "analogy": "A Custom Hook is like 'A DIY toolbox'. Instead of carrying around 10 loose tools (variables and effects) in every project, you put them all in one box (useMyHook) and just bring that box whenever you need to do that specific job.",
+    "code": "function useLocalStorage(key) {\n    const [val, setVal] = useState(localStorage.getItem(key));\n    useEffect(() => localStorage.setItem(key, val), [val]);\n    return [val, setVal];\n}"
+  },
+  {
+    "id": 67,
+    "question": "Discuss 'State Management' libraries: Redux vs Context API vs Zustand.",
+    "answer": "1. **Context API**: Best for low-frequency updates and static data (like themes or auth). Built into React, but can cause unnecessary re-renders in large trees. \n2. **Redux**: The industry standard for complex apps with high-frequency updates and deep state. It offers powerful debugging (Redux DevTools) but has a lot of boilerplate. \n3. **Zustand**: A modern, lightweight alternative that uses a 'hook-based' approach. It is faster than Context, has significantly less boilerplate than Redux, and is currently the favored choice for many new React projects due to its simplicity and performance.",
+    "counterQuestion": "What is 'Redux Toolkit' (RTK)?",
+    "counterQuestionAnswer": "Redux Toolkit is the official, opinionated way to write Redux logic. It simplifies common tasks like creating reducers, handling immutability (via Immer), and managing asynchronous actions (via RTK Query), effectively removing the most painful parts of traditional Redux boilerplate.",
+    "category": "react",
+    "topic": "state_management",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "redux",
+      "zustand",
+      "#highly_asked"
+    ],
+    "analogy": "Redux is like 'A huge department store' (strict rules, many departments, very organized but slow). Context is like 'Passing a message around a classroom'. Zustand is like 'A group chat' (fast, simple, everyone gets the message instantly).",
+    "code": "// Zustand: Simple and powerful\nconst useStore = create((set) => ({\n    count: 0,\n    inc: () => set((state) => ({ count: state.count + 1 }))\n}));"
+  },
+  {
+    "id": 68,
+    "question": "What is 'Server-Side Rendering' (SSR) vs 'Client-Side Rendering' (CSR)?",
+    "answer": "1. **CSR**: The browser downloads a minimal HTML file and a large JS bundle, which then builds the UI. This leads to a slower initial load but fast navigation. \n2. **SSR**: The server generates the full HTML for the page and sends it to the browser. This provides a faster 'First Contentful Paint' (FCP) and better SEO because crawlers can read the content immediately. SSR is common in frameworks like Next.js, while CSR is the default behavior of standard Create React App (CRA) projects.",
+    "counterQuestion": "What is 'Static Site Generation' (SSG)?",
+    "counterQuestionAnswer": "SSG is a variation where the HTML is generated at **build time** rather than on every request. This is the fastest possible way to serve a site, as the pages are just static files on a CDN, but it is only suitable for content that doesn't change frequently.",
+    "category": "react",
+    "topic": "architecture",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "ssr",
+      "performance",
+      "#highly_asked"
+    ],
+    "analogy": "CSR is like 'Ordering a flat-pack IKEA desk' (it arrives as a box of parts, and you have to build it yourself). SSR is like 'Ordering a fully-built desk' (it arrives ready to use, but it was heavier and more expensive to ship).",
+    "code": "// Next.js SSR example\nexport async function getServerSideProps() {\n    const data = await fetchData();\n    return { props: { data } };\n}"
+  },
+  {
+    "id": 69,
+    "question": "Explain 'Hydration' in the context of SSR.",
+    "answer": "Hydration is the process where React 'attaches' itself to the static HTML that was generated by the server. Once the JS bundle loads in the browser, React walks through the existing DOM, sets up event listeners, and initializes the component state without re-rendering the actual elements. This allows the page to be visible immediately (via SSR) while still becoming fully interactive (via Hydration). If the server-rendered HTML doesn't perfectly match the initial client-side render, you will get a 'Hydration Mismatch' warning.",
+    "counterQuestion": "How do you fix a hydration mismatch caused by using 'new Date()'?",
+    "counterQuestionAnswer": "Since 'new Date()' will be different on the server and client, you should use 'useEffect' to set the date value after the initial mount. This ensures the first render (on both server and client) is identical, and the dynamic data is only added once the component has successfully hydrated in the browser.",
+    "category": "react",
+    "topic": "architecture",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "ssr",
+      "hydration"
+    ],
+    "analogy": "Hydration is like 'Waking up a sleeping robot'. The robot is already standing there (HTML), but it's not moving. Once its brain (JavaScript) wakes up, it remembers where its arms and legs are and starts responding to commands.",
+    "code": "// Client-side entry point\nReactDOM.hydrateRoot(document.getElementById('root'), <App />);"
+  },
+  {
+    "id": 70,
+    "question": "Explain 'React Lifecycle Methods' (componentDidMount, etc.) vs Hooks equivalent.",
+    "answer": "1. **componentDidMount**: Replaced by 'useEffect(() => { ... }, [])'. \n2. **componentDidUpdate**: Replaced by 'useEffect(() => { ... }, [deps])'. \n3. **componentWillUnmount**: Replaced by the 'cleanup function' returned from 'useEffect'. Hooks simplify lifecycle management by grouping related logic together (e.g., a subscription and its cleanup) rather than splitting it across separate class methods, leading to more cohesive and less error-prone components.",
+    "counterQuestion": "What is 'getDerivedStateFromProps'?",
+    "counterQuestionAnswer": "'getDerivedStateFromProps' was a rare class method used to update state based on prop changes. In functional components, you don't need a specific hook for this; you can simply update the state during the render phase or use 'useMemo' to derive values directly from props.",
+    "category": "react",
+    "topic": "hooks",
+    "difficulty": "medium",
+    "tags": [
+      "react",
+      "hooks",
+      "lifecycle"
+    ],
+    "analogy": "Lifecycle Methods are like 'Scheduled maintenance for a car'. You change the oil every 5,000 miles (componentDidUpdate). Hooks are like 'Smart sensors' that only alert you when a specific part actually needs attention (dependency array).",
+    "code": "useEffect(() => {\n    console.log('Mounted or dependency changed');\n    return () => console.log('Cleaning up before next run or unmount');\n}, [dependency]);"
+  },
+  {
+    "id": 71,
+    "question": "How do you handle 'Side Effects' in React?",
+    "answer": "Side effects (like data fetching, subscriptions, or DOM mutations) are handled using the **'useEffect'** hook. You provide a setup function and an optional cleanup function. It's critical to correctly manage the **dependency array** to ensure the effect runs only when necessary, preventing infinite loops or stale data. For more complex side effects or data fetching at scale, libraries like **React Query** or **SWR** are recommended as they provide built-in caching, revalidation, and error handling.",
+    "counterQuestion": "What is a 'Race Condition' in data fetching and how do you prevent it in useEffect?",
+    "counterQuestionAnswer": "A race condition occurs when a second request finishes before the first, but the first request's state update happens last, overwriting the newer data. To prevent this, use a boolean 'ignore' flag inside the effect and set it to true in the cleanup function, ensuring that only the result of the *latest* request is applied to the state.",
+    "category": "react",
+    "topic": "hooks",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "hooks",
+      "side_effects"
+    ],
+    "analogy": "Side Effects are like 'Chores you do after work'. Your main job is to render the UI (work), but after that's done, you might need to take out the trash (fetch data) or water the plants (set up a subscription).",
+    "code": "useEffect(() => {\n    const controller = new AbortController();\n    fetch(url, { signal: controller.signal })\n        .then(res => res.json())\n        .then(setData);\n    return () => controller.abort(); // Prevent race conditions\n}, [url]);"
+  },
+  {
+    "id": 72,
+    "question": "Explain 'Error Boundaries' in React.",
+    "answer": "Error Boundaries are React components that catch JavaScript errors anywhere in their child component tree, log those errors, and display a fallback UI instead of crashing the whole application. They catch errors during rendering, in lifecycle methods, and in constructors. **Note**: Currently, Error Boundaries **must be Class Components** because they use the 'static getDerivedStateFromError()' or 'componentDidCatch()' methods, which do not have functional hook equivalents yet.",
+    "counterQuestion": "Do Error Boundaries catch errors in event handlers or asynchronous code?",
+    "counterQuestionAnswer": "No. Error Boundaries do not catch errors in event handlers, asynchronous code (like 'setTimeout' or 'fetch'), or during server-side rendering. For event handlers, you must use a standard 'try/catch' block inside the handler itself.",
+    "category": "react",
+    "topic": "advanced",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "errors",
+      "stability"
+    ],
+    "analogy": "An Error Boundary is like 'A safety net' under a tightrope walker. If the walker (component) falls, the net catches them and shows a message to the audience (fallback UI) so the whole show doesn't have to be canceled.",
+    "code": "class ErrorBoundary extends React.Component {\n    state = { hasError: false };\n    static getDerivedStateFromError(error) { return { hasError: true }; }\n    render() {\n        if (this.state.hasError) return <h1>Something went wrong.</h1>;\n        return this.props.children;\n    }\n}"
+  },
+  {
+    "id": 73,
+    "question": "What is 'Automatic Batching' in React 18?",
+    "answer": "Automatic Batching is a performance feature where React groups multiple state updates into a single re-render, even if they happen inside promises, timeouts, or native event handlers. Before React 18, batching only worked inside React event handlers. This significantly reduces the number of renders and improves the performance of your application without requiring any manual optimization from the developer. It ensures the UI remains consistent and efficient even during complex data-driven updates.",
+    "counterQuestion": "How do you 'opt out' of automatic batching if you absolutely need a synchronous render?",
+    "counterQuestionAnswer": "You can use the 'flushSync' function from 'react-dom' to force a synchronous update. However, this is rarely necessary and should be used with extreme caution as it can hurt performance and break the consistency of React's rendering cycle.",
+    "category": "react",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "performance",
+      "react_18"
+    ],
+    "analogy": "Automatic Batching is like 'Waiting to go to the store until you have a full list'. Instead of driving to the store for milk, then coming back and driving again for eggs (multiple renders), you wait until you know you need both, then go once (one render).",
+    "code": "setTimeout(() => {\n    setCount(c => c + 1);\n    setFlag(f => !f);\n    // React 18: Only 1 re-render here!\n}, 100);"
+  },
+  {
+    "id": 74,
+    "question": "Explain 'useTransition' vs 'useDeferredValue'. How do they improve perceived performance?",
+    "answer": "Both allow you to prioritize UI updates: \n1. **useTransition**: Returns a 'startTransition' function that lets you mark an update as a 'transition' (low priority), keeping the UI responsive while a complex state update happens in the background. \n2. **useDeferredValue**: Allows you to 'defer' the update of a specific value (like a search term) so that the UI can continue to use the old value until the new one is ready. They are essential for building high-performance interfaces where you want to keep the input responsive even while rendering heavy content like large lists or complex charts.",
+    "counterQuestion": "What does the 'isPending' flag from useTransition do?",
+    "counterQuestionAnswer": "The 'isPending' flag is a boolean that tells you if a transition is currently in progress. You can use it to show a loading spinner or slightly dim the UI, providing immediate visual feedback to the user while the high-priority UI remains interactive.",
+    "category": "react",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "performance",
+      "hooks"
+    ],
+    "analogy": "useTransition is like 'Telling your computer to run a heavy task in the background'. You can still move your mouse and type in a document (the UI stays responsive) even if a big file is downloading in the background.",
+    "code": "const [isPending, startTransition] = useTransition();\n\nconst handleClick = () => {\n    startTransition(() => {\n        setHeavyState(newData);\n    });\n};"
+  },
+  {
+    "id": 75,
+    "question": "How do you test React components using 'React Testing Library' (RTL)?",
+    "answer": "React Testing Library (RTL) focuses on testing components from the **user's perspective** rather than their internal implementation. Instead of checking a component's state or props directly, you use queries like 'getByRole', 'getByText', or 'getByLabelText' to find elements on the screen. You then use 'user-event' to simulate interactions (like clicks or typing) and 'expect' to verify that the UI has updated correctly. This approach makes tests more resilient to refactors because they don't break as long as the functionality remains the same for the user.",
+    "counterQuestion": "What is the difference between 'getBy', 'queryBy', and 'findBy' in RTL?",
+    "counterQuestionAnswer": "1. **getBy**: Returns the element or throws an error immediately (use for elements you expect to be there). \n2. **queryBy**: Returns the element or 'null' (use for elements you expect NOT to be there). \n3. **findBy**: Returns a promise that resolves when the element appears (use for asynchronous updates).",
+    "category": "react",
+    "topic": "testing",
+    "difficulty": "medium",
+    "tags": [
+      "react",
+      "testing",
+      "rtl"
+    ],
+    "analogy": "RTL Testing is like 'Checking a restaurant by eating the food'. You don't care how the chef organized the kitchen (internal implementation); you only care if the food tastes good and the service is fast (the UI works as expected).",
+    "code": "test('renders welcome message', () => {\n    render(<Welcome name=\"Alice\" />);\n    const linkElement = screen.getByText(/hello alice/i);\n    expect(linkElement).toBeInTheDocument();\n});"
+  },
+  {
+    "id": 76,
+    "question": "Explain 'HOC' (Higher Order Components) vs 'Render Props'. Are they still relevant after Hooks?",
+    "answer": "1. **HOC**: A function that takes a component and returns a new component with extra functionality (e.g., 'withAuth(MyComponent)'). \n2. **Render Props**: A technique where a component's prop is a function that tells it what to render ('<Mouse render={pos => <div>{pos.x}</div>} />'). While **Hooks have largely replaced these patterns** for sharing stateful logic, they are still relevant for specific architectural needs, such as modifying component behavior from the outside or when working with legacy codebases that haven't been migrated to functional components.",
+    "counterQuestion": "What is 'Wrapper Hell'?",
+    "counterQuestionAnswer": "Wrapper Hell occurs when you use multiple HOCs or nested Render Prop components, leading to a massive, deeply nested component tree that is difficult to read and debug in React DevTools. Hooks solved this by allowing you to 'flatten' this logic into simple function calls inside a single component.",
+    "category": "react",
+    "topic": "architecture",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "patterns",
+      "architecture"
+    ],
+    "analogy": "HOC is like 'A custom filter on a camera' (it wraps the whole lens). Render Props is like 'A camera with a screen that tells you where to point it' (it gives you data to use inside your own logic).",
+    "code": "// HOC\nconst withUser = (Comp) => (props) => <Comp {...props} user={user} />;\n\n// Render Props\n<UserProvider render={user => <Profile user={user} />} />"
+  },
+  {
+    "id": 77,
+    "question": "Discuss 'Server-Side Rendering' (SSR) vs 'Static Site Generation' (SSG) in Next.js.",
+    "answer": "1. **SSR** ('getServerSideProps'): Generates HTML on the server **on every request**. Use for pages with highly dynamic data (like a user's personalized feed). \n2. **SSG** ('getStaticProps'): Generates HTML at **build time**. Use for pages that don't change often (like blog posts or documentation). SSG is significantly faster because the static files can be served from a CDN, while SSR is necessary when the content depends on the specific request (like cookies or query parameters).",
+    "counterQuestion": "What is 'Incremental Static Regeneration' (ISR)?",
+    "counterQuestionAnswer": "ISR is a powerful feature that allows you to update static pages **after** the build, without rebuilding the entire site. You specify a 'revalidate' time, and Next.js will regenerate the page in the background as new requests come in, ensuring your static content stays fresh without sacrificing performance.",
+    "category": "react",
+    "topic": "nextjs",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "nextjs",
+      "performance"
+    ],
+    "analogy": "SSR is like 'A live TV broadcast' (it's happening right now for you). SSG is like 'A recorded movie' (it was made a long time ago and everyone sees the same thing).",
+    "code": "// Next.js: SSG with revalidation\nexport async function getStaticProps() {\n    return { props: { data }, revalidate: 60 };\n}"
+  },
+  {
+    "id": 78,
+    "question": "Explain 'React Server Components' (RSC). How do they differ from client components?",
+    "answer": "React Server Components are a new type of component that **runs only on the server**. \n1. **Zero Bundle Size**: Their code never leaves the server, so they don't add to the client-side bundle size. \n2. **Direct Backend Access**: They can query databases or read files directly. \n3. **Streaming**: They allow the UI to be streamed to the client in chunks. Unlike Client Components (marked with '\"use client\"'), RSCs cannot use Hooks (like 'useState') or browser APIs because they never execute in the browser. They are the future of high-performance full-stack React development.",
+    "counterQuestion": "Can you nest a Client Component inside a Server Component?",
+    "counterQuestionAnswer": "Yes. You can import and use Client Components inside a Server Component. However, you cannot import a Server Component directly into a Client Component (as that would force the RSC code into the client bundle); instead, you should pass the Server Component as 'children' or a prop to the Client Component.",
+    "category": "react",
+    "topic": "advanced",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "rsc",
+      "nextjs",
+      "#highly_asked"
+    ],
+    "analogy": "Server Components are like 'Ordering food from a restaurant' (all the cooking happens in the kitchen, and you just get the finished plate). Client Components are like 'Cooking at home' (you have to bring all the ingredients and tools into your kitchen).",
+    "code": "// App Router: Server Component by default\nasync function BlogPosts() {\n    const posts = await db.query('SELECT * FROM posts');\n    return <ul>{posts.map(p => <li key={p.id}>{p.title}</li>)}</ul>;\n}"
+  },
+  {
+    "id": 79,
+    "question": "What are 'Server Actions' in Next.js? How do they simplify form submissions and data mutations in a full-stack context?",
+    "answer": "Server Actions allow you to define asynchronous functions that run on the server and can be called directly from your Client or Server Components. They eliminate the need to manually create and manage API routes for simple data mutations (like 'POST' requests). You simply define a function with '\"use server\"' and pass it to a form's 'action' prop. Next.js handles the network request, serialization, and error handling automatically, making full-stack development feel like writing simple, local JavaScript functions.",
+    "counterQuestion": "How do you handle 'Optimistic Updates' with Server Actions?",
+    "counterQuestionAnswer": "You use the 'useOptimistic' hook. It allows you to immediately update the UI with the expected result of a server action before the server has actually responded. If the action succeeds, the UI stays as is; if it fails, React automatically rolls back the UI to the previous state, ensuring a smooth and responsive user experience.",
+    "category": "react",
+    "topic": "nextjs",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "nextjs",
+      "server_actions"
+    ],
+    "analogy": "Server Actions are like 'A magic button on your remote'. You press it, and it instantly changes the channel on the TV station's server, without you having to build a whole transmitter (API endpoint) yourself.",
+    "code": "// action.js\n'use server';\nexport async function updateName(formData) {\n    const name = formData.get('name');\n    await db.user.update({ name });\n}"
+  },
+  {
+    "id": 80,
+    "question": "How do you optimize 'React Performance' (Code splitting, Lazy loading, Suspense)?",
+    "answer": "1. **Code Splitting**: Breaking your bundle into smaller chunks so users only download what they need. \n2. **Lazy Loading**: Using 'React.lazy()' to load components only when they are about to be rendered. \n3. **Suspense**: Providing a fallback UI (like a spinner) while the lazy-loaded component is being downloaded. Together, these techniques drastically reduce the 'Initial Bundle Size' and 'Time to Interactive' (TTI), making large React applications feel fast and responsive even on slow mobile networks.",
+    "counterQuestion": "What is 'Pre-fetching' in the context of code splitting?",
+    "counterQuestionAnswer": "Pre-fetching is a technique where you start downloading a code chunk *before* the user actually needs it (e.g., when they hover over a link). This ensures that by the time they click, the code is already in the cache, making the transition feel instantaneous.",
+    "category": "react",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "performance",
+      "optimization",
+      "#highly_asked"
+    ],
+    "analogy": "Lazy Loading is like 'Only opening the map for the part of the city you are currently in'. You don't need the map of the whole world (the full bundle) just to walk down one street (view one page).",
+    "code": "const HeavyComponent = React.lazy(() => import('./HeavyComponent'));\n\nreturn (\n    <Suspense fallback={<Loading />}>\n        <HeavyComponent />\n    </Suspense>\n);"
+  },
+  {
+    "id": 81,
+    "question": "Discuss 'Atomic Design' principles in React component architecture.",
+    "answer": "Atomic Design is a methodology for creating design systems by breaking components into 5 levels: \n1. **Atoms**: Basic building blocks (buttons, inputs). \n2. **Molecules**: Groups of atoms (a search bar). \n3. **Organisms**: Complex UI sections (a header). \n4. **Templates**: Page-level layouts. \n5. **Pages**: Specific instances with real data. This approach ensures that components are highly modular, reusable, and consistent across a large application, making it easier for designers and developers to speak the same language.",
+    "counterQuestion": "What is the biggest challenge when implementing Atomic Design?",
+    "counterQuestionAnswer": "The biggest challenge is often deciding exactly where a component fits (e.g., is this a molecule or an organism?). It requires strict discipline and clear documentation to ensure the team remains consistent, otherwise the folder structure can become confusing and counter-productive.",
+    "category": "react",
+    "topic": "architecture",
+    "difficulty": "medium",
+    "tags": [
+      "react",
+      "design_systems",
+      "atomic_design"
+    ],
+    "analogy": "Atomic Design is like 'The Periodic Table of UI'. You start with simple atoms (Hydrogen/Button), combine them into molecules (Water/Search Bar), and eventually build complex organisms (Cells/Header) to create a living, breathing application.",
+    "code": "// Atom: Button\nconst Button = ({ text }) => <button>{text}</button>;\n\n// Molecule: SearchBar\nconst SearchBar = () => (\n    <div>\n        <Input />\n        <Button text=\"Search\" />\n    </div>\n);"
+  },
+  {
+    "id": 82,
+    "question": "How do you implement 'Micro-frontends' using React?",
+    "answer": "Micro-frontends involve breaking a large frontend into smaller, independently deployable applications. \n1. **Module Federation** (Webpack 5): The modern standard; it allows apps to share code and components at runtime without bundling them together. \n2. **IFrames**: The oldest method; providing complete isolation but with performance and communication overhead. \n3. **Web Components**: Using custom elements as a universal wrapper. Micro-frontends allow different teams to work on different parts of the same site using different technologies or release cycles, which is essential for massive enterprise applications.",
+    "counterQuestion": "What is a 'Shell' or 'Container' app in micro-frontends?",
+    "counterQuestionAnswer": "The Shell is the main application that loads the individual micro-frontends. It handles shared concerns like global navigation, authentication, and routing, acting as the orchestrator that brings all the independent apps together into a single, cohesive user experience.",
+    "category": "react",
+    "topic": "architecture",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "microfrontends",
+      "scalability"
+    ],
+    "analogy": "Micro-frontends are like 'A food court in a mall'. Instead of one giant kitchen trying to cook every type of food, you have 10 separate restaurants. Each has its own chef and menu, but they all share the same seating area (the user's browser).",
+    "code": "// module-federation.config.js (Webpack)\nmodule.exports = {\n    name: 'app_nav',\n    exposes: { './Header': './src/Header' },\n    shared: ['react', 'react-dom']\n};"
+  },
+  {
+    "id": 83,
+    "question": "Discuss 'Frontend Security' (XSS, CSRF, Secure storage in browsers).",
+    "answer": "1. **XSS (Cross-Site Scripting)**: Prevent by sanitizing user input and using 'Content Security Policy' (CSP). React's JSX automatically escapes strings to prevent simple XSS. \n2. **CSRF (Cross-Site Request Forgery)**: Prevent by using 'SameSite' cookie attributes and anti-CSRF tokens. \n3. **Secure Storage**: Avoid storing sensitive data (like JWTs) in 'localStorage' as it's vulnerable to XSS. Instead, use **HttpOnly, Secure cookies** which are inaccessible to JavaScript, significantly reducing the attack surface of your application.",
+    "counterQuestion": "What is 'dangerouslySetInnerHTML' in React?",
+    "counterQuestionAnswer": "'dangerouslySetInnerHTML' is React's way of letting you inject raw HTML into a component. As the name implies, it's dangerous because it bypasses React's automatic XSS protection. You should only use it with trusted content that has been thoroughly sanitized on the server.",
+    "category": "react",
+    "topic": "security",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "security",
+      "best_practices",
+      "#highly_asked"
+    ],
+    "analogy": "Frontend Security is like 'Locking your doors and windows'. XSS is like someone throwing a rock through your window (injecting a script), and CSP is like 'Installing bulletproof glass' to make sure the rock can't do any damage.",
+    "code": "// Content-Security-Policy (Header)\n// script-src 'self' https://trusted.cdn.com;\n\n// Sanitize in React\nconst safeHTML = DOMPurify.sanitize(userInput);"
+  },
+  {
+    "id": 84,
+    "question": "How do you handle 'Large-scale State' in a complex dashboard application?",
+    "answer": "Handling large-scale state requires a multi-layered approach: \n1. **State Location**: Keep state as close to where it's used as possible to prevent global re-renders. \n2. **Normalization**: Store relational data as a flat object with IDs (like a database) to make updates efficient. \n3. **Selectors**: Use memoized selectors (like 'reselect') to ensure components only re-render when their specific slice of state changes. \n4. **Immutability**: Use libraries like **Immer** to handle complex nested state updates cleanly. This ensures the dashboard remains fast even with thousands of data points and frequent updates.",
+    "counterQuestion": "What is 'State Colocation'?",
+    "counterQuestionAnswer": "State Colocation is the principle of keeping state inside the component that uses it, rather than moving it to a global store prematurely. It improves performance and makes the component easier to understand and test in isolation.",
+    "category": "react",
+    "topic": "state_management",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "performance",
+      "scalability"
+    ],
+    "analogy": "Large-scale State is like 'A city's power grid'. If you have one giant power plant (global state) and a wire breaks, the whole city goes dark. If you have many small substations (localized state), a break in one area only affects that neighborhood.",
+    "code": "// Normalizing state (NGRX/Redux pattern)\nconst state = {\n    users: {\n        ids: ['u1', 'u2'],\n        entities: {\n            'u1': { id: 'u1', name: 'Alice' },\n            'u2': { id: 'u2', name: 'Bob' }\n        }\n    }\n};"
+  },
+  {
+    "id": 85,
+    "question": "How do you build a 'Design System' or 'Component Library' using React and CSS-in-JS?",
+    "answer": "Building a component library involves: \n1. **Foundations**: Defining tokens (colors, spacing, typography). \n2. **Components**: Building atoms/molecules using a CSS-in-JS library like **Styled Components** or **Emotion** for scoped, dynamic styling. \n3. **Documentation**: Using **Storybook** to showcase components in isolation. \n4. **Distribution**: Bundling with **Rollup** and publishing to a private NPM registry. This ensures that multiple teams can use the same pre-built, themeable components, guaranteeing UI consistency across a company's entire digital ecosystem.",
+    "counterQuestion": "What is 'Polymorphism' in the context of a component library?",
+    "counterQuestionAnswer": "Polymorphism (using an 'as' prop) allows a component to render as a different HTML element while keeping its styles. For example, a '<Button as=\"a\">' component would look like a button but behave like a link, which is essential for both accessibility and flexibility in a design system.",
+    "category": "react",
+    "topic": "architecture",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "design_systems",
+      "storybook"
+    ],
+    "analogy": "A Design System is like 'A box of LEGO bricks with a manual'. You have all the pieces you need to build anything, and you know exactly which pieces fit together because they follow the same standard measurements (design tokens).",
+    "code": "// Styled Components for Design Tokens\nconst StyledButton = styled.button`\n    background: ${props => props.theme.colors.primary};\n    padding: ${props => props.theme.spacing.medium};\n`;"
+  },
+  {
+    "id": 86,
+    "question": "Discuss the future of React (Concurrent Mode, Transitions).",
+    "answer": "The future of React is centered around **Concurrency**\u2014the ability for React to work on multiple tasks at once and prioritize the most important ones. Features like **Transitions** ('useTransition') allow developers to mark non-urgent updates so the UI stays responsive. **Suspense** is being expanded to handle all data fetching and resource loading. This shift moves React from being a library that just 'renders the UI' to a sophisticated 'orchestrator' that manages the timing and priority of all updates to provide a truly seamless user experience.",
+    "counterQuestion": "What is 'Time Slicing'?",
+    "counterQuestionAnswer": "Time Slicing is an internal React feature that breaks a large rendering task into small chunks. Between these chunks, React yields control back to the browser so it can handle user input or animations, preventing the UI from 'locking up' during heavy renders.",
+    "category": "react",
+    "topic": "advanced",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "concurrency",
+      "performance"
+    ],
+    "analogy": "Concurrent Mode is like 'A chef who can chop vegetables while waiting for the water to boil'. Instead of standing still and doing nothing (blocking the main thread), the chef switches between tasks to get everything done as fast as possible.",
+    "code": "// React 18 Concurrent Rendering\nconst root = ReactDOM.createRoot(document.getElementById('root'));\nroot.render(<App />);"
+  },
+  {
+    "id": 87,
+    "question": "Explain 'React Fiber' architecture. How does it enable incremental rendering?",
+    "answer": "React Fiber is a complete rewrite of React's core reconciliation algorithm. It replaced the synchronous 'Stack' reconciler with a **Fiber** reconciler that can pause, resume, and prioritize work. Each component is a 'Fiber' (a unit of work). Fiber enables **Incremental Rendering**: instead of rendering the whole tree in one go and blocking the main thread, React can work on parts of the tree, pause to handle an event, and then come back to finish. This is the foundation that makes Concurrent Mode and Transitions possible.",
+    "counterQuestion": "What is the 'Double Buffering' technique in Fiber?",
+    "counterQuestionAnswer": "Fiber uses two trees: the 'current' tree (what's on screen) and the 'workInProgress' tree. React makes all changes to the workInProgress tree first. Once the work is complete, it simply swaps the pointers, making the new tree 'current'. This ensures that the user never sees an inconsistent, partially rendered UI.",
+    "category": "react",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "fiber",
+      "internals"
+    ],
+    "analogy": "React Fiber is like 'A project manager who can pause a meeting to take an emergency call'. The project manager (the reconciler) breaks the project into small tasks (Fibers) and handles them one by one, stopping if something more important comes up.",
+    "code": "// Fiber node structure (simplified)\nconst fiber = {\n    type: 'div',\n    props: { children: [] },\n    sibling: null,\n    child: null,\n    return: null // reference to parent\n};"
+  },
+  {
+    "id": 88,
+    "question": "What is the 'React Scheduler' and how does it prioritize different types of updates?",
+    "answer": "The React Scheduler is a separate package that manages when work should be performed. it assigns a **Priority Level** to every task: \n1. **Immediate**: Synchronous (e.g., input fields). \n2. **UserBlocking**: Fast feedback (e.g., button clicks). \n3. **Normal**: Data fetching or background tasks. \n4. **Low**: Non-urgent work (e.g., logging). \n5. **Idle**: Cleanup. By intelligently scheduling these tasks, React ensures that the most critical updates (those the user feels) always happen first, while less important work happens in the background.",
+    "counterQuestion": "What is 'Starvation' in scheduling and how does React prevent it?",
+    "counterQuestionAnswer": "Starvation occurs when a low-priority task is never executed because higher-priority tasks keep coming in. React prevents this by giving every task an 'expiration time'. Once a task expires, its priority is automatically bumped to 'Immediate', forcing the scheduler to run it even if other tasks are waiting.",
+    "category": "react",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "scheduler",
+      "performance"
+    ],
+    "analogy": "The React Scheduler is like 'An Air Traffic Controller'. It looks at all the incoming planes (UI updates) and decides which ones are allowed to land first based on how much fuel they have (priority) and how busy the runway is (the main thread).",
+    "code": "// Priority Levels\nimport { unstable_ImmediatePriority, unstable_runWithPriority } from 'scheduler';\n\nunstable_runWithPriority(unstable_ImmediatePriority, () => {\n    // Critical update logic\n});"
+  },
+  {
+    "id": 89,
+    "question": "Discuss 'Render-as-You-Fetch' pattern with Suspense.",
+    "answer": "Render-as-You-Fetch is the modern pattern for handling data fetching in React. Instead of 'Fetch-on-Render' (fetching in useEffect) which causes 'waterfalls', you **start the fetch and the render at the same time**. While the data is loading, React renders the fallback UI via **Suspense**. As soon as the data arrives, React 'wakes up' the component and finishes the render. This approach eliminates loading waterfalls and ensures that your application starts loading data as soon as possible, providing the fastest possible user experience.",
+    "counterQuestion": "What is a 'Waterfall' in the context of data fetching?",
+    "counterQuestionAnswer": "A waterfall occurs when components wait for their parents to finish fetching data before they start their own fetch (e.g., Parent fetches, then Child renders and fetches). This leads to a series of sequential loading spinners and a much slower overall load time compared to parallel fetching.",
+    "category": "react",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "react",
+      "suspense",
+      "architecture"
+    ],
+    "analogy": "Render-as-You-Fetch is like 'Calling ahead to a restaurant to order your food while you're still in the car'. By the time you get there (the component renders), the food is already being cooked (the request is in flight), so you don't have to wait as long.",
+    "code": "// Using Suspense with a data fetcher\nconst data = resource.read(); // Throws promise if loading\nreturn <div>{data.name}</div>;"
+  },
+  {
+    "id": 90,
+    "question": "How does the new React Native architecture (Fabric and JSI) differ from the old JavaScript bridge?",
+    "answer": "1. **The Old Bridge**: Asynchronous and serialized data across a JSON bridge, which caused bottlenecks for high-frequency updates (like scroll events). \n2. **JSI (JavaScript Interface)**: Allows JavaScript to hold a direct reference to C++ host objects, enabling synchronous calls and significantly faster communication. \n3. **Fabric**: The new rendering system built on JSI that allows for synchronous UI updates and better prioritization. This architecture eliminates the 'bridge' bottleneck, making React Native performance much closer to truly native applications.",
+    "counterQuestion": "What is the 'TurboModules' system?",
+    "counterQuestionAnswer": "TurboModules is the native module counterpart to Fabric. It allows native modules to be loaded lazily and only when needed, rather than all at once during app startup. This significantly improves the initial boot time of large React Native applications.",
+    "category": "react_native",
+    "topic": "architecture",
+    "difficulty": "hard",
+    "tags": [
+      "react_native",
+      "jsi",
+      "fabric"
+    ],
+    "analogy": "The new architecture is like 'A high-speed train tunnel' between two cities (JS and Native). The old bridge was like 'A slow ferry' where you had to unload all your cargo into boxes (JSON) before you could cross.",
+    "code": "// JSI allows direct C++ calls\n// No more JSON serialization over a bridge!"
+  },
+  {
+    "id": 91,
+    "question": "Explain 'Code Push' and how it allows for instant updates in React Native.",
+    "answer": "Code Push is a service (like AppCenter) that allows you to deploy JavaScript and asset updates directly to users' devices without going through the App Store or Google Play review process. Since the React Native app is just a native shell running a JS bundle, Code Push can replace that bundle remotely. This is perfect for fixing critical bugs, changing styling, or adding small features instantly, although it cannot be used to change native code or add new native dependencies.",
+    "counterQuestion": "Are there any Apple/Google policy restrictions on using Code Push?",
+    "counterQuestionAnswer": "Yes. Both Apple and Google allow over-the-air updates as long as they don't 'materially change' the purpose of the app. If you use Code Push to turn a calculator app into a social network, your app will likely be banned. It should only be used for bug fixes and minor feature updates.",
+    "category": "react_native",
+    "topic": "deployment",
+    "difficulty": "medium",
+    "tags": [
+      "react_native",
+      "code_push",
+      "ota"
+    ],
+    "analogy": "Code Push is like 'A magic update spell' for your app. Instead of waiting for the city council (App Store) to approve a new sign for your shop, you just snap your fingers and the sign changes instantly for everyone looking at it.",
+    "code": "// CodePush implementation\nimport codePush from \"react-native-code-push\";\n\nlet MyApp = () => <View>...</View>;\nMyApp = codePush(MyApp);"
+  },
+  {
+    "id": 92,
+    "question": "How do you handle 'Native Modules' in React Native when you need to access platform-specific APIs?",
+    "answer": "When a React Native app needs to access a native API that isn't already exposed (like a specific sensor or a third-party SDK), you must write a **Native Module**. This involves writing the logic in Java/Kotlin (Android) and Objective-C/Swift (iOS) and then exposing those methods to JavaScript using the 'NativeModules' API or the new JSI/TurboModules system. This allows you to bridge the gap between the cross-platform JS code and the full power of the underlying mobile operating system.",
+    "counterQuestion": "What is 'Autolinking' in React Native?",
+    "counterQuestionAnswer": "Autolinking is a feature that automatically connects native dependencies to your project during the build process, eliminating the need for the manual 'react-native link' command. It significantly simplifies the management of third-party native modules.",
+    "category": "react_native",
+    "topic": "native_bridge",
+    "difficulty": "hard",
+    "tags": [
+      "react_native",
+      "java",
+      "swift"
+    ],
+    "analogy": "A Native Module is like 'Hiring a local guide' when you're in a foreign country. You speak JavaScript, but the phone's hardware speaks Java/Swift. The guide (Native Module) translates your requests so the hardware knows exactly what you want it to do.",
+    "code": "// iOS: RCT_EXPORT_MODULE();\n// Android: ReactMethod annotation\n\nconst { MyNativeModule } = NativeModules;\nMyNativeModule.callNativeMethod();"
+  },
+  {
+    "id": 93,
+    "question": "Discuss 'Performance Optimization' in React Native (FlatList, Hermes, Memory management).",
+    "answer": "1. **FlatList**: Use it for large lists as it only renders items currently on screen. \n2. **Hermes**: A high-performance JS engine optimized for mobile that reduces startup time and memory usage. \n3. **Image Optimization**: Use libraries like 'react-native-fast-image' for better caching. \n4. **Avoid Inline Objects**: Don't define objects or functions inside the 'render' method as it causes unnecessary re-renders. \n5. **Memory Management**: Be careful with large images and listener cleanup to avoid memory leaks and 'Out of Memory' crashes.",
+    "counterQuestion": "What is 'WindowSize' in a FlatList?",
+    "counterQuestionAnswer": "WindowSize is a prop that determines how many pages of items are rendered outside of the visible area. A larger WindowSize leads to smoother scrolling but higher memory usage, while a smaller one saves memory but might show blank spaces during very fast scrolling.",
+    "category": "react_native",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "react_native",
+      "performance",
+      "hermes"
+    ],
+    "analogy": "Hermes is like 'A pre-cooked meal'. Instead of the phone having to spend time cooking (compiling) the JavaScript when the app starts, Hermes has already done the work, so the app starts up and runs much faster.",
+    "code": "// Enable Hermes in android/app/build.gradle\nproject.ext.react = [\n    enableHermes: true,\n]"
+  },
+  {
+    "id": 94,
+    "question": "What is 'Expo' and when should you use it over a Bare React Native project?",
+    "answer": "Expo is a framework and platform for universal React applications. \n1. **Managed Workflow**: Expo handles the complex native build processes and provides a massive library of pre-built native modules. Great for rapid prototyping and most standard apps. \n2. **Bare Workflow**: Gives you full control over the native 'android' and 'ios' folders, which is necessary if you need custom native code or specific third-party libraries not supported by Expo. **Use Expo** by default for its superior developer experience, and only 'eject' to Bare if you have complex native requirements.",
+    "counterQuestion": "What is 'EAS' (Expo Application Services)?",
+    "counterQuestionAnswer": "EAS is a suite of cloud services for building, submitting, and updating Expo and React Native apps. It allows you to build native binaries in the cloud (no need for a Mac to build iOS) and manage the entire app lifecycle with a single CLI.",
+    "category": "react_native",
+    "topic": "ecosystem",
+    "difficulty": "medium",
+    "tags": [
+      "react_native",
+      "expo",
+      "eas"
+    ],
+    "analogy": "Expo is like 'A luxury apartment with all utilities included'. You don't have to worry about the plumbing (build settings) or the electricity (native linking)—it's all set up for you so you can just focus on decorating (writing code).",
+    "code": "// Expo Managed Workflow\nnpx expo start\n// Accessing camera easily\nimport { Camera } from 'expo-camera';"
+  },
+  {
+    "id": 95,
+    "question": "What is the 'CSS Box Model'? Explain margin, border, padding, and content.",
+    "answer": "The CSS Box Model is the foundation of layout on the web. Every element is represented as a rectangular box consisting of: \n1. **Content**: The actual text or image. \n2. **Padding**: Transparent space inside the border, around the content. \n3. **Border**: A line that goes around the padding and content. \n4. **Margin**: Transparent space outside the border, separating the element from its neighbors. Understanding how these layers interact (and the difference between 'box-sizing: content-box' vs 'border-box') is critical for creating accurate and predictable web designs.",
+    "counterQuestion": "What does 'box-sizing: border-box' do?",
+    "counterQuestionAnswer": "'border-box' tells the browser to include padding and border in the element's total width and height. This makes layout much easier because if you set an element to 'width: 100px', it will stay 100px regardless of how much padding or border you add, preventing elements from 'breaking' their containers.",
+    "category": "frontend",
+    "topic": "css_basics",
+    "difficulty": "easy",
+    "tags": [
+      "css",
+      "layout",
+      "box_model",
+      "#highly_asked"
+    ],
+    "analogy": "The Box Model is like 'Shipping a fragile gift'. The gift is the Content, the bubble wrap is the Padding, the cardboard box is the Border, and the space you leave between this box and other boxes in the truck is the Margin.",
+    "code": ".box {\n    width: 300px;\n    padding: 20px;\n    border: 5px solid black;\n    margin: 10px;\n    box-sizing: border-box; /* total width = 300px */\n}"
+  },
+  {
+    "id": 96,
+    "question": "Explain 'Semantic HTML'. Why is it important for SEO and Accessibility (a11y)?",
+    "answer": "Semantic HTML uses tags that describe their meaning (e.g., '<header>', '<main>', '<article>', '<footer>') rather than just their appearance ('<div>', '<span>'). \n1. **Accessibility**: Screen readers use these tags to help visually impaired users navigate the page structure (e.g., jumping to the main content). \n2. **SEO**: Search engines use semantic tags to better understand the hierarchy and importance of your content, leading to better indexing and ranking. It essentially makes your code machine-readable in a way that provides context beyond just 'displaying text'.",
+    "counterQuestion": "Is an '<h1>' tag semantic?",
+    "counterQuestionAnswer": "Yes. An '<h1>' indicates the primary heading of the page. Using it semantically means you only have one per page and it represents the main topic, which helps both users and search engines identify the most important content immediately.",
+    "category": "frontend",
+    "topic": "html_basics",
+    "difficulty": "easy",
+    "tags": [
+      "html",
+      "seo",
+      "accessibility",
+      "#highly_asked"
+    ],
+    "analogy": "Semantic HTML is like 'Correctly labeling the aisles in a supermarket'. If the aisle says 'Produce', customers (users) and delivery robots (SEO bots) know exactly what's there. If every aisle is just labeled 'Aisle' (div), everyone gets lost.",
+    "code": "<header>\n    <nav>...</nav>\n</header>\n<main>\n    <article>...</article>\n</main>\n<footer>...</footer>"
+  },
+  {
+    "id": 97,
+    "question": "What is the difference between 'display: none' and 'visibility: hidden'?",
+    "answer": "1. **display: none**: Completely removes the element from the document flow. It takes up **zero space** on the page, and other elements will move to fill its spot. \n2. **visibility: hidden**: Hides the element but keeps it in the document flow. It still **takes up space**, acting like an invisible box that blocks other elements from moving into its position. Use 'display: none' when you want to truly hide something (like a closed modal), and 'visibility: hidden' when you want to hide content but preserve the page layout.",
+    "counterQuestion": "Does 'display: none' prevent an element's resources (like images) from loading?",
+    "counterQuestionAnswer": "No. The browser will still download the images and other resources associated with an element even if it is set to 'display: none'. To prevent loading, you must either not include the element in the HTML or use techniques like lazy-loading.",
+    "category": "frontend",
+    "topic": "css_basics",
+    "difficulty": "easy",
+    "tags": [
+      "css",
+      "layout",
+      "visibility"
+    ],
+    "analogy": "'display: none' is like 'A magician making a box completely disappear' (the space it was in is now empty). 'visibility: hidden' is like 'Wearing an invisibility cloak'—you're still standing there taking up space, but people just can't see you.",
+    "code": ".hidden-gone { display: none; } /* removed from flow */\n.hidden-ghost { visibility: hidden; } /* still takes space */"
+  },
+  {
+    "id": 98,
+    "question": "Explain 'Flexbox' vs 'CSS Grid'. When would you use one over the other?",
+    "answer": "1. **Flexbox**: A one-dimensional layout system (either a row or a column). It is perfect for aligning items in a linear way, like a navigation bar or a centered button. \n2. **CSS Grid**: A two-dimensional layout system (both rows and columns). it is designed for complex, full-page layouts where you need precise control over both horizontal and vertical placement. **Use Flexbox** for small components and simple alignments. **Use Grid** for the overall page structure and complex galleries where items need to span multiple rows or columns.",
+    "counterQuestion": "Can you use Flexbox and Grid together?",
+    "counterQuestionAnswer": "Yes, and you usually should! A common pattern is using CSS Grid for the main page layout (header, sidebar, main content) and then using Flexbox inside each of those grid areas to align the individual buttons, text, and icons.",
+    "category": "frontend",
+    "topic": "css_layout",
+    "difficulty": "medium",
+    "tags": [
+      "css",
+      "flexbox",
+      "grid",
+      "#highly_asked"
+    ],
+    "analogy": "Flexbox is like 'A single row of theater seats' (items can grow or shrink to fit the row). CSS Grid is like 'A piece of graph paper' where you can decide exactly which squares an item occupies both horizontally and vertically.",
+    "code": "// Grid layout\n.container {\n    display: grid;\n    grid-template-columns: repeat(3, 1fr);\n    gap: 10px;\n}"
+  },
+  {
+    "id": 99,
+    "question": "How does 'CSS Specificity' work? How is the weight of a selector calculated?",
+    "answer": "CSS Specificity is the set of rules that determine which style is applied when multiple rules target the same element. It's calculated using a weight system: \n1. **Inline styles**: (e.g., style='...') Weight = \n1000. \n2. **IDs**: (e.g., #header) Weight = \n100. \n3. **Classes, attributes, and pseudo-classes**: (e.g., .btn, [type='text'], :hover) Weight = \n10. \n4. **Elements and pseudo-elements**: (e.g., h1, :before) Weight = \n1. If two rules have equal specificity, the one defined **last** in the CSS wins. Using '!important' overrides everything but is generally considered a bad practice as it makes debugging very difficult.",
+    "counterQuestion": "Does the specificity of the universal selector (*) carry any weight?",
+    "counterQuestionAnswer": "No, the universal selector (*) has a specificity of 0-0-\n0. It is the lowest possible priority and will be overridden by any other selector that targets the element directly.",
+    "category": "frontend",
+    "topic": "css_basics",
+    "difficulty": "medium",
+    "tags": [
+      "css",
+      "specificity",
+      "best_practices"
+    ],
+    "analogy": "Specificity is like 'A hierarchy of authority'. An ID is like a King (very powerful), a Class is like a Knight (moderate power), and an Element is like a Peasant (very little power). A King always overrides a Knight, no matter how many Knights there are.",
+    "code": "#unique-id { color: blue; }    /* 100 points */\n.some-class { color: red; }   /* 10 points */\ndiv { color: green; }         /* 1 point */"
+  },
+  {
+    "id": 100,
+    "question": "What is the 'Stacking Context' and how does 'z-index' actually work?",
+    "answer": "The Stacking Context is a three-dimensional conceptualization of HTML elements along an imaginary z-axis. While 'z-index' controls the order of elements within a context, a higher z-index **won't work** if the element is inside a parent with a lower z-index that has already created a new stacking context. A new context is created by properties like 'opacity < 1', 'transform', 'filter', and 'position: fixed/sticky'. This explains why sometimes an element with 'z-index: 9999' still appears behind an element with 'z-index: 1'; it is 'trapped' within its parent's stacking context.",
+    "counterQuestion": "How do you create a new stacking context on an element manually?",
+    "counterQuestionAnswer": "The most common way is to set 'position: relative' (or absolute/fixed) along with a 'z-index' value other than 'auto'. You can also use 'isolation: isolate;' which is a modern property specifically designed to create a new stacking context without changing any other visual properties.",
+    "category": "frontend",
+    "topic": "css_layout",
+    "difficulty": "hard",
+    "tags": [
+      "css",
+      "z-index",
+      "layout"
+    ],
+    "analogy": "Stacking Context is like 'Being on different floors of a building'. No matter how high you jump (z-index) on the 1st floor, you will never be higher than someone standing on the 2nd floor, even if they are sitting on the ground.",
+    "code": ".parent {\n    position: relative;\n    z-index: 1;\n}\n.child {\n    position: absolute;\n    z-index: 9999; /* still below anything with z-index: 2 on parent's level */\n}"
+  },
+  {
+    "id": 101,
+    "question": "Explain 'Responsive Web Design'. What are Media Queries, Container Queries, and the Mobile-First approach?",
+    "answer": "1. **Mobile-First**: You write styles for the smallest screen first and then use media queries to add complexity for larger screens. \n2. **Media Queries**: Allow you to apply styles based on the **browser viewport** size (e.g., '@media (min-width: 768px)'). \n3. **Container Queries**: A modern feature ('@container') that allows you to apply styles based on the size of the **parent element** rather than the whole viewport. This is revolutionary for building truly modular components that look good regardless of where they are placed on a page (e.g., a sidebar vs. a full-width main area).",
+    "counterQuestion": "Why is 'Mobile-First' better than 'Desktop-First'?",
+    "counterQuestionAnswer": "Mobile-First results in simpler, more optimized code. It's easier to add layout complexity as screens get larger than it is to 'undo' complex desktop layouts for small screens. It also aligns with the modern reality that most web traffic comes from mobile devices, ensuring the best performance for the majority of users.",
+    "category": "frontend",
+    "topic": "css_layout",
+    "difficulty": "medium",
+    "tags": [
+      "css",
+      "responsive",
+      "mobile_first",
+      "#highly_asked"
+    ],
+    "analogy": "Responsive Design is like 'A shape-shifting suit of armor'. It fits perfectly on a tiny fairy (mobile), but as the wearer grows into a giant (desktop), the armor automatically adds new plates and details (media queries) to maintain full coverage and functionality.",
+    "code": "/* Mobile First */\n.grid { display: flex; flex-direction: column; }\n\n/* Desktop */\n@media (min-width: 768px) {\n    .grid { flex-direction: row; }\n}"
+  },
+  {
+    "id": 102,
+    "question": "What is 'Critical CSS' and why is it important for page speed?",
+    "answer": "Critical CSS is the minimum amount of CSS required to render the **'Above the Fold'** content (what the user sees immediately without scrolling). By extracting this CSS and inlining it directly into the HTML '<head>', you allow the browser to start rendering the page before the main CSS file has finished downloading. This dramatically reduces the 'First Contentful Paint' (FCP) time and eliminates the 'Flash of Unstyled Content' (FOUC), providing a much faster perceived loading experience for the user.",
+    "counterQuestion": "How do you load the 'non-critical' CSS without blocking the page?",
+    "counterQuestionAnswer": "You use a technique like '<link rel=\"preload\" as=\"style\" onload=\"this.rel='stylesheet'\">'. This tells the browser to download the main CSS file in the background (asynchronously) without delaying the initial rendering of the critical, inlined styles.",
+    "category": "frontend",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "css",
+      "performance",
+      "optimization",
+      "#highly_asked"
+    ],
+    "analogy": "Critical CSS is like 'The intro of a song'. You want people to hear the melody immediately (see the page) while the rest of the instruments (non-critical CSS) are being tuned in the background. If you wait for the whole band to be ready, the audience will leave.",
+    "code": "<style>\n  /* Critical CSS inlined in <head> */\n  body { margin: 0; font-family: sans-serif; }\n  .header { height: 60px; background: #eee; }\n</style>"
+  },
+  {
+    "id": 103,
+    "question": "Explain 'Web Accessibility (WCAG)'. What are the 4 main principles (POUR)?",
+    "answer": "Accessibility ensures your site can be used by everyone, including people with disabilities. The WCAG guidelines are built on **POUR**: \n1. **Perceivable**: Information must be presentable in ways users can perceive (e.g., alt text for images). \n2. **Operable**: Interface must be usable (e.g., keyboard-only navigation). \n3. **Understandable**: Content and operation must be clear (e.g., predictable navigation). \n4. **Robust**: Content must be compatible with various user agents, including assistive technologies. Following these principles is not just about compliance; it's about building a better, more inclusive web for all users.",
+    "counterQuestion": "What is 'ARIA' in the context of accessibility?",
+    "counterQuestionAnswer": "ARIA (Accessible Rich Internet Applications) is a set of attributes you add to HTML to provide extra context to screen readers when standard HTML tags aren't enough. For example, 'aria-label' or 'role=\"button\"' can make a custom '<div>' component understandable to assistive technology.",
+    "category": "frontend",
+    "topic": "accessibility",
+    "difficulty": "medium",
+    "tags": [
+      "html",
+      "accessibility",
+      "a11y"
+    ],
+    "analogy": "Accessibility (POUR) is like 'A well-designed public park'. It must be Perceivable (clear signs), Operable (ramps for wheelchairs), Understandable (simple maps), and Robust (built to last and work for everyone, regardless of their equipment).",
+    "code": "<!-- Accessible Button -->\n<button aria-label=\"Close Modal\" onclick=\"close()\">\n    <span aria-hidden=\"true\">&times;</span>\n</button>"
+  },
+  {
+    "id": 104,
+    "question": "What are 'Pseudo-classes' (e.g., :hover) vs 'Pseudo-elements' (e.g., ::before)?",
+    "answer": "1. **Pseudo-classes** (single colon): Represent a specific **state** of an element, like ':hover', ':active', or ':nth-child(2)'. \n2. **Pseudo-elements** (double colon): Represent a specific **part** of an element, like '::before', '::after', or '::first-line'. Pseudo-elements allow you to insert content or style specific parts of an element without adding extra HTML tags, while pseudo-classes allow you to respond to user interaction or the element's position in the DOM.",
+    "counterQuestion": "Do you need the 'content' property for ::before and ::after?",
+    "counterQuestionAnswer": "Yes. Without the 'content' property (even if it's just an empty string: 'content: \"\"'), the pseudo-element will not be rendered at all. It is a mandatory property for these two pseudo-elements to appear on the page.",
+    "category": "frontend",
+    "topic": "css_basics",
+    "difficulty": "easy",
+    "tags": [
+      "css",
+      "selectors",
+      "fundamentals"
+    ],
+    "analogy": "A Pseudo-class is like 'An element's mood' (how it feels when you touch it, like :hover). A Pseudo-element is like 'An element's accessories' (extra things like ::before that aren't part of its body but change how it looks).",
+    "code": "/* Pseudo-class */\nbutton:hover { background: blue; }\n\n/* Pseudo-element */\nbutton::before { content: '🚀'; margin-right: 5px; }"
+  },
+  {
+    "id": 105,
+    "question": "How do you optimize Web Accessibility? Discuss ARIA roles, contrast ratios, and keyboard navigation.",
+    "answer": "Optimizing accessibility involves: \n1. **Semantic HTML**: Using tags like '<button>' and '<nav>' so screen readers understand the structure. \n2. **ARIA Roles**: Providing extra context (e.g., 'role=\"alert\"') when standard HTML isn't enough. \n3. **Contrast Ratios**: Ensuring text is readable against its background (WCAG AA requires 4.5:1). \n4. **Keyboard Navigation**: Ensuring all interactive elements can be reached and activated using only the 'Tab' and 'Enter' keys, providing clear ':focus' states for the user.",
+    "counterQuestion": "What is 'Alt Text' and why is it critical?",
+    "counterQuestionAnswer": "Alt text ('alt' attribute on images) provides a text description of an image. It is critical for visually impaired users who use screen readers to understand the content of the image, and it also appears if the image fails to load or for search engine crawlers (SEO).",
+    "category": "frontend",
+    "topic": "accessibility",
+    "difficulty": "medium",
+    "tags": [
+      "html",
+      "accessibility",
+      "a11y"
+    ],
+    "analogy": "Accessibility Optimization is like 'Adding Braille to a menu'. The food is the same for everyone, but the labels (ARIA/Semantics) ensure that even people who can't see the menu can still understand exactly what their options are.",
+    "code": "<nav role=\"navigation\">\n    <ul role=\"list\">\n        <li><a href=\"/\" aria-current=\"page\">Home</a></li>\n    </ul>\n</nav>"
+  },
+  {
+    "id": 106,
+    "question": "Discuss styling architectures: Vanilla CSS vs BEM vs Utility-first (Tailwind) vs CSS-in-JS.",
+    "answer": "1. **Vanilla CSS**: Standard CSS files. Hard to scale without a convention. \n2. **BEM (Block Element Modifier)**: A naming convention (e.g., '.btn--large') that makes CSS modular and prevents naming collisions. \n3. **Utility-first (Tailwind)**: Building designs by composing low-level utility classes directly in HTML. Fast to develop but can lead to 'class soup'. \n4. **CSS-in-JS**: Scoped styles tied to components (common in React). **Choose BEM** for standard projects, **Tailwind** for rapid prototyping and design systems, and **CSS-in-JS** for complex, component-heavy applications where styles need to be dynamic.",
+    "counterQuestion": "What is the main advantage of 'CSS Modules'?",
+    "counterQuestionAnswer": "CSS Modules automatically scopes your CSS to a specific component by generating unique class names at build time. This allows you to use simple class names like '.title' in multiple files without worrying about them clobbering each other globally.",
+    "category": "frontend",
+    "topic": "architecture",
+    "difficulty": "medium",
+    "tags": [
+      "css",
+      "architecture",
+      "best_practices"
+    ],
+    "analogy": "Styling Architectures are like 'Different ways to organize a library'. BEM is like 'Strict Dewey Decimal' (logical but long names). Tailwind is like 'A stack of pre-labeled boxes' (fast to grab what you need). CSS-in-JS is like 'Writing the book and the cover at the same time'.",
+    "code": "/* BEM Naming */\n.card { ... }\n.card__title { ... }\n.card--featured { ... }"
+  },
+  {
+    "id": 107,
+    "question": "Explain the difference between 'Webpack', 'Vite', and 'Rollup'. Why is Vite faster?",
+    "answer": "1. **Webpack**: A robust, plugin-heavy bundler that builds a complete dependency graph and bundles everything before serving. Can be slow for large apps. \n2. **Rollup**: Optimized for ESM (ES Modules) and library bundling; produces very small bundles via superior tree-shaking. \n3. **Vite**: The modern standard. It's faster because it uses **Native ESM** for development (serving files directly to the browser without bundling) and uses **Esbuild** (written in Go) for lightning-fast dependency pre-bundling. It only bundles for production (using Rollup), making the development experience nearly instantaneous regardless of project size.",
+    "counterQuestion": "What is 'HMR' (Hot Module Replacement)?",
+    "counterQuestionAnswer": "HMR allows a browser to update only the specific module that was changed, without refreshing the entire page. This preserves the application's state (like text in an input field) during development, significantly speeding up the feedback loop.",
+    "category": "tooling",
+    "topic": "bundlers",
+    "difficulty": "medium",
+    "tags": [
+      "webpack",
+      "vite",
+      "performance"
+    ],
+    "analogy": "Webpack is like 'A factory that builds the entire car before shipping it to you'. Vite is like 'A 3D printer' that prints each part only when you're about to use it, making the setup time much faster.",
+    "code": "// vite.config.js\nimport { defineConfig } from 'vite';\nexport default defineConfig({ ... });"
+  },
+  {
+    "id": 108,
+    "question": "What are 'Babel' and 'Polyfills'? Why do we need them?",
+    "answer": "1. **Babel**: A 'Transpiler' that converts modern JavaScript (ES6+) into an older version (ES5) so it can run in legacy browsers. \n2. **Polyfills**: Pieces of code (usually standard library functions like 'Array.prototype.includes') that provide modern functionality to older browsers that lack them natively. Together, they ensure that you can use the latest JS features without breaking the experience for users on older browsers or non-evergreen environments.",
+    "counterQuestion": "What is 'Core-js'?",
+    "counterQuestionAnswer": "Core-js is the standard library for JavaScript polyfills. It's used by Babel and other tools to provide the actual implementation of missing features (like Promises or Symbols) in legacy environments.",
+    "category": "tooling",
+    "topic": "transpilation",
+    "difficulty": "medium",
+    "tags": [
+      "babel",
+      "polyfills",
+      "compatibility"
+    ],
+    "analogy": "Babel is like 'A translator' who turns modern slang into old-fashioned English so your grandparents can understand you. Polyfills are like 'Providing a hearing aid' to someone so they can actually hear the translation.",
+    "code": "// babel.config.json\n{\n  \"presets\": [[\"@babel/preset-env\", { \"targets\": \"> 0.25%, not dead\" }]]\n}"
+  },
+  {
+    "id": 109,
+    "question": "Explain 'Tree Shaking' and how it reduces bundle size.",
+    "answer": "Tree Shaking is a form of **Dead Code Elimination** that relies on the static structure of ES Modules ('import' and 'export'). During the build process, the bundler (like Rollup or Webpack) analyzes which functions and variables are actually used. Any code that is exported but never imported anywhere else is 'shaken off' and excluded from the final bundle. This significantly reduces the size of the JavaScript sent to the browser, improving load times and performance.",
+    "counterQuestion": "Why doesn't Tree Shaking work well with CommonJS ('module.exports')?",
+    "counterQuestionAnswer": "CommonJS is dynamic; you can require modules inside 'if' statements or use variables in 'require' calls. This makes it impossible for bundlers to safely determine which code is used at build time. Tree Shaking requires the static 'import/export' syntax to work effectively.",
+    "category": "tooling",
+    "topic": "optimization",
+    "difficulty": "hard",
+    "tags": [
+      "performance",
+      "optimization",
+      "esm"
+    ],
+    "analogy": "Tree Shaking is like 'Cleaning out a dead garden'. You only keep the plants that are still growing (functions that are imported), and you shake off all the dead leaves and branches (unused exports) so they don't take up space.",
+    "code": "// math.js\nexport const add = (a, b) => a + b;\nexport const sub = (a, b) => a - b; // If never used, it's shaken off"
+  },
+  {
+    "id": 110,
+    "question": "What is 'Tailwind CSS' vs 'CSS Modules'? Discuss the trade-offs.",
+    "answer": "1. **Tailwind CSS**: A utility-first framework where you style elements using pre-defined classes (e.g., 'flex p-4'). It's extremely fast for prototyping and ensures a consistent design system, but can lead to long, messy class strings in HTML. \n2. **CSS Modules**: Automatically scopes CSS to a specific component by generating unique class names. It allows for standard CSS/Sass usage without global namespace collisions. **Trade-off**: Tailwind is better for speed and consistency, while CSS Modules is better for developers who prefer the separation of concerns and the full power of raw CSS.",
+    "counterQuestion": "What is 'PurgeCSS' in the context of Tailwind?",
+    "counterQuestionAnswer": "PurgeCSS is a tool that scans your HTML/JS files and removes all the Tailwind classes you *didn't* use from the final CSS file. This ensures that even though Tailwind has thousands of classes, the final CSS bundle remains tiny (often under 10kb).",
+    "category": "tooling",
+    "topic": "styling",
+    "difficulty": "medium",
+    "tags": [
+      "tailwind",
+      "css_modules",
+      "styling"
+    ],
+    "analogy": "Tailwind is like 'A set of pre-cut wooden planks' (you just put them together to build a shed). CSS Modules are like 'Building your own planks from a tree'—it takes more work, but you have total control over the shape and size of every piece.",
+    "code": "/* Tailwind */\n<div className=\"p-4 bg-blue-500\" />\n\n/* CSS Modules */\nimport styles from './Card.module.css';\n<div className={styles.card} />"
+  },
+  {
+    "id": 111,
+    "question": "Explain 'React Query' (TanStack Query). How does it handle server-state vs. local state?",
+    "answer": "React Query is a library for managing **Server State** (data that lives on the server and is fetched via APIs). \n1. **Local State**: (useState/Redux) Data that lives in the browser. \n2. **Server State**: Data that is asynchronous, shared, and can become stale. React Query handles caching, background revalidation, error handling, and loading states automatically. It treats the server as the 'source of truth' and uses a 'stale-while-revalidate' strategy, ensuring the UI is always fast while the data stays fresh without the complexity of manual 'useEffect' hooks.",
+    "counterQuestion": "What is 'Query Invalidation'?",
+    "counterQuestionAnswer": "Query Invalidation is the process of telling React Query that a specific piece of data is now stale (usually after a 'mutation' like a POST request). React Query will then automatically refetch that data in the background to ensure the UI reflects the latest server state.",
+    "category": "tooling",
+    "topic": "data_fetching",
+    "difficulty": "hard",
+    "tags": [
+      "react_query",
+      "server_state",
+      "caching"
+    ],
+    "analogy": "React Query is like 'A personal secretary for your API'. You ask for the same data 10 times, but the secretary only calls the server once and gives you the cached copy for the other 9 times, ensuring your app stays fast and doesn't overwhelm the backend.",
+    "code": "const { data, isLoading } = useQuery(['user', id], () => fetchUser(id));\nif (isLoading) return <Spinner />;"
+  },
+  {
+    "id": 112,
+    "question": "What is 'SWR' (Stale-While-Revalidate)?",
+    "answer": "SWR is a data-fetching strategy and library (by Vercel) that first returns the data from **cache** (stale), then sends the **fetch** request (revalidate), and finally comes with the **up-to-date data**. It ensures that the user sees something immediately while the app remains consistent in the background. Like React Query, it handles automatic revalidation on focus, network recovery, and interval polling, but is generally more lightweight and focused specifically on simple data-fetching hooks.",
+    "counterQuestion": "What is 'Global Mutate' in SWR?",
+    "counterQuestionAnswer": "Global Mutate allows you to update the cache for a specific key from *anywhere* in your application, even without access to the local 'mutate' function from a specific hook. This is useful for updating a user profile or cart count from a completely different part of the UI.",
+    "category": "tooling",
+    "topic": "data_fetching",
+    "difficulty": "medium",
+    "tags": [
+      "swr",
+      "caching",
+      "performance"
+    ],
+    "analogy": "SWR is like 'A news anchor reading the morning paper'. They tell you what's in the paper from last night (the cache) immediately, while the reporter is out getting the live update for the evening news (revalidation).",
+    "code": "const { data, error } = useSWR('/api/user', fetcher);\nif (error) return <div>Failed to load</div>;\nif (!data) return <div>Loading...</div>;"
+  },
+  {
+    "id": 113,
+    "question": "How do you implement 'Code Splitting' and 'Lazy Loading' in a modern JS app?",
+    "answer": "1. **Dynamic Imports**: Use the 'import()' syntax to load a module only when a specific condition is met (e.g., a button click). \n2. **Route-based Splitting**: In frameworks like React or Next.js, use 'React.lazy' or dynamic routes to split the bundle by page. \n3. **Bundler Support**: Modern bundlers (Vite/Webpack) automatically detect dynamic imports and create separate 'chunks' (JS files). This prevents the user from downloading the entire app's logic upfront, significantly reducing the initial page load time.",
+    "counterQuestion": "What is the 'Magic Comment' in Webpack for naming chunks?",
+    "counterQuestionAnswer": "You can use '/* webpackChunkName: \"my-chunk-name\" */' inside a dynamic import. This tells Webpack to name the resulting JS file something readable instead of a generic ID, which is helpful for debugging and monitoring bundle sizes.",
+    "category": "tooling",
+    "topic": "performance",
+    "difficulty": "medium",
+    "tags": [
+      "code_splitting",
+      "lazy_loading",
+      "optimization"
+    ],
+    "analogy": "Code Splitting is like 'Only packing the gear you need for a specific hike'. If you're going to the beach, you don't need your snow boots. You leave the boots at home (the server) and only bring your sandals (the beach component) to save weight.",
+    "code": "// Dynamic Import\nimport('./HeavyComponent').then(module => {\n    module.doSomething();\n});"
+  },
+  {
+    "id": 114,
+    "question": "Discuss 'CSS-in-JS' (Styled Components, Emotion).",
+    "answer": "CSS-in-JS allows you to write CSS directly inside your JavaScript files, typically using tagged template literals. \n1. **Benefits**: Scoped styles (no global collisions), dynamic styling based on props, and better developer experience (all logic in one file). \n2. **Drawbacks**: Increased runtime overhead (JS has to parse and inject the CSS) and larger bundle sizes. While popular in the React ecosystem, many teams are shifting back to **Zero-Runtime CSS** (like Tailwind or Panda CSS) to improve performance, especially on mobile devices.",
+    "counterQuestion": "What is the 'ThemeContext' in Styled Components?",
+    "counterQuestionAnswer": "ThemeContext (via 'ThemeProvider') allows you to define a global theme object (colors, fonts, etc.) that is automatically available as a 'props.theme' object in every styled component. This makes it trivial to implement dark mode or brand-specific branding across a large application.",
+    "category": "tooling",
+    "topic": "styling",
+    "difficulty": "medium",
+    "tags": [
+      "styled_components",
+      "emotion",
+      "css_in_js"
+    ],
+    "analogy": "CSS-in-JS is like 'Building a car where the paint is mixed into the metal'. The color isn't just on the surface (a separate file); it's an integral part of the parts themselves, making it impossible for the paint to chip off or affect other cars.",
+    "code": "const Button = styled.button`\n    color: ${props => props.primary ? 'white' : 'blue'};\n    background: ${props => props.primary ? 'blue' : 'white'};\n`;"
+  },
+  {
+    "id": 115,
+    "question": "What is 'PWA' (Progressive Web App)? Explain 'Service Workers'.",
+    "answer": "A PWA is a web application that uses modern web capabilities to provide an app-like experience (offline support, push notifications, installability). The core of a PWA is the **Service Worker**\u2014a script that runs in the background, independent of the web page. It acts as a **Proxy** between the browser and the network, allowing you to intercept requests and serve cached content even when the user is offline. This makes web apps resilient to poor network conditions and significantly faster on repeat visits.",
+    "counterQuestion": "What is the 'Web App Manifest'?",
+    "counterQuestionAnswer": "The Manifest is a simple JSON file that tells the browser about your web application (name, icons, start URL, theme color). It's what allows the 'Add to Home Screen' prompt and defines how the app should look when launched in standalone mode (e.g., without the browser address bar).",
+    "category": "tooling",
+    "topic": "ecosystem",
+    "difficulty": "hard",
+    "tags": [
+      "pwa",
+      "service_workers",
+      "offline"
+    ],
+    "analogy": "A Service Worker is like 'A butler who keeps a pantry full of food'. If the grocery store (the internet) closes, the butler can still serve you a meal from the pantry (the cache), so you never go hungry.",
+    "code": "// register service worker\nif ('serviceWorker' in navigator) {\n    navigator.serviceWorker.register('/sw.js');\n}"
+  },
+  {
+    "id": 116,
+    "question": "How do you optimize 'Core Web Vitals' (LCP, FID, CLS)?",
+    "answer": "1. **LCP (Largest Contentful Paint)**: Optimize by using faster hosting, CDN, and preloading critical images. \n2. **FID (First Input Delay)**: Improve by reducing JavaScript execution time and breaking up long tasks. \n3. **CLS (Cumulative Layout Shift)**: Prevent by always including size attributes on images/videos and reserving space for dynamic content (like ads) to avoid the page 'jumping' as it loads. Optimizing these metrics is now a critical part of Google's SEO ranking algorithm and directly correlates with better user retention.",
+    "counterQuestion": "What is 'INP' (Interaction to Next Paint)?",
+    "counterQuestionAnswer": "INP is the newest Core Web Vital (replacing FID) that measures the **overall responsiveness** of a page to user interactions throughout its entire lifecycle, not just the first one. It provides a more accurate picture of how 'snappy' a web app feels during actual use.",
+    "category": "tooling",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "web_vitals",
+      "performance",
+      "seo",
+      "#highly_asked"
+    ],
+    "analogy": "Core Web Vitals are like 'A health checkup for your website'. LCP is your heart rate (how fast it starts), CLS is your balance (how steady it is), and FID is your reflexes (how fast it responds). If any of these are off, you're not fit for the front page (of Google).",
+    "code": "import { onLCP, onFID, onCLS } from 'web-vitals';\nonLCP(console.log);\nonFID(console.log);\nonCLS(console.log);"
+  },
+  {
+    "id": 117,
+    "question": "What is 'tRPC' and how does it provide end-to-end type safety without a schema-first approach (like GraphQL)?",
+    "answer": "tRPC allows you to build deeply integrated APIs with TypeScript without requiring a separate schema or code generation step. It uses **TypeScript Inference** to share the types of your backend procedures directly with your frontend. When you change a function signature on the server, the frontend immediately shows a red underline in your IDE. This provides a 'GraphQL-like' developer experience for full-stack TypeScript apps without the overhead of maintaining a schema or resolvers.",
+    "counterQuestion": "Does tRPC work with non-TypeScript frontends?",
+    "counterQuestionAnswer": "No. tRPC is strictly designed for TypeScript-to-TypeScript communication. If you need to support mobile apps (non-TS) or third-party developers, you would typically use a standard REST or GraphQL API instead.",
+    "category": "tooling",
+    "topic": "api_design",
+    "difficulty": "hard",
+    "tags": [
+      "trpc",
+      "typescript",
+      "fullstack"
+    ],
+    "analogy": "tRPC is like 'A telepathic link between two people'. If one person changes their mind (a backend type change), the other person instantly knows it without a single word being spoken (no API documentation or schema required).",
+    "code": "// tRPC procedure\nconst userRouter = router({\n    get: publicProcedure.input(z.string()).query(({ input }) => ...)\n});"
+  },
+  {
+    "id": 118,
+    "question": "What is 'Storybook' and why is it used in modern component-driven development?",
+    "answer": "Storybook is a development environment tool that allows you to build and document UI components in **isolation**. Instead of running your whole app to see a button, you build a 'Story' for it. This makes it easy to test every state of a component (e.g., loading, disabled, error) without worrying about complex application logic or data. It also serves as a living design system that designers and product managers can review to ensure UI consistency across the entire product.",
+    "counterQuestion": "What is the 'Controls' addon in Storybook?",
+    "counterQuestionAnswer": "The Controls addon provides a graphical UI where you can dynamically interact with a component's props (like changing a label or toggling a boolean) directly in the Storybook interface, allowing you to live-test the component's behavior without changing any code.",
+    "category": "tooling",
+    "topic": "documentation",
+    "difficulty": "medium",
+    "tags": [
+      "storybook",
+      "design_systems",
+      "testing"
+    ],
+    "analogy": "Storybook is like 'A showroom for furniture'. You can see the sofa in different colors and sizes in the showroom without having to see the whole house it will eventually go into.",
+    "code": "// Button.stories.js\nexport const Primary = { args: { primary: true, label: 'Button' } };"
+  },
+  {
+    "id": 119,
+    "question": "How do you structure a monorepo (e.g., using Turborepo) to share business logic between a React web app and a React Native mobile app?",
+    "answer": "A modern monorepo structure (using Turborepo or Nx) typically consists of an **'apps'** folder and a **'packages'** folder. \n1. **apps**: Contains the React web app (Next.js) and the React Native app. \n2. **packages**: Contains shared logic like 'api' (tRPC/Axios), 'types', and 'ui' (shared design system). You then use workspaces (npm/yarn/pnpm) to link these packages. Turborepo provides a high-performance build system that caches results, ensuring that you only rebuild the specific parts of the repo that have changed.",
+    "counterQuestion": "What is 'Remote Caching' in Turborepo?",
+    "counterQuestionAnswer": "Remote Caching allows you to share build artifacts across your entire team and CI/CD pipeline. If your teammate already built a specific package, your machine will download their result from the cloud instead of rebuilding it locally, significantly reducing overall development time.",
+    "category": "tooling",
+    "topic": "architecture",
+    "difficulty": "hard",
+    "tags": [
+      "turborepo",
+      "monorepo",
+      "architecture"
+    ],
+    "analogy": "Turborepo is like 'A shared brain for a team of developers'. If one person solves a problem (builds a package), the whole team instantly 'remembers' the solution (downloads the build cache), so no one ever has to do the same work twice.",
+    "code": "// turbo.json\n{\n    \"pipeline\": {\n        \"build\": { \"dependsOn\": [\"^build\"], \"outputs\": [\"dist/**\"] }\n    }\n}"
+  },
+  {
+    "id": 120,
+    "question": "What are 'Core Web Vitals'? Explain LCP, FID, and CLS.",
+    "answer": "Core Web Vitals are a set of metrics that Google uses to measure user experience.\n\n- **LCP (Largest Contentful Paint):** Measures loading performance. Ideal is < 2.5s.\n- **FID (First Input Delay):** Measures interactivity. Ideal is < 100ms.\n- **CLS (Cumulative Layout Shift):** Measures visual stability. Ideal is < 0.1.",
+    "counterQuestion": "What is 'INP' (Interaction to Next Paint)?",
+    "counterQuestionAnswer": "INP is a new metric (replacing FID) that measures the overall responsiveness of a page by looking at the latency of all interactions (clicks, taps, keyboard) that occur during a user's visit, not just the first one.",
+    "category": "performance",
+    "topic": "web_vitals",
+    "difficulty": "medium",
+    "tags": [
+      "frontend",
+      "performance",
+      "seo",
+      "#highly_asked"
+    ],
+    "analogy": "Core Web Vitals (Deep Dive) is like 'A professional athlete's performance metrics'. It's not just about how fast you run (LCP), but also how quickly you react to the starting gun (FID) and how stable you stay during the race (CLS).",
+    "code": "// Lighthouse reports CWV\n// LCP: < 2.5s\n// FID: < 100ms\n// CLS: < 0.1"
+  },
+  {
+    "id": 121,
+    "question": "Explain 'Hydration' in the context of SSR (Server-Side Rendering). What is the 'Uncanny Valley'?",
+    "answer": "Hydration is the process where client-side JavaScript takes over static HTML rendered by the server, turning it into an interactive app (attaching event listeners).\n\n**The Uncanny Valley:** This is the period between when the page is visible (HTML loaded) and when it is interactive (JS loaded/hydrated). If a user clicks a button during this time, nothing happens, leading to frustration.",
+    "counterQuestion": "How does 'Progressive Hydration' or 'Resumability' (Qwik) solve this?",
+    "counterQuestionAnswer": "Progressive Hydration hydrates components only as needed (e.g., when they enter the viewport). Resumability (like in Qwik) avoids hydration entirely by serializing the app state into the HTML, allowing the client to 'resume' exactly where the server left off without re-executing JS to rebuild the state.",
+    "category": "performance",
+    "topic": "rendering",
+    "difficulty": "hard",
+    "tags": [
+      "frontend",
+      "ssr",
+      "react",
+      "nextjs"
+    ],
+    "analogy": "Hydration (The Uncanny Valley) is like 'A store that looks open but the doors are still locked'. You can see the products in the window (the HTML), but you can't walk in and buy anything until the manager arrives with the keys (the JavaScript).",
+    "code": "// Potential Hydration Error\nfunction Clock() {\n    return <div>{new Date().getTime()}</div>; // Mismatch!\n}"
+  },
+  {
+    "id": 122,
+    "question": "What is 'Critical CSS'? How do you implement it?",
+    "answer": "Critical CSS is the minimum set of CSS required to render the 'Above the Fold' content (what the user sees immediately without scrolling).\n\n**Implementation:**\n1. Extract the CSS used by the top of the page.\n2. **Inline** that CSS directly in the `<head>` of the HTML.\n3. Load the rest of the CSS asynchronously (using `rel='preload'` or a script) so it doesn't block the initial paint.",
+    "counterQuestion": "Why is 'Inlining' bad for large amounts of CSS?",
+    "counterQuestionAnswer": "Inlining prevents the CSS from being cached by the browser across different pages. If the critical CSS is too large, it increases the initial HTML size, potentially delaying the LCP. You must strike a balance (usually <14kb for the initial chunk).",
+    "category": "performance",
+    "topic": "css",
+    "difficulty": "medium",
+    "tags": [
+      "frontend",
+      "css",
+      "performance"
+    ],
+    "analogy": "Critical CSS (Implementation) is like 'Printing a restaurant's specials on a chalkboard at the entrance'. It's the first thing customers see, and it's much faster than handing them a 50-page menu (the full CSS bundle).",
+    "code": "// Critical CSS logic\n// 1. Identify ATF (Above the Fold) styles\n// 2. Inline in HTML <head>"
+  }
+]

@@ -1,0 +1,631 @@
+[
+  {
+    "id": 1,
+    "question": "Explain 'OAuth2' and 'OpenID Connect' (OIDC) flows.",
+    "answer": "1. **OAuth2**: A framework for **Authorization**. It allows a third-party app to access a user's data (e.g., 'Log in with Google') without seeing their password. It uses 'Access Tokens'. \n2. **OIDC**: A layer on top of OAuth2 for **Authentication**. It adds 'ID Tokens' (JWTs) that contain user profile information. OAuth2 is about 'What can you do?'; OIDC is about 'Who are you?'. The most common flow is the **Authorization Code Flow**, which is the most secure for web applications.",
+    "counterQuestion": "What is the 'Scope' in OAuth2?",
+    "counterQuestionAnswer": "Scope is a mechanism in OAuth2 to limit an application's access to a user's account. An application can request one or more scopes (e.g., 'read:profile', 'write:emails'), and the user must explicitly approve which permissions they are granting to the app.",
+    "category": "security",
+    "topic": "iam",
+    "difficulty": "hard",
+    "tags": [
+      "oauth2",
+      "oidc",
+      "iam"
+    ],
+    "analogy": "OAuth2 is like 'A valet key' for your car. It lets the valet drive and park it, but they can't open the trunk or glovebox. OIDC is like 'The Valet's ID badge' that proves they actually work for the hotel.",
+    "code": "// OIDC ID Token (JWT) Payload\n{\n  \"iss\": \"https://accounts.google.com\",\n  \"sub\": \"123456789\",\n  \"email\": \"user@example.com\",\n  \"iat\": 1516239022\n}"
+  },
+  {
+    "id": 2,
+    "question": "What is a 'JWT' (JSON Web Token)? Discuss its structure and security risks (e.g., XSS/CSRF).",
+    "answer": "A JWT is a compact, URL-safe way of representing claims between two parties. **Structure**: Header (algorithm), Payload (data/claims), and Signature (verification). **Security Risks**: \n1. **XSS**: If stored in 'localStorage', a malicious script can steal the token. \n2. **CSRF**: If stored in 'Cookies', the app is vulnerable to CSRF unless 'SameSite' is used. \n3. **Revocation**: JWTs are stateless and hard to revoke before they expire. **Best Practice**: Store in an 'HttpOnly' cookie and keep the lifespan short.",
+    "counterQuestion": "What is the 'alg: none' vulnerability in JWT?",
+    "counterQuestionAnswer": "The 'alg: none' vulnerability is a classic security flaw where a malicious user modifies the JWT header to specify that no signature algorithm is used ('none'). If the server's JWT library is poorly configured, it might accept the token without verifying the signature, allowing the attacker to spoof any user ID or claim.",
+    "category": "security",
+    "topic": "tokens",
+    "difficulty": "medium",
+    "tags": [
+      "jwt",
+      "xss",
+      "csrf"
+    ],
+    "analogy": "A JWT is like 'A luggage tag' on your suitcase. It tells the airport where the bag should go (the claims), and it has a tamper-evident seal (the signature). If someone tries to change the destination, the seal breaks, and the airport rejects the bag.",
+    "code": "// Secure Cookie Headers for JWT\nSet-Cookie: token=...; HttpOnly; Secure; SameSite=Strict; Max-Age=3600"
+  },
+  {
+    "id": 3,
+    "question": "How do you prevent 'SQL Injection' (SQLi) beyond using an ORM?",
+    "answer": "Even with an ORM (like Django or SQLAlchemy), you can still be vulnerable if you use 'raw SQL'. **Prevention**: Always use **Parameterized Queries** (Prepared Statements). Instead of f-strings or concatenation, you use placeholders (e.g., `SELECT * FROM users WHERE id = %s`). The database driver ensures that the input is treated as a literal value and never as executable code. Other defenses include using 'Least Privilege' database accounts and performing strict input validation.",
+    "counterQuestion": "What is 'Blind SQL Injection'?",
+    "counterQuestionAnswer": "Blind SQLi is a type of attack where the application doesn't return the results of the query or a database error message. Instead, the attacker asks 'True/False' questions to the database (e.g., 'does the admin password start with A?') and observes the application's response or time delay to reconstruct the data piece by piece.",
+    "category": "security",
+    "topic": "vulnerabilities",
+    "difficulty": "medium",
+    "tags": [
+      "sql_injection",
+      "database_security",
+      "vulnerabilities"
+    ],
+    "analogy": "SQL Injection is like 'Writing a trick instruction on a sticky note for a robot'. If you tell the robot 'Pick up the box and [SELF_DESTRUCT]', and the robot doesn't check the note first, it will blow up. Parameterized queries are like 'Putting the instructions in a clear glass box' where the robot can see them but can't be tricked by them.",
+    "code": "# SECURE: Parameterized Query\ncursor.execute(\"SELECT * FROM users WHERE id = %s\", (user_id,))\n\n# INSECURE: F-String (NEVER DO THIS)\ncursor.execute(f\"SELECT * FROM users WHERE id = {user_id}\")"
+  },
+  {
+    "id": 4,
+    "question": "What is 'Cross-Site Scripting' (XSS)? Explain 'Stored', 'Reflected', and 'DOM-based' XSS.",
+    "answer": "XSS allows attackers to inject malicious scripts into web pages viewed by other users. \n1. **Stored**: Script is permanently stored on the server (e.g., in a database). \n2. **Reflected**: Script is 'reflected' off the web server via a link or form submission. \n3. **DOM-based**: Vulnerability exists in client-side code rather than server-side code. **Prevention**: Always escape/sanitize user input and use a strong 'Content Security Policy' (CSP).",
+    "counterQuestion": "What is the difference between 'Sanitizing' and 'Escaping'?",
+    "counterQuestionAnswer": "Sanitizing involves removing or cleaning potentially dangerous parts of the input (e.g., stripping out `<script>` tags). Escaping involves converting special characters into a safe, non-executable format (e.g., converting `<` to `&lt;`). Escaping is generally preferred as it is less prone to 'bypass' techniques.",
+    "category": "security",
+    "topic": "vulnerabilities",
+    "difficulty": "medium",
+    "tags": [
+      "xss",
+      "security",
+      "frontend_security"
+    ],
+    "analogy": "XSS is like 'Slipping a fake flyer into a stack of real ones at a concert'. The concert-goers (the users) trust the stack, so they read the fake flyer and follow its malicious instructions (like 'Go to this dangerous website').",
+    "code": "// Content Security Policy (CSP) Header\nContent-Security-Policy: default-src 'self'; script-src 'self' https://apis.google.com;"
+  },
+  {
+    "id": 5,
+    "question": "How does 'CSRF' (Cross-Site Request Forgery) work? How do 'SameSite' cookies help?",
+    "answer": "CSRF tricks a logged-in user into performing an action they didn't intend (e.g., changing their password) by sending a request from a different site. **SameSite Cookies**: A cookie attribute that tells the browser whether to send the cookie with cross-site requests. \n1. **Strict**: Cookie only sent on first-party requests. \n2. **Lax**: Sent on top-level navigations (e.g., clicking a link). \n3. **None**: Sent on all requests (requires 'Secure' attribute). Lax/Strict effectively kill CSRF for most modern apps.",
+    "counterQuestion": "What is a 'CSRF Token'?",
+    "counterQuestionAnswer": "A CSRF token is a unique, secret, and unpredictable value generated by the server and sent to the client. The client must include this token in any state-changing request (like POST or PUT). The server verifies the token before processing the request, ensuring that the request originated from the application's own UI and not from a malicious third-party site.",
+    "category": "security",
+    "topic": "vulnerabilities",
+    "difficulty": "medium",
+    "tags": [
+      "csrf",
+      "cookies",
+      "security"
+    ],
+    "analogy": "CSRF is like 'A malicious letter that looks like it's from your bank'. It asks you to sign a form to 'Update your address', but the form is actually an 'Authorize Transfer' form. Because the bank sees your real signature (your session cookie), they perform the transfer.",
+    "code": "<!-- CSRF Token in HTML Form -->\n<form method=\"POST\">\n  <input type=\"hidden\" name=\"csrfmiddlewaretoken\" value=\"abc123xyz\">\n  <button type=\"submit\">Submit</button>\n</form>"
+  },
+  {
+    "id": 6,
+    "question": "Explain 'Encryption at Rest' vs. 'Encryption in Transit' (TLS/SSL).",
+    "answer": "1. **In Transit**: Protects data while it is moving across the network (using TLS/SSL). It prevents 'Eavesdropping'. \n2. **At Rest**: Protects data while it is stored on disk (using AES-256). It prevents data theft if the physical hardware is stolen or compromised. A secure application must implement **both** to ensure end-to-end data protection.",
+    "counterQuestion": "What is 'End-to-End Encryption' (E2EE)?",
+    "counterQuestionAnswer": "E2EE is a system of communication where only the communicating users can read the messages. In E2EE, the data is encrypted on the sender's device and only decrypted on the recipient's device. Even the service provider (like WhatsApp or Signal) cannot access the data because they don't have the private keys needed for decryption.",
+    "category": "security",
+    "topic": "cryptography",
+    "difficulty": "medium",
+    "tags": [
+      "encryption",
+      "tls",
+      "security"
+    ],
+    "analogy": "Encryption in Transit is like 'An armored truck moving money between banks'. Encryption at Rest is like 'The giant vault inside the bank'. You need the truck to get the money there safely, and the vault to keep it safe once it arrives.",
+    "code": "// Nginx TLS Configuration\nssl_protocols TLSv1.2 TLSv1.3;\nssl_ciphers HIGH:!aNULL:!MD5;"
+  },
+  {
+    "id": 7,
+    "question": "What is 'Rate Limiting' and 'IP Whitelisting'?",
+    "answer": "1. **Rate Limiting**: Limits the number of requests a user/IP can make in a given timeframe. Prevents DoS attacks and brute-forcing. \n2. **IP Whitelisting**: Only allows traffic from specific, trusted IP addresses. Often used to protect internal admin panels or database ports. Rate limiting is about 'How much?'; Whitelisting is about 'Who?'.",
+    "counterQuestion": "What is the 'Token Bucket' algorithm in rate limiting?",
+    "counterQuestionAnswer": "The token bucket algorithm allows for occasional bursts of traffic while still maintaining a strict long-term average rate. 'Tokens' are added to a bucket at a fixed rate; each request consumes one token. If the bucket is empty, the request is rejected. This is more flexible than a simple 'Fixed Window' approach which can cause spikes at the turn of every minute.",
+    "category": "security",
+    "topic": "infrastructure",
+    "difficulty": "medium",
+    "tags": [
+      "rate_limiting",
+      "security",
+      "infrastructure"
+    ],
+    "analogy": "Rate limiting is like 'A turnstile at a subway station'. It only lets one person through at a time, ensuring that the platform (the server) doesn't get overcrowded and dangerous for everyone.",
+    "code": "# Nginx Rate Limiting\nlimit_req_zone $binary_remote_addr zone=mylimit:10m rate=10r/s;\nlimit_req zone=mylimit burst=20 nodelay;"
+  },
+  {
+    "id": 8,
+    "question": "Discuss the 'OWASP Top 10' vulnerabilities.",
+    "answer": "The OWASP Top 10 is a standard awareness document for developers and web application security. It represents a broad consensus about the most critical security risks to web applications. Key items include **Broken Access Control**, **Cryptographic Failures**, **Injection** (SQLi/XSS), and **Insecure Design**. It serves as a checklist for engineering teams to ensure their applications are protected against the most common and damaging attacks.",
+    "counterQuestion": "What is 'Broken Access Control'?",
+    "counterQuestionAnswer": "Broken Access Control occurs when an application doesn't properly enforce restrictions on what authenticated users are allowed to do. For example, a user being able to access or modify another user's data by simply changing the 'id' in a URL. This is currently the #1 risk on the OWASP Top 10 list.",
+    "category": "security",
+    "topic": "vulnerabilities",
+    "difficulty": "medium",
+    "tags": [
+      "owasp",
+      "security",
+      "best_practices"
+    ],
+    "analogy": "The OWASP Top 10 is like 'The most common ways people break into houses'. Instead of worrying about a spy coming through the chimney, you check that your front door is locked (Broken Access Control) and your windows are closed (Injection).",
+    "code": "// OWASP Top 10 Checklist (2021)\n1. Broken Access Control\n2. Cryptographic Failures\n3. Injection\n4. Insecure Design\n..."
+  },
+  {
+    "id": 9,
+    "question": "How do you perform 'Secure Secret Management' in CI/CD?",
+    "answer": "1. **Environment Variables**: Use encrypted CI/CD secrets (e.g., GitHub Actions Secrets). \n2. **Just-In-Time (JIT) Access**: Use tools like Vault to generate temporary credentials for the build process. \n3. **Secret Scanning**: Use 'git-secrets' or 'TruffleHog' to prevent secrets from being committed in the first place. Secrets should never be hardcoded or printed to build logs.",
+    "counterQuestion": "What is 'OIDC' for CI/CD?",
+    "counterQuestionAnswer": "OIDC allows your CI/CD runner (like GitHub Actions) to authenticate with your cloud provider (like AWS) without needing long-lived access keys. It uses a short-lived, identity-based token, which is much more secure because there are no persistent secrets to be stolen or leaked.",
+    "category": "security",
+    "topic": "cicd",
+    "difficulty": "medium",
+    "tags": [
+      "secrets",
+      "cicd",
+      "security"
+    ],
+    "analogy": "Secret management in CI/CD is like 'A spy receiving an invisible ink message'. The message is hidden until the spy (the build runner) uses a special light (the vault token) to read it, ensuring no one else can see it in transit.",
+    "code": "# GitHub Actions: Secure Secret Injection\nsteps:\n  - name: Build\n    env:\n      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}\n    run: npm run build"
+  },
+  {
+    "id": 10,
+    "question": "What is 'Penetration Testing' vs 'Vulnerability Scanning'?",
+    "answer": "1. **Vulnerability Scanning**: An automated process that searches for known vulnerabilities (like outdated libraries). It's fast and can be run frequently. \n2. **Penetration Testing (Pen Testing)**: A manual, simulated attack by a human expert to find complex logical flaws and exploit multiple vulnerabilities in sequence. Pen testing is much more thorough but also more expensive and less frequent.",
+    "counterQuestion": "What is 'Red Teaming'?",
+    "counterQuestionAnswer": "Red Teaming is an even more advanced form of pen testing where the 'Red Team' attempts to breach the organization's security using any means necessary (including social engineering and physical entry) without the knowledge of the internal 'Blue Team' (defenders). It's a test of the organization's overall detection and response capabilities.",
+    "category": "security",
+    "topic": "methodology",
+    "difficulty": "medium",
+    "tags": [
+      "pen_testing",
+      "vulnerability_scanning",
+      "security"
+    ],
+    "analogy": "Vulnerability scanning is like 'A robot that checks if your doors are locked'. Pen testing is like 'Hiring a professional lock-picker' to see if they can pick the lock, climb through the window, and get to the safe.",
+    "code": "# Run nmap scan\nnmap -sV -T4 -p 1-65535 192.168.1.1"
+  },
+  {
+    "id": 11,
+    "question": "Explain 'Honeypots' and how they are used for fraud detection.",
+    "answer": "A Honeypot is a 'decoy' system or piece of data (like a fake database or a hidden form field) designed to attract and trap attackers. If anyone interacts with the honeypot, you know immediately that they are malicious because a legitimate user would never find it. In web forms, a 'hidden' field can catch bots that automatically fill in all fields, allowing you to reject their submissions instantly.",
+    "counterQuestion": "What is a 'Honeytoken'?",
+    "counterQuestionAnswer": "A Honeytoken is a piece of data (like a fake credit card number or a fake AWS key) that is placed inside a real database or codebase. If that token is ever 'used' in the wild, you know that your data has been breached and you can trace it back to where the token was stolen from.",
+    "category": "security",
+    "topic": "fraud_detection",
+    "difficulty": "medium",
+    "tags": [
+      "honeypots",
+      "fraud_detection",
+      "security"
+    ],
+    "analogy": "A Honeypot is like 'A fake wallet lying on the sidewalk'. A regular pedestrian will ignore it or turn it in, but a thief will pick it up. The moment the wallet is touched, a silent alarm goes off, and you know exactly who the thief is.",
+    "code": "<!-- Honeypot Field (Hidden from users) -->\n<input type=\"text\" name=\"phone_secondary\" style=\"display:none\" autocomplete=\"off\">"
+  },
+  {
+    "id": 12,
+    "question": "How do you handle 'PII' (Personally Identifiable Information) compliance (GDPR/CCPA)?",
+    "answer": "1. **Data Minimization**: Only collect what you absolutely need. \n2. **Encryption**: Encrypt PII at rest and in transit. \n3. **Right to be Forgotten**: Implement systems to permanently delete a user's data upon request. \n4. **Anonymization/Pseudonymization**: Replace identifying fields with random tokens for analytics. \n5. **Access Control**: Strictly limit who in the company can see raw PII data.",
+    "counterQuestion": "What is the difference between 'Encryption' and 'Tokenization'?",
+    "counterQuestionAnswer": "Encryption uses a mathematical algorithm to scramble data into a format that can be reversed with a key. Tokenization replaces the sensitive data with a non-sensitive 'token' that has no mathematical relationship to the original data. The original data is stored in a separate, secure vault. Tokenization is often preferred for things like credit card numbers because it reduces the 'PCI Scope' of the rest of the application.",
+    "category": "security",
+    "topic": "compliance",
+    "difficulty": "hard",
+    "tags": [
+      "pii",
+      "gdpr",
+      "compliance"
+    ],
+    "analogy": "Handling PII is like 'Handling hazardous material'. You only take what you need, you keep it in a lead-lined container (encryption), you label it clearly, and when you're done, you dispose of it properly so it doesn't leak and cause a disaster.",
+    "code": "// PII Anonymization Example\n{ \"user_id\": \"uuid-123\", \"email\": \"hash(user@example.com)\" }"
+  },
+  {
+    "id": 13,
+    "question": "What is 'Content Security Policy' (CSP) and how does it prevent XSS?",
+    "answer": "CSP is an HTTP response header that tells the browser which sources of content (scripts, styles, images) are trusted. **Example**: `script-src 'self' https://trusted.com`. If an attacker tries to inject a script from `https://malicious.com`, the browser will block it. CSP also allows you to disable 'inline scripts' and 'eval()', which are the two most common ways XSS is exploited. It provides a massive second line of defense even if your app has an injection vulnerability.",
+    "counterQuestion": "What is a 'CSP Report-Only' header?",
+    "counterQuestionAnswer": "The `Content-Security-Policy-Report-Only` header allows you to test a new policy without actually blocking anything. The browser will only send reports of violations to a specified URL. This allows you to fine-tune your policy and ensure it doesn't break your site's functionality before you 'turn it on' for real.",
+    "category": "security",
+    "topic": "frontend_security",
+    "difficulty": "hard",
+    "tags": [
+      "csp",
+      "xss",
+      "security"
+    ],
+    "analogy": "CSP is like 'A guest list for a party'. Even if someone sneaks in through the back window, the DJ (the browser) won't let them play their music unless their name is on the approved list of performers.",
+    "code": "Content-Security-Policy: default-src 'self'; img-src *; media-src media1.com media2.com; script-src userscripts.example.com"
+  },
+  {
+    "id": 14,
+    "question": "Discuss 'Zero Trust Architecture'.",
+    "answer": "Zero Trust is a security model based on the principle of **'Never Trust, Always Verify'**. Traditional security focuses on the 'Perimeter' (firewalls), but once inside, users are trusted. In Zero Trust, every request\u2014whether it comes from inside or outside the network\u2014must be authenticated, authorized, and continuously validated before access is granted. It uses **Identity-based segmentation** and 'Least Privilege' access to minimize the blast radius of a potential breach.",
+    "counterQuestion": "What is 'Micro-segmentation'?",
+    "counterQuestionAnswer": "Micro-segmentation is a key part of Zero Trust where you divide the network into small, isolated zones (segments). You then define strict security policies that control traffic between these segments. This prevents an attacker who has compromised one service from easily 'moving laterally' to other services in your infrastructure.",
+    "category": "security",
+    "topic": "architecture",
+    "difficulty": "hard",
+    "tags": [
+      "zero_trust",
+      "security",
+      "architecture"
+    ],
+    "analogy": "Zero Trust is like 'A high-security building where every door requires a badge swipe'. Just because you got through the front door doesn't mean you can go into the server room or the CEO's office. You have to prove who you are and why you're there at every single door.",
+    "code": "# Zero Trust Policy (OPA/Rego)\ndefault allow = false\nallow { \n    input.user.role == \"admin\" \n    input.method == \"GET\"\n}"
+  },
+  {
+    "id": 15,
+    "question": "How do you implement 'Multi-Factor Authentication' (MFA) securely?",
+    "answer": "MFA requires two or more pieces of evidence from different categories: \n1. **Something you know** (Password). \n2. **Something you have** (Phone/Security Key). \n3. **Something you are** (Biometrics). **Security Ranking**: \n1. **FIDO2/WebAuthn** (Hardware keys like YubiKey) - Most secure, prevents phishing. \n2. **TOTP** (Authenticator apps) - Good, but vulnerable to advanced phishing. \n3. **SMS** - Least secure, vulnerable to SIM swapping. Always encourage WebAuthn or TOTP over SMS.",
+    "counterQuestion": "What is 'Push-based MFA Fatigue'?",
+    "counterQuestionAnswer": "MFA fatigue occurs when an attacker sends dozens of push notifications to a user's phone in a short period. The frustrated or distracted user eventually clicks 'Approve' just to make the notifications stop, inadvertently granting the attacker access. Modern MFA systems fight this by requiring the user to type in a number displayed on the login screen into their phone.",
+    "category": "security",
+    "topic": "iam",
+    "difficulty": "medium",
+    "tags": [
+      "mfa",
+      "iam",
+      "security"
+    ],
+    "analogy": "MFA is like 'A bank vault that requires two different people with two different keys to open it'. Even if one person loses their key (password is stolen), the vault stays locked because the second key (the phone or security key) is still safe.",
+    "code": "// WebAuthn Registration Response (Simplified)\n{\n  \"id\": \"credential_id_here\",\n  \"type\": \"public-key\",\n  \"response\": { \"attestationObject\": \"...\", \"clientDataJSON\": \"...\" }\n}"
+  },
+  {
+    "id": 16,
+    "question": "Explain 'OAuth2 PKCE' (Proof Key for Code Exchange). Why is it needed for public clients?",
+    "answer": "PKCE is an extension to the OAuth2 Authorization Code flow. Standard flows use a 'Client Secret' to exchange a code for a token, but **Public Clients** (like mobile apps or SPAs) cannot keep a secret safe. **PKCE Solution**: The client generates a random 'Code Verifier' and sends its hash ('Code Challenge') in the first request. In the second request, it sends the raw 'Code Verifier'. The server hashes it and verifies it matches. This prevents an attacker from intercepting the authorization code and using it themselves.",
+    "counterQuestion": "Should you use PKCE for confidential clients (backends)?",
+    "counterQuestionAnswer": "Yes. While not strictly required (since backends can use secrets), the OAuth2 community now recommends using PKCE for **all** clients. It provides an extra layer of defense-in-depth against 'Code Injection' attacks and makes your security architecture more consistent.",
+    "category": "security",
+    "topic": "iam",
+    "difficulty": "hard",
+    "tags": [
+      "pkce",
+      "oauth2",
+      "security"
+    ],
+    "analogy": "PKCE is like 'A secret handshake you agree on through a series of locked boxes'. You send a locked box with a picture of the handshake (the challenge), and later you show the actual handshake (the verifier) to prove it was you who sent the first box.",
+    "code": "// PKCE: Code Challenge Generation\nconst challenge = base64UrlEncode(sha256(verifier));"
+  },
+  {
+    "id": 17,
+    "question": "What is 'mTLS' (Mutual TLS) and how does it enhance service-to-service security?",
+    "answer": "In standard TLS, only the server provides a certificate to prove its identity to the client. In **Mutual TLS (mTLS)**, both the client and the server provide certificates. This ensures that only trusted clients can talk to the server and vice versa. It is the gold standard for 'Service-to-Service' communication in microservices architectures, as it provides strong, cryptographically verified identity for every single connection without needing shared secrets or API keys.",
+    "counterQuestion": "What is a 'Service Mesh's role in mTLS?",
+    "counterQuestionAnswer": "Managing certificates for thousands of microservices manually is impossible. A Service Mesh (like Istio or Linkerd) automates mTLS by injecting 'Sidecar' proxies that handle the certificate rotation, distribution, and the mTLS handshake automatically for every service, making secure communication transparent to the application code.",
+    "category": "security",
+    "topic": "infrastructure",
+    "difficulty": "hard",
+    "tags": [
+      "mtls",
+      "security",
+      "service_mesh"
+    ],
+    "analogy": "mTLS is like 'Two spies meeting in a park'. Not only does Spy A show their ID to Spy B, but Spy B also shows their ID to Spy A. They both know exactly who they are talking to before they start sharing secrets.",
+    "code": "# Envoy mTLS Config Fragment\ncommon_tls_context:\n  validation_context:\n    trusted_ca: { filename: \"/etc/certs/root-ca.crt\" }\n  tls_certificates: [{ certificate_chain: { filename: \"/etc/certs/cert.crt\" } }]"
+  },
+  {
+    "id": 18,
+    "question": "Discuss 'OIDC' (OpenID Connect) vs 'OAuth2'.",
+    "answer": "1. **OAuth2**: A framework for **Authorization** ('What can this app do with my data?'). It issues an **Access Token**. \n2. **OIDC**: A protocol on top of OAuth2 for **Authentication** ('Who is this user?'). It adds an **ID Token** (a JWT) and a **UserInfo endpoint**. Think of OAuth2 as a key to a specific room, and OIDC as an ID card that tells the receptionist who you are. Most modern 'Login' systems use OIDC to get the user's name and email while using OAuth2 to get permission to access their Google Drive or GitHub repos.",
+    "counterQuestion": "Can you use OIDC for authorization?",
+    "counterQuestionAnswer": "Technically no. OIDC is for identity. However, because the ID Token is a JWT, you can include 'roles' or 'groups' inside it. Your application can then look at these claims to make authorization decisions (e.g., 'If role is admin, show the dashboard'). So while OIDC is for identity, that identity is often used to drive authorization.",
+    "category": "security",
+    "topic": "iam",
+    "difficulty": "medium",
+    "tags": [
+      "oidc",
+      "oauth2",
+      "security"
+    ],
+    "analogy": "OAuth2 is 'The key to the mini-bar'. OIDC is 'The passport you showed the receptionist' to get the key. One gives you permission to do something, the other tells the system who you are.",
+    "code": "// ID Token Claims\n{\n  \"name\": \"Jane Doe\",\n  \"given_name\": \"Jane\",\n  \"family_name\": \"Doe\",\n  \"preferred_username\": \"jdoe\"\n}"
+  },
+  {
+    "id": 19,
+    "question": "What are Passkeys? How does WebAuthn differ from traditional password + TOTP MFA?",
+    "answer": "Passkeys are based on the **WebAuthn** standard and use public-key cryptography to replace passwords. Instead of a shared secret (password) stored on a server, your device generates a public/private key pair. The server only has the public key. **Difference**: Unlike TOTP (which can be phished), WebAuthn is cryptographically bound to the specific website's domain. It is impossible to use a passkey on a 'fake' site, making it the first truly phish-proof authentication method.",
+    "counterQuestion": "What is 'Attestation' in WebAuthn?",
+    "counterQuestionAnswer": "Attestation is a feature where the authenticator (e.g., a YubiKey or a MacBook's Secure Enclave) provides a cryptographic proof to the server that it is a genuine, certified device and not a software emulator. This allows high-security applications (like banking) to restrict login only to trusted hardware devices.",
+    "category": "security",
+    "topic": "authentication",
+    "difficulty": "hard",
+    "tags": [
+      "passkeys",
+      "webauthn",
+      "fido2"
+    ],
+    "analogy": "A Passkey is like 'A digital fingerprint that only fits one specific lock'. You don't have to remember a combination (password); you just use your device's biometric sensor to unlock the key, and the key unlocks the site. Because the key is unique to that site, it can't be used anywhere else.",
+    "code": "// WebAuthn get() options\nconst options = {\n  publicKey: {\n    challenge: Uint8Array.from(challenge),\n    allowCredentials: [{ id: credentialId, type: 'public-key' }]\n  }\n};"
+  },
+  {
+    "id": 20,
+    "question": "How do you handle session revocation globally when using edge-cached APIs?",
+    "answer": "Revoking stateless sessions (like JWTs) at the 'Edge' is a challenge. **Strategies**: \n1. **Short Lifespan**: Keep JWTs very short-lived (e.g., 5 mins) so revocation happens naturally. \n2. **Global Blacklist**: Use a fast, distributed store like Redis (or Cloudflare Workers KV) to store revoked 'jti' (JWT IDs). The edge proxy checks this list on every request. \n3. **Versioned Tokens**: Include a 'version' in the user's data; incrementing the version in the DB immediately invalidates all tokens with the old version.",
+    "counterQuestion": "What is the 'Ghost Session' problem?",
+    "counterQuestionAnswer": "A ghost session occurs when a user's account is deactivated or their permissions are revoked, but their stateless JWT is still valid and being accepted by edge servers or microservices that don't have real-time access to the primary user database. This is why short TTLs and revocation lists are critical.",
+    "category": "security",
+    "topic": "sessions",
+    "difficulty": "hard",
+    "tags": [
+      "revocation",
+      "sessions",
+      "edge_computing"
+    ],
+    "analogy": "Session revocation at the edge is like 'A security guard with a clipboard of banned people at a club'. Even if a person has a valid ticket (a JWT), the guard checks the clipboard (the blacklist) before letting them in. If they're on the list, their ticket is useless.",
+    "code": "# Redis-based Revocation Check\nif redis.exists(f\"revoked:{jwt_id}\"):\n    return 401_UNAUTHORIZED"
+  },
+  {
+    "id": 21,
+    "question": "What is 'Shift Left Security'? How do you integrate it into the CI/CD pipeline?",
+    "answer": "Shift Left Security means moving security practices earlier in the software development lifecycle (to the 'left' of the timeline). Instead of waiting for a final security audit, you integrate automated security checks into the developer's workflow and the CI/CD pipeline. This includes **Pre-commit hooks** (scanning for secrets), **IDE plugins** (finding vulnerabilities while writing code), and **CI scans** (SAST/SCA) that block the build if major issues are found.",
+    "counterQuestion": "What is the primary benefit of shifting left?",
+    "counterQuestionAnswer": "The primary benefit is **Cost and Speed**. It is much cheaper and faster to fix a security bug found by a developer in their IDE than it is to fix a bug found by a pen tester in production, which might require a massive rewrite, a public disclosure, and emergency deployments.",
+    "category": "devsecops",
+    "topic": "methodology",
+    "difficulty": "medium",
+    "tags": [
+      "shift_left",
+      "cicd",
+      "security"
+    ],
+    "analogy": "Shift Left Security is like 'Checking your parachute before you get on the plane' instead of checking it while you're falling through the air. It's much easier to fix a hole in the chute while you're still on the ground.",
+    "code": "# Shift Left: Pre-commit hook example\n- repo: https://github.com/pre-commit/pre-commit-hooks\n  hooks:\n    - id: detect-aws-credentials"
+  },
+  {
+    "id": 22,
+    "question": "Explain the difference between 'SAST', 'DAST', and 'SCA' tools.",
+    "answer": "1. **SAST (Static Application Security Testing)**: Analyzes source code without running it (e.g., SonarQube). Finds logical flaws and 'injection' risks. \n2. **DAST (Dynamic Application Security Testing)**: Tests the running application from the outside (e.g., OWASP ZAP). Finds configuration issues and runtime vulnerabilities. \n3. **SCA (Software Composition Analysis)**: Scans your dependencies (like NPM/PIP packages) for known vulnerabilities (e.g., Snyk). SCA is critical because most modern code is actually third-party libraries.",
+    "counterQuestion": "Which one should you prioritize first?",
+    "counterQuestionAnswer": "You should prioritize **SCA** first, as it is the easiest to automate and catches the most common vulnerabilities (outdated packages). Then implement **SAST** for internal code quality, and finally **DAST** for production-like runtime environment testing.",
+    "category": "devsecops",
+    "topic": "tools",
+    "difficulty": "medium",
+    "tags": [
+      "sast",
+      "dast",
+      "sca"
+    ],
+    "analogy": "SCA is like 'Checking the expiration date on all the ingredients in your pantry'. SAST is like 'Checking the recipe for mistakes before you start cooking'. DAST is like 'Tasting the soup once it's done' to make sure it's not too salty.",
+    "code": "// SCA Audit Output (Example)\nLow: cookie-parser@1.4.3 requires update to 1.4.4\nHigh: lodash@4.17.11 vulnerable to Prototype Pollution"
+  },
+  {
+    "id": 23,
+    "question": "How do you perform 'Container Image Scanning' to detect vulnerabilities?",
+    "answer": "Container scanning tools (like **Trivy**, **Clair**, or **AWS Inspector**) analyze the layers of your Docker image. They look for: \n1. Vulnerabilities in the base OS packages (e.g., an old version of `openssl`). \n2. Vulnerabilities in the application dependencies. \n3. Hardcoded secrets. **Best Practice**: Scan the image during the CI build and again in the container registry. If a new high-severity CVE is found for an image already in production, you should be alerted immediately.",
+    "counterQuestion": "What is a 'Distroless' image?",
+    "counterQuestionAnswer": "A distroless image contains only your application and its minimal runtime dependencies (no shell, no package manager, no standard Linux utilities). This significantly reduces the **Attack Surface** because even if an attacker gets inside the container, they have no tools (like `curl` or `bash`) to explore the network or download malicious payloads.",
+    "category": "devsecops",
+    "topic": "containers",
+    "difficulty": "hard",
+    "tags": [
+      "containers",
+      "docker",
+      "scanning"
+    ],
+    "analogy": "Container scanning is like 'X-raying a shipping container at the port'. You don't know what's inside the crates (the image layers), but the X-ray can see if there are any illegal items (vulnerabilities) hidden deep inside without you having to open every crate.",
+    "code": "# Trivy Scan Command\ntrivy image my-app:latest"
+  },
+  {
+    "id": 24,
+    "question": "Discuss 'Secret Scanning' and how to prevent credential leaks in Git.",
+    "answer": "Secret scanning involves using automated tools to search for hardcoded secrets (like AWS keys or database passwords) in your code history. **Prevention**: \n1. **Pre-commit Hooks**: Use tools like `gitleaks` to block a commit if it contains a secret. \n2. **Registry Scanning**: GitHub and GitLab have built-in secret scanning for public and private repos. \n3. **Revocation**: If a secret is leaked, you must immediately **Revoke** the secret and rotate it. Simply deleting the line in Git is not enough, as the secret remains in the commit history.",
+    "counterQuestion": "How do you 'clean' a Git history if a secret was accidentally pushed?",
+    "counterQuestionAnswer": "You can use tools like `git-filter-repo` or the 'BFG Repo-Cleaner' to rewrite the Git history and remove all traces of the secret. However, this changes the commit hashes, which can be disruptive for other team members. The most important step is still to rotate the leaked secret immediately, as it should be considered compromised the moment it was pushed.",
+    "category": "devsecops",
+    "topic": "best_practices",
+    "difficulty": "medium",
+    "tags": [
+      "secret_scanning",
+      "git",
+      "security"
+    ],
+    "analogy": "Secret scanning in Git is like 'A lost-and-found department that proactively looks for things people dropped'. If someone drops their wallet (a secret) in the hallway (the repo), the department finds it and tells them to cancel their cards immediately.",
+    "code": "# git-secrets pattern addition\ngit secrets --add 'AKIA[A-Z0-9]{16}'"
+  },
+  {
+    "id": 25,
+    "question": "What is 'Infrastructure as Code (IaC) Security' (Checkov, Terrascan)?",
+    "answer": "IaC security involves scanning your infrastructure configuration files (Terraform, CloudFormation, Kubernetes YAML) for misconfigurations before they are deployed. Tools like **Checkov** or **Terrascan** check for 'security smells' like: \n1. S3 buckets being public. \n2. IAM roles with 'AdministratorAccess'. \n3. Security groups allowing SSH from the entire internet. Shifting security left to IaC prevents misconfigured infrastructure from ever reaching your cloud environment.",
+    "counterQuestion": "What is 'Drift' in IaC?",
+    "counterQuestionAnswer": "Drift occurs when the actual state of your infrastructure in the cloud differs from the desired state defined in your IaC files (e.g., someone manually changed a setting in the AWS Console). Good IaC security practices involve continuous 'Drift Detection' to ensure that the production environment always matches the version-controlled, security-scanned configuration.",
+    "category": "devsecops",
+    "topic": "infrastructure",
+    "difficulty": "hard",
+    "tags": [
+      "iac",
+      "terraform",
+      "checkov"
+    ],
+    "analogy": "IaC security scanning is like 'A blueprint review by a fire marshal'. Before you even start building the skyscraper (deploying the cloud infrastructure), the marshal looks at the drawings and says, 'You're missing a fire exit here' or 'This material is flammable'.",
+    "code": "# Checkov: Fail on S3 Public Access\ncheckov -d . --check CKV_AWS_20"
+  },
+  {
+    "id": 26,
+    "question": "How do you manage 'Compliance as Code' (SOC2, HIPAA, GDPR)?",
+    "answer": "Compliance as Code translates regulatory requirements (like 'all data must be encrypted') into automated tests and configuration checks. Using tools like **InSpec** or **Open Policy Agent (OPA)**, you can write policies that automatically verify your infrastructure and application state against compliance benchmarks. This replaces manual, once-a-year audits with continuous, real-time compliance monitoring, ensuring you never 'drift' out of compliance.",
+    "counterQuestion": "What is the role of 'Policy as Code' (PaC) in compliance?",
+    "counterQuestionAnswer": "Policy as Code is the practical implementation of Compliance as Code. It involves writing security and compliance rules in a high-level language (like Rego for OPA). These policies are version-controlled and can be enforced at multiple points: during the CI build, at the deployment stage, or continuously in the running environment.",
+    "category": "devsecops",
+    "topic": "compliance",
+    "difficulty": "hard",
+    "tags": [
+      "compliance_as_code",
+      "opa",
+      "soc2"
+    ],
+    "analogy": "Compliance as Code is like 'An automated auditor who lives in your server room'. Instead of coming once a year to look at papers, they are there 24/7, constantly checking that every light is green and every door is locked, and sounding an alarm the second something is out of compliance.",
+    "code": "# Compliance Check (InSpec)\ndescribe aws_s3_bucket(bucket_name: 'my-bucket') do\n  it { should_not be_public }\n  it { should have_encryption_enabled }\nend"
+  },
+  {
+    "id": 27,
+    "question": "Explain 'Zero Trust Architecture' in a cloud-native environment.",
+    "answer": "In cloud-native systems, the 'Perimeter' is dead. Zero Trust involves: \n1. **Workload Identity**: Giving every service a cryptographically verified identity (e.g., SPIFFE). \n2. **Mutual TLS (mTLS)**: Encrypting and authenticating all service-to-service traffic. \n3. **Fine-grained Authorization**: Using an externalized policy engine (like OPA) to decide which service can call another based on identity, time, and context. You assume the network is always compromised and verify every single interaction.",
+    "counterQuestion": "What is 'Identity-based Networking'?",
+    "counterQuestionAnswer": "In traditional networking, security is based on IP addresses and ports. In Identity-based networking (a core part of Zero Trust), security is based on the verified identity of the service or user. This is much more robust in dynamic cloud environments where IP addresses change frequently as containers are scaled up and down.",
+    "category": "devsecops",
+    "topic": "architecture",
+    "difficulty": "hard",
+    "tags": [
+      "zero_trust",
+      "cloud_native",
+      "security"
+    ],
+    "analogy": "Zero Trust in cloud-native is like 'An airport where you have to show your ID and boarding pass at every single shop and gate'. Your ID is checked at the entrance, the security line, the duty-free shop, and the gate. No one is ever just 'trusted' because they are already inside the building.",
+    "code": "# Kubernetes NetworkPolicy (Deny All)\nkind: NetworkPolicy\nspec:\n  podSelector: {}\n  policyTypes: [\"Ingress\", \"Egress\"]"
+  },
+  {
+    "id": 28,
+    "question": "Explain 'Hashing' vs 'Encryption'. Why should you never use MD5 for passwords?",
+    "answer": "1. **Encryption**: Two-way. Data is scrambled but can be unscrambled with a key. \n2. **Hashing**: One-way. Data is transformed into a fixed-length string (a 'fingerprint') that cannot be reversed. **MD5 for Passwords**: Never use MD5 because it is too fast and has many 'collision' vulnerabilities. An attacker can use 'Rainbow Tables' or brute-force billions of MD5 hashes per second. Modern password hashing should use **Argon2**, **bcrypt**, or **scrypt**, which are designed to be slow and resource-intensive to defend against brute-force.",
+    "counterQuestion": "What is a 'Collision' in hashing?",
+    "counterQuestionAnswer": "A collision occurs when two different inputs produce the exact same hash output. While theoretically possible for any hash function (due to the Pigeonhole Principle), a 'cryptographically secure' hash function makes it computationally impossible to find two such inputs intentionally. MD5 is no longer secure because collisions can be generated in seconds.",
+    "category": "crypto",
+    "topic": "fundamentals",
+    "difficulty": "medium",
+    "tags": [
+      "hashing",
+      "encryption",
+      "md5"
+    ],
+    "analogy": "Encryption is like 'Sending a coded letter that can be decoded with a key'. Hashing is like 'Turning a whole steak into ground beef'. You can't turn the ground beef back into a steak, but you can always tell if two piles of ground beef came from the same steak by comparing them.",
+    "code": "# Secure Hashing with Argon2 (Python)\nfrom argon2 import PasswordHasher\nph = PasswordHasher()\nhash = ph.hash(\"my_secret_password\")"
+  },
+  {
+    "id": 29,
+    "question": "What is 'Symmetric' vs 'Asymmetric' encryption?",
+    "answer": "1. **Symmetric**: The same key is used for both encryption and decryption (e.g., AES). It's very fast but requires a secure way to share the key. \n2. **Asymmetric**: Uses a pair of keys\u2014a **Public Key** for encryption and a **Private Key** for decryption (e.g., RSA, ECC). It's slower but solves the key-sharing problem. **Typical use**: Asymmetric is used to securely exchange a symmetric key (during a TLS handshake), and then symmetric is used for the actual high-speed data transfer.",
+    "counterQuestion": "What is 'Key Rotation'?",
+    "counterQuestionAnswer": "Key rotation is the practice of regularly changing the cryptographic keys used to protect data. This limits the amount of data that would be compromised if a single key were ever stolen and is a core requirement for many compliance standards (like PCI DSS).",
+    "category": "crypto",
+    "topic": "fundamentals",
+    "difficulty": "medium",
+    "tags": [
+      "symmetric",
+      "asymmetric",
+      "encryption"
+    ],
+    "analogy": "Symmetric encryption is like 'A safe with one key'—both you and your friend have a copy. Asymmetric encryption is like 'A mailbox with a slot'. Anyone can drop a letter in (encrypt with public key), but only you have the key to open the mailbox and read the letters (decrypt with private key).",
+    "code": "# Asymmetric: Generate RSA Key Pair\nopenssl genrsa -out private.pem 2048\nopenssl rsa -in private.pem -pubout -out public.pem"
+  },
+  {
+    "id": 30,
+    "question": "Explain 'Salt' and 'Pepper' in the context of password hashing.",
+    "answer": "1. **Salt**: A unique, random string added to each password before hashing and stored alongside the hash in the DB. It prevents 'Rainbow Table' attacks (where attackers pre-compute hashes for common passwords). \n2. **Pepper**: A secret string added to all passwords before hashing, but **stored separately** from the database (e.g., in a secret manager). If the database is stolen, the attacker still can't brute-force the hashes because they don't have the pepper. Salt is unique per user; Pepper is global per application.",
+    "counterQuestion": "Why shouldn't you use a user's 'email' as a salt?",
+    "counterQuestionAnswer": "A salt must be globally unique and unpredictable. A user's email is neither. If two users use the same password on different sites that both use emails as salts, their hashes will be identical if their emails are known, making the attacker's job much easier. Always use a cryptographically secure random number generator for salts.",
+    "category": "crypto",
+    "topic": "passwords",
+    "difficulty": "medium",
+    "tags": [
+      "salt",
+      "pepper",
+      "passwords"
+    ],
+    "analogy": "Salt is like 'A unique seasoning for every dish'. Pepper is like 'A secret ingredient in the restaurant's safe'. Even if a thief steals all the finished dishes (the database), they still don't know the secret ingredient, so they can't replicate the flavor (the hash).",
+    "code": "# Password Hashing with Salt\npassword_to_hash = user_password + unique_user_salt\n# Password Hashing with Pepper\nfinal_hash = hash(password_to_hash + global_secret_pepper)"
+  },
+  {
+    "id": 31,
+    "question": "What is a 'Digital Signature' and how does it ensure non-repudiation?",
+    "answer": "A digital signature is a mathematical scheme for verifying the authenticity of digital messages. \n1. The sender hashes the message and encrypts the hash with their **Private Key**. \n2. The recipient decrypts the signature with the sender's **Public Key** and compares the hash. **Non-repudiation**: Because only the sender has the private key, they cannot later deny ('repudiate') having sent the message, as the signature proves it could only have originated from them.",
+    "counterQuestion": "What is a 'Hash Collision' in the context of Digital Signatures?",
+    "counterQuestionAnswer": "If an attacker can find two different messages that produce the same hash, they could potentially trick someone into signing a 'harmless' message and then attach that signature to a 'malicious' message. This is why modern signatures use high-bit-depth hash functions like SHA-256 or SHA-3.",
+    "category": "crypto",
+    "topic": "signatures",
+    "difficulty": "hard",
+    "tags": [
+      "digital_signatures",
+      "non_repudiation",
+      "security"
+    ],
+    "analogy": "A Digital Signature is like 'A wax seal on a letter'. If the seal is intact, you know the letter hasn't been opened or changed. And since the seal has your unique family crest (your private key), everyone knows it could only have come from you.",
+    "code": "# Python: Verify RSA Signature\nfrom Crypto.Signature import pkcs1_15\nfrom Crypto.Hash import SHA256\ntry:\n    pkcs1_15.new(public_key).verify(hash_obj, signature)\n    print(\"Authentic\")\nexcept:"
+  },
+  {
+    "id": 32,
+    "question": "Explain 'Public Key Infrastructure' (PKI) and 'Certificate Authorities' (CAs).",
+    "answer": "PKI is the system that manages digital certificates and public-key encryption. **CAs** are trusted third-party organizations (like Let's Encrypt or DigiCert) that verify the identity of a website and issue a **Digital Certificate**. Your browser contains a list of 'Root CAs' it trusts. When you visit an HTTPS site, the server presents its certificate; your browser verifies it was signed by a trusted CA, ensuring you are talking to the real site and not an impostor.",
+    "counterQuestion": "What is a 'Self-Signed Certificate'?",
+    "counterQuestionAnswer": "A self-signed certificate is one that is not signed by a trusted CA but by the server owner themselves. Browsers will display a security warning ('Your connection is not private') because there is no trusted third party to verify the owner's identity. They are commonly used for internal development or testing environments where public trust is not required.",
+    "category": "crypto",
+    "topic": "pki",
+    "difficulty": "hard",
+    "tags": [
+      "pki",
+      "certificates",
+      "ca"
+    ],
+    "analogy": "A Certificate Authority is like 'The Department of Motor Vehicles (DMV)'. You show the DMV your birth certificate (proof of identity), and they give you a Driver's License (a Digital Certificate). When a police officer (the browser) sees your license, they trust it because they trust the DMV.",
+    "code": "# View Certificate Details (CLI)\nopenssl x509 -in cert.pem -text -noout"
+  },
+  {
+    "id": 33,
+    "question": "What is 'Diffie-Hellman Key Exchange'?",
+    "answer": "Diffie-Hellman is a method that allows two parties to agree on a **shared secret key** over an insecure channel without actually sending the key itself. It uses modular exponentiation to combine their respective private keys with each other's public keys. The result is a matching secret key on both sides. This is the foundation of the TLS handshake, allowing a secure connection to be established even if an attacker is recording all the traffic from the very beginning.",
+    "counterQuestion": "What is 'Elliptic Curve Diffie-Hellman' (ECDH)?",
+    "counterQuestionAnswer": "ECDH is a variant of Diffie-Hellman that uses the mathematics of elliptic curves instead of traditional modular exponentiation. It is much more efficient, allowing for shorter keys (e.g., a 256-bit ECC key is as strong as a 3072-bit RSA key), which results in faster handshakes and less computational overhead for both client and server.",
+    "category": "crypto",
+    "topic": "key_exchange",
+    "difficulty": "hard",
+    "tags": [
+      "diffie_hellman",
+      "key_exchange",
+      "security"
+    ],
+    "analogy": "Diffie-Hellman is like 'Mixing paint'. You and your friend both start with a common color (yellow). You each add a secret color. You swap the mixtures and add your secret color again. Now you both have the exact same shade of 'secret' green, but someone watching you swap the mixtures can't figure out the secret colors you used.",
+    "code": "# DH Key Exchange (Simplified logic)\nShared Secret = (Public_B ^ Private_A) % Prime\nShared Secret = (Public_A ^ Private_B) % Prime"
+  },
+  {
+    "id": 34,
+    "question": "Explain 'Multi-Factor Authentication' (MFA) methods (TOTP, SMS, Hardware keys).",
+    "answer": "1. **SMS**: Send a code via text. Easiest but least secure (SIM swapping). \n2. **TOTP (Time-based One-Time Password)**: An app (Google Authenticator) generates a 6-digit code based on a shared secret and the current time. Secure but vulnerable to phishing. \n3. **Hardware Keys (WebAuthn/FIDO2)**: A physical device (YubiKey) performs a cryptographic handshake. The most secure method; it is phish-proof because the key is bound to the specific domain.",
+    "counterQuestion": "What is a 'Backup Code' in MFA?",
+    "counterQuestionAnswer": "Backup codes (or recovery codes) are a set of one-time-use codes provided to the user when they first set up MFA. They are designed to be stored securely (offline) and used to regain access to the account if the user loses their phone or hardware key, preventing them from being permanently locked out.",
+    "category": "crypto",
+    "topic": "mfa",
+    "difficulty": "medium",
+    "tags": [
+      "mfa",
+      "totp",
+      "security"
+    ],
+    "analogy": "MFA is like 'A two-factor authentication for your house'. You have the physical key (something you have) and a secret code for the alarm system (something you know). Even if a thief steals your key, they still can't get past the alarm.",
+    "code": "// TOTP Shared Secret (Base32)\nJBSWY3DPEHPK3PXP"
+  },
+  {
+    "id": 35,
+    "question": "What is 'End-to-End Encryption' (E2EE)?",
+    "answer": "In E2EE, only the communicating users can read the messages. The data is encrypted on the sender's device and only decrypted on the recipient's device. The service provider (e.g., Signal, iMessage) acts only as a 'relayer' and never has the private keys needed to decrypt the content. This ensures that even if the provider's servers are compromised or subpoenaed, the messages remain private and unreadable.",
+    "counterQuestion": "How does 'Key Verification' work in E2EE apps?",
+    "counterQuestionAnswer": "Key verification (often via scanning a QR code or comparing a 'Safety Number') allows users to verify that the public key they have for a friend actually belongs to that friend and hasn't been replaced by a 'Man-in-the-Middle'. This ensures the integrity of the end-to-end encrypted channel.",
+    "category": "crypto",
+    "topic": "encryption",
+    "difficulty": "hard",
+    "tags": [
+      "e2ee",
+      "privacy",
+      "security"
+    ],
+    "analogy": "E2EE is like 'Sending a locked box through the mail'. The post office (the service provider) carries the box, but you and your friend are the only ones with the keys to open it. The post office knows who is sending the box to whom, but they have no idea what's inside.",
+    "code": "// E2EE: Signal Protocol (Double Ratchet)\n1. X3DH for initial key agreement\n2. Double Ratchet for session key management"
+  },
+  {
+    "id": 36,
+    "question": "Discuss 'Zero-Knowledge Proofs' (ZKP) at a high level.",
+    "answer": "ZKP is a cryptographic method where one party (the **Prover**) can prove to another party (the **Verifier**) that they know a specific piece of information (like a password) without actually revealing the information itself. **Example**: Proving you are over 18 without showing your actual birth date. In blockchain and privacy-focused apps, ZKP allows for 'Private Transactions' where the validity of a transaction is verified without revealing the sender, receiver, or amount.",
+    "counterQuestion": "What are 'zk-SNARKs'?",
+    "counterQuestionAnswer": "zk-SNARKs (Zero-Knowledge Succinct Non-Interactive Argument of Knowledge) are a specific type of ZKP that are 'succinct' (small and fast to verify) and 'non-interactive' (the prover only needs to send one message). They are the technology behind privacy-centric cryptocurrencies like Zcash.",
+    "category": "crypto",
+    "topic": "advanced",
+    "difficulty": "hard",
+    "tags": [
+      "zkp",
+      "privacy",
+      "cryptography"
+    ],
+    "analogy": "A Zero-Knowledge Proof is like 'Proving you have the key to a room by entering the room through a hidden door and walking out the front door'. You never showed the key, but the fact that you were inside proves you must have had it.",
+    "code": "// ZKP Example: Range Proof\nI prove that X is between 1 and 100\nWithout revealing that X is 42."
+  },
+  {
+    "id": 37,
+    "question": "How do you securely store 'API Keys' and 'Database Credentials'?",
+    "answer": "1. **Secret Manager**: Use a dedicated service like **HashiCorp Vault**, **AWS Secrets Manager**, or **GCP Secret Manager**. \n2. **Environment Injection**: Inject secrets into the application environment at runtime; never commit them to Git. \n3. **Least Privilege**: Ensure the credentials only have the minimum permissions needed. \n4. **Rotation**: Automatically rotate secrets every 30-90 days to minimize the window of opportunity if a key is ever leaked.",
+    "counterQuestion": "What is 'Secret Sprawl'?",
+    "counterQuestionAnswer": "Secret sprawl is the unintended accumulation of sensitive credentials across various locations, such as hardcoded strings in code, configuration files, build logs, and developer machines. It significantly increases the risk of a breach because there are more 'targets' for an attacker to find.",
+    "category": "crypto",
+    "topic": "best_practices",
+    "difficulty": "medium",
+    "tags": [
+      "secrets",
+      "security",
+      "vault"
+    ],
+    "analogy": "Storing API keys in a Secret Manager is like 'Keeping your jewelry in a safe-deposit box at the bank' instead of in a shoebox under your bed (hardcoded in code). The bank provides logs of everyone who opens the box and can change the lock if you lose your key.",
+    "code": "# Fetch secret from HashiCorp Vault\ncurl --header \"X-Vault-Token: ...\" $VAULT_ADDR/v1/secret/data/db-creds"
+  }
+]

@@ -1,0 +1,918 @@
+    Production Deployment
+       Complete Guide
+           Kubernetes · Docker · Django · Terraform · GitHub Actions
+
+A comprehensive, opinionated reference for building and operating a serious production stack
+                                   from the ground up.
+
+
+
+
+   React          Django           Celery          Redis          Postgres        Kubernetes
+PRODUCTION DEPLOYMENT GUIDE                                              Chapter 6 — Final Blueprint
+
+
+
+
+     NAVIGATION
+
+
+
+     Table of Contents
+     01 Kubernetes Production Setup
+       – Namespace, ServiceAccount, ConfigMap, Secret
+       – Deployment: Replicas, Rolling Updates, Health Probes
+       – Service, PodDisruptionBudget, HPA, NetworkPolicy, Ingress
+       – Key customisations & security hardening
+
+     02 Terraform AWS Infrastructure
+       – VPC, Subnets, Security Groups
+       – ALB, Target Groups, EC2 Instances
+       – Provider, Variables, Outputs
+
+     03 Production Django with Docker
+       – Multi-stage Dockerfile, non-root user
+       – Entrypoint, Gunicorn config, Nginx reverse proxy
+       – Docker Compose, Django settings, health endpoint
+
+     04 CI/CD Pipelines
+       – Jenkins declarative pipeline
+       – GitHub Actions: test, build, push
+       – Stronger pipeline with lint & security gates
+
+     05 Integrated Production Architecture
+       – Full stack design: React · Django · Celery · Redis · Postgres
+       – Kubernetes workload design, Terraform modules
+       – GitHub Actions: Frontend CI, Backend CI, Deploy workflow
+       – Repo structure & operational rules
+
+     06 Final Blueprint & Recommendations
+       – Recommended production choices
+       – What NOT to put in Kubernetes first
+       – Final architecture blueprint
+
+
+
+
+                                                          Page 2
+PRODUCTION DEPLOYMENT GUIDE                                                                          Chapter 6 — Final Blueprint
+
+
+
+
+     CHAPTER 01
+
+
+
+     Kubernetes Production Setup
+     Kubernetes is the runtime backbone of this production stack. The manifests below form a hardened,
+     zero-downtime deployment baseline for any stateless web application.
+
+
+
+     Resource Overview
+     Each Kubernetes object plays a specific role in the deployment:
+
+     Kind                          Name                     Purpose
+
+     Namespace                     production-app           Isolates all resources; prevents cross-team collisions
+
+                                                            Pod identity; credentials NOT auto-mounted for
+     ServiceAccount                app-sa
+                                                            security
+
+     ConfigMap                     app-config               Non-sensitive config: APP_ENV, LOG_LEVEL, PORT
+
+                                                            Sensitive   values:    DATABASE_URL,          API_KEY
+     Secret                        app-secrets
+                                                            (Opaque type)
+
+     Deployment                    app                      Manages pods; rolling update; 3 replicas baseline
+
+     Service                       app-service              Stable ClusterIP endpoint; routes to port 8080
+
+     PodDisruptionBudget           app-pdb                  Keeps ≥2 pods alive during node drains
+
+     HorizontalPodAutoscal
+                                   app-hpa                  3–10 replicas; scales on CPU 70% / Memory 75%
+     er
+
+     NetworkPolicy                 app-network-policy       Controls ingress/egress; tighten in real production
+
+     Ingress                       app-ingress              HTTP/HTTPS entrypoint via NGINX; TLS termination
+
+
+
+     Deployment Configuration
+     The Deployment is the most important resource. Key production settings:
+
+          • replicas: 3 — baseline for high availability
+          • RollingUpdate with maxUnavailable: 0 and maxSurge: 1 — aims for zero-downtime deploys
+          • revisionHistoryLimit: 5 — retains rollback capability for the last 5 versions
+          • podAntiAffinity — spreads replicas across different nodes (weight 100)
+          • terminationGracePeriodSeconds: 30 — allows in-flight requests to complete
+          • preStop sleep 10 — drains traffic before SIGTERM is sent
+
+
+
+
+                                                           Page 3
+PRODUCTION DEPLOYMENT GUIDE                                                                          Chapter 6 — Final Blueprint
+
+
+
+
+     Security Hardening
+     Every layer of security is applied — from pod level down to container capabilities:
+
+     Scope               Setting                                     Effect
+
+     Pod level           runAsNonRoot: true                          Container cannot run as UID 0
+
+     Pod level           seccompProfile: RuntimeDefault              Restricts allowed syscalls
+
+     Pod level           fsGroup: 2000                               Mounted volume files owned by GID 2000
+
+     Container           allowPrivilegeEscalation: false             Blocks sudo / setuid binaries
+
+     Container           readOnlyRootFilesystem: true                App cannot write outside /tmp
+
+     Container           capabilities.drop: ALL                      No extra Linux capabilities
+
+     ServiceAccou
+                         automountServiceAccountToken: false         API credentials not exposed in pod
+     nt
+
+
+          ■ readOnlyRootFilesystem requires an emptyDir volume mounted at /tmp. Ensure your app writes
+          temporary files only there.
+
+
+
+     Health Probes
+     Three complementary probes manage the full container lifecycle:
+
+     Probe                 Path           Timing                     Effect
+
+                                          5s period, 30 failures
+     startupProbe          /startup                                  Gates liveness/readiness until app is ready
+                                          allowed
+
+                                                                     Removes pod from Service endpoints if
+     readinessProbe        /ready         10s period, 3 failures
+                                                                     unhealthy
+
+                                                                     Restarts    container   if    app   hangs     or
+     livenessProbe         /live          20s period, 3 failures
+                                                                     deadlocks
+
+
+
+     HPA Scaling Behaviour
+          • Scale-up: No stabilisation delay — reacts immediately, up to 100% more replicas per 60 s
+          • Scale-down: 5-minute stabilisation window — avoids flapping; max 50% reduction per 60 s
+          • CPU target: 70% average utilisation across replicas
+          • Memory target: 75% average utilisation across replicas
+          • Range: minReplicas 3 — maxReplicas 10
+
+
+
+     Key Customisations
+     Before applying these manifests, update these five values:
+
+
+
+
+                                                           Page 4
+PRODUCTION DEPLOYMENT GUIDE                                                                         Chapter 6 — Final Blueprint
+
+
+
+
+     #     Field           Placeholder                            What to set
+
+     1     image           YOUR_IMAGE:TAG                         e.g. ghcr.io/acme/myapp:1.2.3
+
+     2     host            app.example.com                        Your real domain name
+
+     3     secretName      app-tls                                Kubernetes Secret with TLS cert/key
+
+           DATABASE
+     4                     postgres://user:password@…             Real database connection string
+           _URL
+
+           Health
+     5                     /ready /live /startup                  Must be implemented in your application
+           paths
+
+
+
+     Next Level: Beyond This Baseline
+         • Helm for reusable templating across environments
+         • Kustomize for dev / staging / prod overlays
+         • cert-manager for automatic TLS certificate renewal
+         • External Secrets Operator for secret management
+         • topologySpreadConstraints for more even pod distribution
+         • Prometheus metrics and alerting
+         • Stricter NetworkPolicies (ingress-nginx namespace only)
+         • initContainers for database migrations or schema checks
+
+
+
+
+                                                         Page 5
+PRODUCTION DEPLOYMENT GUIDE                                                                    Chapter 6 — Final Blueprint
+
+
+
+
+     CHAPTER 02
+
+
+
+     Terraform AWS Infrastructure
+     Terraform provisions the platform — the cloud resources your application runs on. It should never contain
+     application code, only infrastructure declarations.
+
+
+
+     What This Setup Provisions
+        • VPC with public and private subnets across multiple availability zones
+        • NAT gateway for private subnet internet egress
+        • Security groups: ALB (public 80/443) and App (ALB → 8080 only)
+        • Application Load Balancer with health-checked target group
+        • EC2 instance in private subnet with bootstrap user-data
+        • ALB listener forwarding HTTP → target group
+
+
+
+     Terraform Module Structure
+     A well-organised Terraform project separates concerns into reusable modules:
+
+        modules/
+        network/ # VPC, subnets, NAT, route tables
+        kubernetes/ # EKS/GKE/AKS cluster, node groups, IAM
+        postgres/ # RDS instance, parameter groups, backups
+        redis/ # ElastiCache / Memorystore
+        storage/ # S3 bucket for media & static assets
+        dns/ # Route53 zones, records
+        registry/ # ECR / GHCR setup
+
+        environments/
+        dev/ # Development workspace
+        staging/ # Staging workspace
+        prod/ # Production workspace
+
+
+
+
+     Load Balancer Health Check
+     The ALB health check is configured to match your application's readiness endpoint:
+
+        health_check {
+        enabled = true
+        interval = 30 # Check every 30 seconds
+        path = "/ready"
+        port = "traffic-port"
+        healthy_threshold = 3 # 3 successes → healthy
+        unhealthy_threshold = 3 # 3 failures → unhealthy
+
+
+
+
+                                                           Page 6
+PRODUCTION DEPLOYMENT GUIDE                                                                        Chapter 6 — Final Blueprint
+
+
+
+
+        timeout = 5
+        matcher = "200-399"
+        }
+
+
+
+
+     What Terraform Should NOT Manage
+       ■ Terraform provisions the platform. Application deployment (image tags, replica counts, config values)
+       belongs in Kubernetes manifests or Helm charts — not in Terraform.
+
+        • Do not manage Kubernetes Deployments from Terraform (use kubectl / Helm / ArgoCD)
+        • Do not hardcode secrets in .tf files — use AWS Secrets Manager or Vault
+        • Do not run migrations from Terraform — run them as a Kubernetes Job
+
+
+     What Terraform Should Provision
+       Infrastructure Layer                                  Security & Edge Layer
+            • VPC, subnets, NAT                                  • Security groups, IAM roles
+
+            • EKS/GKE/AKS cluster                                • KMS keys, secret store
+
+            • RDS Postgres                                       • DNS records, TLS certs
+
+            • ElastiCache Redis                                  • Load balancer integration
+
+            • S3 media bucket                                    • Container registry
+
+
+
+
+                                                        Page 7
+PRODUCTION DEPLOYMENT GUIDE                                                                       Chapter 6 — Final Blueprint
+
+
+
+
+     CHAPTER 03
+
+
+
+     Production Django with Docker
+     A production Django setup is not just adding Gunicorn. It requires careful layering of the WSGI server,
+     reverse proxy, static/media handling, security settings, and health endpoints.
+
+
+
+     What This Production Setup Includes
+        • Dockerfile — multi-stage build, non-root user, minimal runtime image
+        • entrypoint.sh — waits for DB, runs collectstatic and migrate, then starts server
+        • gunicorn.conf.py — CPU-aware worker count, shared-memory tmp dir
+        • nginx/default.conf — static/media served directly; Django proxied via upstream
+        • docker-compose.yml — db + web + nginx with shared volumes and health checks
+        • .dockerignore — excludes venv, .env, sqlite, media, test artifacts from build context
+
+
+
+     Dockerfile: Why Multi-Stage?
+     The multi-stage build keeps the final production image clean. The builder stage installs all dependencies;
+     the runtime stage copies only what is needed to run.
+
+        FROM python:3.12-slim AS base
+        # Install build tools, libpq-dev, curl...
+
+        FROM base AS builder
+        COPY requirements.txt .
+        RUN pip install -r requirements.txt
+
+        FROM python:3.12-slim AS runtime # Fresh clean image
+        COPY --from=builder /usr/local /usr/local # Only packages
+        COPY . .
+        USER appuser # Never run as root
+        CMD ["gunicorn", "-c", "gunicorn.conf.py", "config.wsgi:application"]
+
+
+
+
+     Gunicorn Configuration
+     Key settings in gunicorn.conf.py:
+
+        import multiprocessing
+        bind = "0.0.0.0:8000"
+        workers = multiprocessing.cpu_count() * 2 + 1 # Standard formula
+        threads = 2
+        timeout = 60
+        graceful_timeout = 30
+        accesslog = "-" # stdout
+        errorlog = "-" # stderr
+
+
+
+
+                                                        Page 8
+PRODUCTION DEPLOYMENT GUIDE                                                                           Chapter 6 — Final Blueprint
+
+
+
+
+          worker_tmp_dir = "/dev/shm" # Shared memory for performance
+
+
+
+
+     Django Settings: Environment-Driven
+     All sensitive values must come from environment variables — never hardcoded:
+
+          import os
+
+          DEBUG = False
+          SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+          ALLOWED_HOSTS = os.environ["DJANGO_ALLOWED_HOSTS"].split(",")
+
+          CELERY_BROKER_URL = os.environ["REDIS_URL"]
+          CELERY_RESULT_BACKEND = os.environ["REDIS_URL"]
+
+          STATIC_ROOT = "/app/staticfiles"
+          DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+
+
+
+     Required Production Security Settings
+          CSRF_COOKIE_SECURE = True
+          SESSION_COOKIE_SECURE = True
+          SECURE_BROWSER_XSS_FILTER = True
+          SECURE_CONTENT_TYPE_NOSNIFF = True
+          X_FRAME_OPTIONS = "DENY"
+          SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+          SECURE_SSL_REDIRECT = True
+          SECURE_HSTS_SECONDS = 31536000 # Only after HTTPS is confirmed working
+
+
+
+
+     Docker Compose: Service Separation
+     Three separate services — each with a single responsibility:
+
+     Service      Image                          Key Config
+
+     db           postgres:16-alpine             Persistent volume, health check with pg_isready
+
+     web          Built from Dockerfile          Depends on db healthy; expose port 8000 internally only
+
+     nginx        nginx:1.27-alpine              Published on port 80; serves static/media from shared volumes
+
+
+       ■ In this setup, only Nginx is publicly exposed on port 80. Django/Gunicorn is internal only. Static and
+       media files are served directly by Nginx from shared named volumes.
+
+
+
+     What Makes This Production (Not Dev)
+       Production Practices
+           • Gunicorn WSGI server                                  • Health checks on all services
+
+           • Nginx reverse proxy                                   • Static/media served by Nginx
+
+
+
+                                                          Page 9
+PRODUCTION DEPLOYMENT GUIDE                                                                     Chapter 6 — Final Blueprint
+
+
+
+
+          • Non-root container user                             • DB waits with pg_isready
+
+          • Named volumes for persistence                       • Debug=False enforced
+
+
+
+     Migrations: The Mature Pattern
+     Running migrations inside every app container startup works for small teams but creates race conditions at
+     scale. The mature approach:
+
+        • One dedicated Kubernetes Job runs manage.py migrate before deployment
+        • App containers start Gunicorn — no migration logic
+        • Optional separate Job runs collectstatic
+        • This pattern avoids multiple pods racing to migrate simultaneously
+
+
+
+
+                                                      Page 10
+PRODUCTION DEPLOYMENT GUIDE                                                                  Chapter 6 — Final Blueprint
+
+
+
+
+     CHAPTER 04
+
+
+
+     CI/CD Pipelines
+     A production CI/CD pipeline enforces quality gates before any image reaches a registry. Tests, checks,
+     and security scans must pass before Docker build runs — and build must pass before deployment is
+     triggered.
+
+
+
+     Pipeline Stages — Both Jenkins and GitHub Actions
+     Stage                    What It Does
+
+     Checkout                 Pull source code from repository
+
+     Set up Python            Create virtualenv, install dependencies
+
+     Django checks            python manage.py check — catches config errors early
+
+     Tests                    Full test suite — fails fast before Docker build
+
+     Build image              docker build with versioned + latest tags
+
+     Push image               Authenticate to GHCR and push both tags
+
+     Cleanup                  Prune dangling images, remove local venv
+
+
+
+     Jenkins Pipeline Key Concepts
+        • agent any — runs on any available Jenkins worker
+        • timestamps() — all log lines prefixed with timestamp
+        • disableConcurrentBuilds() — prevents overlapping runs for same job
+        • buildDiscarder(logRotator: 20) — keeps only last 20 builds
+        • IMAGE_TAG = BUILD_NUMBER — each build gets a unique, traceable tag
+        • withCredentials — registry token loaded from Jenkins secure store, never in code
+
+
+
+     GitHub Actions: Basic Pipeline
+        name: Django CI/CD
+        on:
+        push: { branches: ["main"] }
+        pull_request: { branches: ["main"] }
+
+        jobs:
+        test-and-build:
+        runs-on: ubuntu-latest
+        permissions:
+
+
+
+
+                                                       Page 11
+PRODUCTION DEPLOYMENT GUIDE                                                                               Chapter 6 — Final Blueprint
+
+
+
+
+        contents: read
+        packages: write # Needed to push to GHCR
+        steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-python@v5
+        - run: pip install -r requirements.txt
+        - run: python manage.py check
+        - run: python manage.py test
+        - uses: docker/login-action@v3
+        - uses: docker/metadata-action@v5 # Auto-generates tags
+        - uses: docker/build-push-action@v6 # Builds + pushes with GHA cache
+
+
+
+
+     GitHub Actions: Stronger Pipeline (Recommended)
+     Split into two jobs: quality first, then docker build (only if quality passes):
+
+        • quality job: lint (ruff), Django checks, tests, pip-audit, bandit source scan
+        • docker job: needs: quality — only runs if all quality gates pass
+        • Conditional push: image only published on push events, not on PRs
+        • Cache: type=gha with mode=max — significantly speeds up repeated builds
+
+
+
+     Jenkins vs. GitHub Actions
+       Use GitHub Actions when:                                  Use Jenkins when:
+          • Code is already on GitHub                                 • Company already runs Jenkins
+
+          • Want simpler setup                                        • Complex custom pipeline requirements
+
+          • No complex internal pipelines                             • Heavy internal / private infra integration
+
+          • Modern team, greenfield project                           • Existing Jenkins investment
+
+
+       ■ For most modern GitHub-hosted projects, GitHub Actions is the cleaner default. It requires zero server
+       infrastructure, has first-class Docker support, and integrates natively with GHCR using GITHUB_TOKEN.
+
+
+
+     Deployment Stage: After CI Passes
+     Typical deployment targets and their update commands:
+
+        # Docker server via SSH
+        docker pull ghcr.io/your-org/app:latest
+        docker compose up -d
+
+        # Kubernetes (direct)
+        kubectl set image deployment/backend backend=ghcr.io/your-org/backend:latest
+
+        # Kubernetes via Helm
+        helm upgrade --install app ./helm-chart --set image.tag=
+
+
+
+
+                                                            Page 12
+PRODUCTION DEPLOYMENT GUIDE                                                                    Chapter 6 — Final Blueprint
+
+
+
+
+     CHAPTER 05
+
+
+
+     Integrated Production Architecture
+     Docker, Kubernetes, GitHub Actions, and Terraform are not separate tools — they are layers of a single
+     delivery and runtime system. This chapter shows how they connect.
+
+
+
+     The Recommended Full Stack
+     Layer                 Components
+
+     App Layer             React (frontend), Django + Gunicorn (API), Celery Worker, Celery Beat
+
+     Data Layer            PostgreSQL (managed), Redis (broker + cache), S3 object storage (media)
+
+     Delivery Layer        Docker images, GitHub Actions (CI/CD), Container Registry (GHCR/ECR)
+
+     Runtime Layer         Kubernetes, Ingress controller, cert-manager for TLS
+
+     Infra Layer           Terraform — provisions VPC, cluster, DB, Redis, storage, DNS
+
+     Ops Layer             Sentry (errors), Prometheus + Grafana (metrics), Centralised logs
+
+
+
+     Production Architecture Diagram
+                                                 Users / Internet
+
+                                                         ↓
+                                               CDN / Load Balancer
+
+                                                         ↓
+                                               Kubernetes Ingress
+
+                                                         ↓
+                                           React Frontend | Django API
+
+                                                         ↓
+                                         PostgreSQL | Redis | S3 Storage
+
+                                                         ↓
+                                            Celery Worker | Celery Beat
+
+
+
+     Separate Docker Images
+     Build separate, purpose-specific images — each with a single responsibility:
+
+     Image                 Base                      Role
+
+
+
+
+                                                       Page 13
+PRODUCTION DEPLOYMENT GUIDE                                                                    Chapter 6 — Final Blueprint
+
+
+
+
+     Frontend image           Node build → Nginx      Builds React, serves static via Nginx
+
+     Backend image            Django + Gunicorn       Handles API requests
+
+     Worker image             Same as backend         Different CMD: celery -A config worker
+
+     Beat image               Same as backend         Different CMD: celery -A config beat
+
+
+       ■ Using the same backend image for worker and beat keeps dependencies in sync and reduces
+       maintenance overhead. Only the entry command differs.
+
+
+
+     Kubernetes Workload Design
+        • Separate Deployments for: frontend, backend, celery-worker, celery-beat
+        • Separate Services for frontend and backend (Celery needs no Service)
+        • Ingress: / → frontend, /api/ → backend
+        • ConfigMap for non-secret config; Secret / ExternalSecret for credentials
+        • HPA on backend and worker; beat keeps replicas: 1 (no leader election by default)
+        • PDB on backend; migration as a dedicated Job
+
+
+
+     Kubernetes Object Checklist
+         • namespace                                             • service/frontend
+
+         • configmap                                             • service/backend
+
+         • secret                                                • ingress
+
+         • deployment/frontend                                   • hpa/backend
+
+         • deployment/backend                                    • pdb/backend
+
+         • deployment/celery-worker                              • job/migrate
+
+         • deployment/celery-beat                                • networkpolicy
+
+
+
+     GitHub Actions: Three Workflows
+     Workflow           Trigger                    Steps
+
+     frontend.yml       paths: frontend/**         npm ci → test → build → docker push
+
+     backend.yml        paths: backend/**          pip install → check → test → docker push
+
+                        on:       workflow_run
+     deploy.yml                                    migrate job → kubectl set image → restart workers
+                        (both above)
+
+
+
+     Example Deploy Workflow
+        name: Deploy
+
+
+
+
+                                                       Page 14
+PRODUCTION DEPLOYMENT GUIDE                                                            Chapter 6 — Final Blueprint
+
+
+
+
+        on:
+        workflow_run:
+        workflows: ["Backend CI", "Frontend CI"]
+        types: [completed]
+
+        jobs:
+        deploy:
+        if: github.event.workflow_run.conclusion == 'success'
+        steps:
+        - name: Run migrations
+        run: |
+        kubectl apply -f infra/kubernetes/job-migrate.yaml
+        kubectl wait --for=condition=complete job/backend-migrate --timeout=300s
+        - name: Update backend
+        run: kubectl set image deployment/backend backend=ghcr.io/org/backend:latest
+        - name: Restart workers
+        run: |
+        kubectl rollout restart deployment/celery-worker
+        kubectl rollout restart deployment/celery-beat
+
+
+
+
+     Recommended Repository Structure
+        project/
+        ■■■ frontend/
+        ■ ■■■ Dockerfile
+        ■ ■■■ nginx.conf
+        ■ ■■■ src/
+        ■■■ backend/
+        ■ ■■■ Dockerfile
+        ■ ■■■ entrypoint.sh
+        ■ ■■■ gunicorn.conf.py
+        ■ ■■■ requirements.txt
+        ■ ■■■ config/
+        ■■■ infra/
+        ■ ■■■ terraform/
+        ■ ■ ■■■ main.tf variables.tf outputs.tf
+        ■ ■ ■■■ environments/ dev/ staging/ prod/
+        ■ ■■■ kubernetes/
+        ■ ■■■ namespace.yaml backend-deployment.yaml
+        ■ ■■■ frontend-deployment.yaml celery-worker-deployment.yaml
+        ■ ■■■ services.yaml ingress.yaml hpa.yaml
+        ■ ■■■ configmap.yaml secrets.yaml job-migrate.yaml
+        ■■■ .github/
+        ■■■ workflows/
+        ■■■ backend.yml frontend.yml deploy.yml
+
+
+
+
+                                                   Page 15
+PRODUCTION DEPLOYMENT GUIDE                                                                        Chapter 6 — Final Blueprint
+
+
+
+
+     CHAPTER 06
+
+
+
+     Final Blueprint & Recommendations
+     This chapter distils everything into clear, opinionated recommendations — what to do, what not to do, and
+     the exact architecture to use for a serious project.
+
+
+
+     What I Would Add (Often Missed)
+     #    Component               Why It Matters
+
+     1    Redis                   Essential Celery broker; also great for Django caching
+
+     2    Celery Beat             Required if you need any scheduled / periodic tasks
+
+     3    Object Storage          User uploads must not live inside ephemeral pods
+
+          Ingress / Reverse
+     4                            A proper HTTP entrypoint is non-negotiable
+          Proxy
+
+     5    Error Tracking          Sentry or equivalent — know about errors before users do
+
+     6    Metrics & Alerts        Prometheus + Grafana; alert on SLO breaches
+
+          Secrets
+     7                            No secrets hardcoded in YAML, Git, or manifests
+          Management
+
+          Separate
+     8                            Avoid race conditions at scale; decouple from startup
+          Migration Job
+
+
+
+     Operational Rules
+     Concern                       Rule
+
+     Migrations                    Run as a Job — never hidden inside every pod start
+
+     Celery Beat                   Keep replicas: 1 unless you design explicit leader election
+
+     Workers                       Scale workers separately from web/API pods
+
+     Backend HPA                   Apply HPA to API pods; workers can have their own HPA
+
+     Frontend HPA                  Lower priority — usually serves static files via Nginx or CDN
+
+     Secrets                       Use a secrets manager integration, never plain files in Git
+
+
+
+     What NOT to Do First
+
+
+
+                                                            Page 16
+PRODUCTION DEPLOYMENT GUIDE                                                                        Chapter 6 — Final Blueprint
+
+
+
+
+       ■ Do not start by putting everything inside Kubernetes. Start with managed services for databases, object
+       storage, and Redis. Add complexity only when you have proven need for it.
+
+        • Not Postgres first in Kubernetes — use RDS or Cloud SQL; stateful Postgres in K8s requires
+        expertise
+        • Not media storage inside pods — pods are ephemeral; files will be lost on restart
+        • Not secrets directly in YAML forever — use External Secrets or a secrets manager from day one
+
+
+
+     The Cleanest Separation of Concerns
+     Tool                    Responsibility
+
+     Docker                  Build immutable, versioned application images
+
+     Terraform               Provision and manage all cloud infrastructure
+
+     GitHub Actions          Test, build, publish images, and trigger deployments
+
+     Kubernetes              Run frontend, backend, worker, and beat workloads
+
+     Managed Services        Postgres, Redis, object storage — let the cloud provider operate these
+
+
+
+     Final Production Blueprint
+     This is the architecture to deploy for any serious production project:
+
+        React → Nginx container → Kubernetes Deployment
+        Django → Gunicorn → Kubernetes Deployment
+        Celery → Worker process → Kubernetes Deployment
+        Celery Beat → Scheduler process → Kubernetes Deployment (replicas: 1)
+        Redis → Managed / dedicated → External service
+        Postgres → Managed (RDS/Cloud SQL) → External service
+        Media/Static → S3 + CDN → Object storage
+        Terraform → Provisions all infra → IaC
+        GitHub Actions → Builds & deploys → CI/CD
+        Ingress → Public entrypoint → NGINX Ingress Controller
+        Observability → Sentry + Prometheus + centralised logs
+
+
+
+
+     Best Next Step
+     With this blueprint as your reference, the recommended next step is to scaffold a production starter
+     repository with real files for all components:
+
+        • Dockerfiles for frontend, backend, worker
+        • docker-compose.yml for local development
+        • Kubernetes manifests for all workloads
+        • GitHub Actions workflows (frontend, backend, deploy)
+        • Terraform module skeletons for your cloud provider
+
+
+
+
+                                                         Page 17
+PRODUCTION DEPLOYMENT GUIDE                                                                    Chapter 6 — Final Blueprint
+
+
+
+
+        This guide covers the full production stack — from Kubernetes hardening to CI/CD pipelines. Every
+         recommendation here is opinionated by design: these are the choices that work in real production.
+
+
+
+
+                                                      Page 18
+

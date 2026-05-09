@@ -1,0 +1,503 @@
+[
+    {
+        "id":  1,
+        "question":  "What is \u0027GraphQL\u0027? How does it solve \u0027Over-fetching\u0027 and \u0027Under-fetching\u0027?",
+        "answer":  "GraphQL is a query language for APIs that allows clients to request exactly the data they need and nothing more. \n1. **Over-fetching**: Standard REST APIs often return huge JSON objects where the client only needs 2 fields. GraphQL allows the client to specify those 2 fields, reducing payload size. \n2. **Under-fetching**: REST might require 3 separate calls (e.g., User -\u003e Posts -\u003e Comments) to get all related data. GraphQL allows the client to fetch all these nested relationships in a single, efficient request, significantly reducing the number of network round-trips and improving mobile app performance.",
+        "analogy":  "GraphQL is like a **Custom Pizza Order**. In a standard REST API, you might order a \u0027Pepperoni\u0027 but get olives and onions you didn\u0027t ask for (Over-fetching). In GraphQL, you specify exactly which toppings you want on your specific slice, ensuring you get exactly what you need and nothing more.",
+        "code":  "```graphql\n# Client requests only the specific fields it needs\nquery GetUserProfile($userId: ID!) {\n  user(id: $userId) {\n    name\n    email\n    posts {\n      title\n    }\n  }\n}\n```",
+        "counterQuestion":  "What is the \u0027N+1 Problem\u0027 in GraphQL and how do you solve it?",
+        "counterQuestionAnswer":  "The N+1 problem occurs when the server executes a separate database query for every item in a list of nested objects. You solve this using **\u0027DataLoaders\u0027**, which batch and cache database requests, ensuring that multiple requests for the same or related data are combined into a single, efficient query.",
+        "category":  "api_standards",
+        "topic":  "graphql",
+        "difficulty":  "medium",
+        "tags":  [
+                     "graphql",
+                     "performance",
+                     "api_design",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  2,
+        "question":  "Explain the different \u0027API Versioning\u0027 strategies (URL path, Custom Headers, Accept Headers).",
+        "answer":  "1. **URL Path**: (e.g., /api/v1/users/) Most common and easiest for developers to see. \n2. **Custom Headers**: (e.g., X-API-Version: 1) Keeps the URL clean but is less visible in browser bars. \n3. **Accept Headers (Content Negotiation)**: (e.g., application/vnd.company.v1+json) Theoretically the most \u0027RESTful\u0027 approach as it treats versions as different representations of the same resource. Choosing a strategy depends on your user base; URL path is generally preferred for public APIs due to its simplicity and discoverability.",
+        "analogy":  "API Versioning is like **Electrical Outlets**. Moving from Type A to Type B is a \u0027breaking change\u0027 for your appliances. You can provide adapters (backward compatibility), maintain dual-outlets (v1 and v2) during a transition period, or eventually require everyone to upgrade to the new standard.",
+        "code":  "```http\n# Option 1: URL Versioning (Most Common)\nGET /api/v1/users/123\n\n# Option 2: Header Versioning (RESTful/Clean URLs)\nGET /api/users/123\nAccept: application/vnd.myapi.v2+json\n```",
+        "counterQuestion":  "When should you introduce a \u0027Breaking Change\u0027 in an API version?",
+        "counterQuestionAnswer":  "You should only introduce breaking changes (like removing fields or changing data types) in a **new major version** (e.g., moving from v1 to v2). You should also provide a clear deprecation schedule and support the old version for a reasonable period to avoid breaking your users\u0027 applications.",
+        "category":  "api_standards",
+        "topic":  "versioning",
+        "difficulty":  "medium",
+        "tags":  [
+                     "api_design",
+                     "versioning",
+                     "best_practices",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  3,
+        "question":  "What is the difference between \u0027Rate Limiting\u0027 and \u0027Throttling\u0027?",
+        "answer":  "While often used interchangeably, they have subtle differences: \n1. **Rate Limiting**: Typically refers to a hard limit over a specific window (e.g., 1000 requests per hour). Once reached, further requests are rejected with a \u0027429 Too Many Requests\u0027. \n2. **Throttling**: Often refers to dynamically slowing down the processing speed or \u0027leaking\u0027 requests at a steady rate to prevent system overload (e.g., limiting to 10 requests per second). Both are essential for protecting your infrastructure from abuse, scraping, and accidental DDoS attacks by ensuring fair usage of resources across all your clients.",
+        "analogy":  "**Rate Limiting** is the bouncer at a club who says \u0027Only 100 people per hour\u0027. **Throttling** is the revolving door at the entrance that only lets 1 person through every 5 seconds to ensure the lobby doesn\u0027t get overcrowded, even if the total capacity hasn\u0027t been reached yet.",
+        "code":  "```python\n# Rate Limiting configuration (Django Rest Framework style)\nREST_FRAMEWORK = {\n    \u0027DEFAULT_THROTTLE_RATES\u0027: {\n        \u0027user\u0027: \u00271000/hour\u0027,   # Hard limit\n        \u0027anon\u0027: \u0027100/day\u0027,     # Stricter limit for unauthenticated\n    }\n}\n```",
+        "counterQuestion":  "What is a \u0027Burst\u0027 in the context of rate limiting?",
+        "counterQuestionAnswer":  "A Burst allows a client to temporarily exceed their steady-state rate limit for a short period (e.g., allowed 5 req/sec but can burst up to 20 for one second). This accommodates natural spikes in user activity without negatively impacting their experience, while still maintaining a safe average load on the server.",
+        "category":  "api_standards",
+        "topic":  "security",
+        "difficulty":  "medium",
+        "tags":  [
+                     "api_design",
+                     "security",
+                     "rate_limiting",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  4,
+        "question":  "How do you implement \u0027Distributed Rate Limiting\u0027 using Redis?",
+        "answer":  "In a distributed system with multiple web servers, local rate limiting isn\u0027t enough. You use **Redis** as a shared counter. A common algorithm is the **\u0027Sliding Window Log\u0027** or **\u0027Fixed Window Counter\u0027**. For each request, you increment a key in Redis (e.g., \u0027rate:user_123:minute_10\u0027) and check if it exceeds the limit. Using Redis ensures that all your web servers share the same \u0027view\u0027 of a user\u0027s usage, preventing them from bypassing limits by hitting different server nodes. Redis\u0027s \u0027INCR\u0027 and \u0027EXPIRE\u0027 commands are atomic and extremely fast, making it the perfect tool for this task.",
+        "analogy":  "Distributed Rate Limiting is like a **Shared Toll Booth**. No matter which highway lane (server node) you enter, they all check the same central database (Redis) to see if you\u0027ve already used up your daily pass. You can\u0027t cheat by simply switching lanes.",
+        "code":  "```python\n# Simplified Redis Sliding Window\ndef is_rate_limited(user_id, limit=100):\n    now = time.time()\n    key = f\"rate_limit:{user_id}\"\n    pipe = redis_client.pipeline()\n    pipe.zadd(key, {now: now})\n    pipe.zremrangebyscore(key, 0, now - 60) # Remove older than 1 min\n    pipe.zcard(key) # Count remaining\n    _, _, current_count = pipe.execute()\n    return current_count \u003e limit\n```",
+        "counterQuestion":  "What is the \u0027Token Bucket\u0027 algorithm in Redis?",
+        "counterQuestionAnswer":  "The Token Bucket algorithm allows for \u0027bursts\u0027 of traffic. You store the number of available \u0027tokens\u0027 in a Redis key. Each request consumes a token. Tokens are refilled at a constant rate (e.g., via a background task or by calculating the time since the last request). If the bucket is empty, the request is rate-limited. This is smoother than a fixed window and more resilient to natural traffic spikes.",
+        "category":  "api_standards",
+        "topic":  "security",
+        "difficulty":  "hard",
+        "tags":  [
+                     "redis",
+                     "rate_limiting",
+                     "distributed_systems",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  5,
+        "question":  "Explain \u0027Queries\u0027, \u0027Mutations\u0027, and \u0027Subscriptions\u0027 in GraphQL.",
+        "answer":  "These are the three main operation types in GraphQL: \n1. **Queries**: Used to fetch data (equivalent to GET). \n2. **Mutations**: Used to modify data (equivalent to POST/PUT/DELETE). \n3. **Subscriptions**: Used for real-time updates. The server pushes data to the client whenever a specific event occurs (usually over WebSockets). This clear separation allows developers to define a strict contract for how data is accessed, changed, and streamed, providing a type-safe and highly structured way to interact with your backend services.",
+        "analogy":  "Queries are like **Reading a Book** at the library. Mutations are like **Filling out an Application Form** to join the library. Subscriptions are like **Radio Broadcasts** â€” you tune in once, and the information flows to you as soon as the station transmits it.",
+        "code":  "```graphql\n# Mutation Example: Creating a new post\nmutation CreateNewPost($input: PostInput!) {\n  createPost(input: $input) {\n    id\n    title\n    createdAt\n  }\n}\n```",
+        "counterQuestion":  "Can a single GraphQL request contain both a Query and a Mutation?",
+        "counterQuestionAnswer":  "No. A single GraphQL operation must be of one type (Query, Mutation, or Subscription). However, you can have multiple fields within a single Query or Mutation, allowing you to fetch several different types of data or perform several different changes in one go.",
+        "category":  "api_standards",
+        "topic":  "graphql",
+        "difficulty":  "easy",
+        "tags":  [
+                     "graphql",
+                     "basics",
+                     "api_design"
+                 ]
+    },
+    {
+        "id":  6,
+        "question":  "How do you solve the \u0027N+1 Problem\u0027 in GraphQL using \u0027DataLoaders\u0027?",
+        "answer":  "The N+1 problem occurs when a query for a list of objects (e.g., 100 posts) triggers an additional database query for a nested field (e.g., the author) for *each* item. **DataLoaders** solve this by \u0027coalescing\u0027 these requests. Instead of fetching each author immediately, the DataLoader waits for the event loop to finish its current tick, collects all the requested author IDs, and executes a single **Batch Query** (e.g., \u0027SELECT * FROM users WHERE id IN (...)\u0027). It also caches the results, so if two posts have the same author, that author is only fetched once, drastically reducing database load.",
+        "analogy":  "DataLoaders are like a **School Bus**. Instead of 30 parents driving 30 separate cars to the same school (30 individual database queries), the bus waits at the stop, collects all 30 kids, and takes them all to school in a single trip (1 batch query).",
+        "code":  "```javascript\n// DataLoader batch function (Node.js/JavaScript)\nconst userLoader = new DataLoader(async (userIds) =\u003e {\n  const users = await db.users.findMany({\n    where: { id: { in: userIds } }\n  });\n  // Return users in the same order as IDs\n  return userIds.map(id =\u003e users.find(u =\u003e u.id === id));\n});\n\n// Resolver uses the loader\nconst resolvers = {\n  Post: {\n    author: (post) =\u003e userLoader.load(post.authorId),\n  },\n};\n```",
+        "counterQuestion":  "Is the DataLoader cache persistent across different requests?",
+        "counterQuestionAnswer":  "No. A DataLoader\u0027s cache is typically scoped to a **single request**. It ensures that data isn\u0027t fetched twice *within the same query*, but it doesn\u0027t share data between different users or subsequent requests, which ensures data consistency and prevents security issues like cross-user data leakage.",
+        "category":  "api_standards",
+        "topic":  "graphql",
+        "difficulty":  "hard",
+        "tags":  [
+                     "graphql",
+                     "performance",
+                     "dataloaders",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  7,
+        "question":  "What is \u0027gRPC\u0027? How does it differ from REST (Protobuf vs. JSON)?",
+        "answer":  "gRPC is a high-performance RPC (Remote Procedure Call) framework originally developed by Google. \n1. **Protobuf (gRPC)**: Uses Protocol Buffers, a binary serialization format that is much smaller and faster than text-based JSON. It is strictly typed and requires a \u0027.proto\u0027 file to define the service contract. \n2. **JSON (REST)**: Human-readable and easy to debug but carries significant overhead in terms of size and parsing speed. gRPC also uses **HTTP/2** by default, allowing for features like \u0027Multiplexing\u0027 and \u0027Server Streaming\u0027, making it the ideal choice for high-speed microservice-to-microservice communication.",
+        "analogy":  "REST/JSON is like a **Handwritten Letter** â€” easy for humans to read, but slow to write and bulky to send. gRPC/Protobuf is like **Morse Code** â€” it\u0027s a series of optimized pulses that require a \u0027decoder\u0027 (the .proto file) to understand, but it\u0027s incredibly fast and efficient over long distances.",
+        "code":  "```protobuf\n// Protobuf definition (.proto)\nsync service UserService {\n  rpc GetUser (UserRequest) returns (UserResponse) {}\n}\n\nmessage UserRequest {\n  int32 user_id = 1;\n}\n\nmessage UserResponse {\n  string name = 1;\n  string email = 2;\n}\n```",
+        "counterQuestion":  "Why is gRPC rarely used for direct communication between a Web Browser and a Backend?",
+        "counterQuestionAnswer":  "Browsers have limited support for HTTP/2 features required by gRPC (like trailing headers) and cannot natively handle binary Protobuf data without a library. While \u0027gRPC-Web\u0027 exists as a workaround, the standard REST/JSON or GraphQL approach is still much simpler and more widely supported for the \u0027last mile\u0027 between browser and server.",
+        "category":  "api_standards",
+        "topic":  "grpc",
+        "difficulty":  "hard",
+        "tags":  [
+                     "grpc",
+                     "protobuf",
+                     "performance",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  8,
+        "question":  "Discuss \u0027HATEOAS\u0027 in REST APIs. Why is it rarely implemented in practice?",
+        "answer":  "HATEOAS (Hypermedia As The Engine Of Application State) is a constraint of REST where the server response includes **links** to other related actions and resources (e.g., a \u0027User\u0027 response includes links to \u0027delete\u0027, \u0027update\u0027, and \u0027posts\u0027). It is rarely implemented because it adds significant complexity to the server implementation and increases payload size. More importantly, most modern frontend developers prefer a fixed API documentation (like Swagger/OpenAPI) rather than dynamically discovering actions through hypermedia links, making HATEOAS feel like unnecessary \u0027over-engineering\u0027 for most real-world projects.",
+        "analogy":  "HATEOAS is like a **\u0027Choose Your Own Adventure\u0027 Book**. The current page you are reading (the response) tells you exactly which pages you can turn to next (the links) to continue the story, so you don\u0027t need a separate map or guide (documentation) to know what\u0027s possible.",
+        "code":  "```json\n// HATEOAS Response Example\n{\n  \"id\": \"order_123\",\n  \"status\": \"shipped\",\n  \"_links\": {\n    \"self\": { \"href\": \"/orders/123\" },\n    \"cancel\": { \"href\": \"/orders/123/cancel\" },\n    \"track\": { \"href\": \"/orders/123/track\" }\n  }\n}\n```",
+        "counterQuestion":  "What is the main benefit of HATEOAS if it were implemented?",
+        "counterQuestionAnswer":  "The main benefit is \u0027Decoupling\u0027. If the server changes a URL path (e.g., from \u0027/users/1\u0027 to \u0027/profile/1\u0027), a HATEOAS-compliant client wouldn\u0027t break because it simply follows the links provided by the server rather than hardcoding the URLs in its own code. This makes the API more self-describing and evolution-friendly.",
+        "category":  "api_standards",
+        "topic":  "rest",
+        "difficulty":  "hard",
+        "tags":  [
+                     "rest",
+                     "api_design",
+                     "architecture"
+                 ]
+    },
+    {
+        "id":  9,
+        "question":  "What is \u0027Schema-First\u0027 vs \u0027Code-First\u0027 development in GraphQL?",
+        "answer":  "1. **Schema-First**: You write the GraphQL Schema Definition Language (SDL) first, which acts as a contract between frontend and backend. Both teams can work in parallel based on this contract. \n2. **Code-First**: You define the schema using your programming language\u0027s classes and decorators, and the SDL is automatically generated. Schema-first is better for large, cross-functional teams and ensuring design-led APIs, while code-first is often faster for developers to implement and keeps the schema perfectly in sync with the underlying code.",
+        "analogy":  "Schema-First is like having **Architectural Blueprints** drawn up and signed by everyone before a single brick is laid. Code-First is like **Building the House** first and then hiring someone to draw the blueprints based on what you actually built.",
+        "code":  "```graphql\n# Schema-First (SDL)\ntype User {\n  id: ID!\n  username: String!\n  email: String\n}\n\n# Code-First (Python/Strawberry Example)\n@strawberry.type\nclass User:\n    id: strawberry.ID\n    username: str\n    email: Optional[str]\n```",
+        "counterQuestion":  "What is \u0027Introspection\u0027 in GraphQL?",
+        "counterQuestionAnswer":  "Introspection is a feature that allows clients to query the GraphQL server for information about its own schema. This is what enables powerful tools like GraphiQL or Apollo Studio to provide auto-completion and documentation based on the live API structure.",
+        "category":  "api_standards",
+        "topic":  "graphql",
+        "difficulty":  "medium",
+        "tags":  [
+                     "graphql",
+                     "api_design",
+                     "best_practices"
+                 ]
+    },
+    {
+        "id":  10,
+        "question":  "Explain \u0027gRPC\u0027 and \u0027Protocol Buffers\u0027. Why is it faster than JSON?",
+        "answer":  "gRPC uses Protocol Buffers (Protobuf) for serialization. It is faster than JSON for three reasons: \n1. **Binary Format**: Protobuf is a compact binary format, whereas JSON is text-based and verbose. \n2. **No Field Names**: Protobuf only stores field numbers, while JSON repeats field names (\u0027id\u0027, \u0027name\u0027) in every message. \n3. **Static Types**: Protobuf handles serialization and deserialization using pre-compiled code, which is significantly more CPU-efficient than the runtime reflection and string parsing required for JSON. This makes gRPC the standard for high-performance internal microservices.",
+        "analogy":  "JSON is like **Packing for a Trip** with large, bulky suitcases where you can see every item inside. gRPC is like **Vacuum-sealing your Clothes** â€” it takes a tiny bit of effort to compress them, but you can fit 5x more into the same car, and the car moves much faster because it\u0027s lighter.",
+        "code":  "```protobuf\n// Protobuf stores tags (1, 2), not field names (\u0027name\u0027, \u0027price\u0027)\nmessage Product {\n  string name = 1;\n  double price = 2;\n  int32 stock = 3;\n}\n```",
+        "counterQuestion":  "What is a \u0027.proto\u0027 file?",
+        "counterQuestionAnswer":  "A \u0027.proto\u0027 file is where you define your service definition, including the static types for each message and the RPC methods available. It acts as the \u0027source of truth\u0027 from which client and server code in multiple languages can be automatically generated.",
+        "category":  "api_standards",
+        "topic":  "grpc",
+        "difficulty":  "medium",
+        "tags":  [
+                     "grpc",
+                     "protobuf",
+                     "performance",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  11,
+        "question":  "What is \u0027Unary\u0027 vs \u0027Streaming\u0027 gRPC?",
+        "answer":  "1. **Unary**: The client sends a single request and gets a single response (like a standard REST call). \n2. **Streaming**: gRPC supports three types of streaming: **Server Streaming** (one request, multiple responses), **Client Streaming** (multiple requests, one response), and **Bidirectional Streaming** (both sides send streams of data). Streaming is ideal for real-time applications like live score updates, stock tickers, or large file uploads where you want to process data in chunks rather than waiting for the entire payload to arrive.",
+        "analogy":  "Unary is like a **Standard Text Message** â€” you send a question and wait for a reply. Streaming is like a **Live Phone Call** or a **Walkie-Talkie** where both people can keep talking as long as the connection is open, and data flows continuously.",
+        "code":  "```protobuf\n// Server Streaming: One request, multiple responses\nrpc GetTrafficUpdates (Region) returns (stream TrafficData) {}\n\n// Bidirectional Streaming: Real-time chat\nrpc Chat (stream ChatMessage) returns (stream ChatMessage) {}\n```",
+        "counterQuestion":  "How does HTTP/2 enable gRPC streaming?",
+        "counterQuestionAnswer":  "HTTP/2 supports \u0027Multiplexing\u0027, which allows multiple data streams to be sent concurrently over a single TCP connection. This eliminates \u0027Head-of-Line Blocking\u0027 and allows gRPC to maintain long-lived, high-throughput streaming connections efficiently.",
+        "category":  "api_standards",
+        "topic":  "grpc",
+        "difficulty":  "hard",
+        "tags":  [
+                     "grpc",
+                     "streaming",
+                     "http2"
+                 ]
+    },
+    {
+        "id":  12,
+        "question":  "How do you handle \u0027Versioning\u0027 in a GraphQL or gRPC API?",
+        "answer":  "Unlike REST which uses URL versions (v1, v2), GraphQL and gRPC favor **\u0027Continuous Evolution\u0027**. \n1. **GraphQL**: You use the \u0027@deprecated\u0027 directive to mark fields as old and add new fields to the same schema. \n2. **gRPC**: You add new optional fields with unique field numbers. Old clients will ignore new fields, and new clients can handle the absence of old ones. This \u0027Never Break the Contract\u0027 philosophy reduces the need for complex multi-version deployments and allows you to slowly phase out old features without breaking existing clients.",
+        "analogy":  "Continuous Evolution is like **Updating an App on your Phone**. You add new features and buttons, but the old buttons still work for users who haven\u0027t updated yet. You only remove the old buttons once you\u0027re certain everyone has moved to the new version.",
+        "code":  "```graphql\n# GraphQL Deprecation\ntype User {\n  id: ID!\n  # Old field, marked for eventual removal\n  full_name: String @deprecated(reason: \"Use firstName and lastName instead\")\n  firstName: String\n  lastName: String\n}\n```",
+        "counterQuestion":  "When is a \u0027Breaking Change\u0027 absolutely necessary in gRPC?",
+        "counterQuestionAnswer":  "A breaking change is necessary if you change the type of an existing field (e.g., from string to int) or reuse an existing field number for a different purpose. In such rare cases, you would typically define a new service or message name to avoid crashing old clients.",
+        "category":  "api_standards",
+        "topic":  "versioning",
+        "difficulty":  "hard",
+        "tags":  [
+                     "api_design",
+                     "versioning",
+                     "best_practices"
+                 ]
+    },
+    {
+        "id":  13,
+        "question":  "Explain \u0027Offset-based\u0027 vs \u0027Cursor-based\u0027 Pagination. When would you choose one over the other?",
+        "answer":  "1. **Offset-based**: Uses \u0027LIMIT\u0027 and \u0027OFFSET\u0027 in SQL. It is simple to implement and allows skipping to a specific page. However, it becomes very slow as the offset grows, and items can be missed or duplicated if the list changes during navigation. \n2. **Cursor-based**: Uses a unique identifier (like a timestamp or ID) of the last item seen to fetch the next set. It is much faster for large datasets and more stable for real-time lists (no skipping or duplicates). **Choose Cursor-based** for high-scale, frequently updated lists (like social media feeds). **Choose Offset-based** for small lists or admin panels where users need to jump to specific pages.",
+        "analogy":  "Offset-based is like saying \u0027Go to the 1,000th page of the dictionary\u0027 (you have to count through all 999 pages first). Cursor-based is like saying \u0027Find the word after ZEBRA\u0027 (you can jump straight to the exact location using the index).",
+        "code":  "```sql\n-- Offset-based (Slow for deep pages)\nSELECT * FROM posts ORDER BY id LIMIT 20 OFFSET 10000;\n\n-- Cursor-based (Fast and stable)\nSELECT * FROM posts WHERE id \u003e 10000 ORDER BY id LIMIT 20;\n```",
+        "counterQuestion":  "Why is \u0027OFFSET\u0027 slow in SQL?",
+        "counterQuestionAnswer":  "In SQL, the database must still \u0027scan\u0027 and count through all the rows being skipped before it can return the requested items. For example, \u0027OFFSET 1000000\u0027 requires the database to read a million rows into memory and then discard them, which is extremely inefficient and slow on large tables.",
+        "category":  "api_standards",
+        "topic":  "design_patterns",
+        "difficulty":  "hard",
+        "tags":  [
+                     "pagination",
+                     "performance",
+                     "api_design",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  14,
+        "question":  "Discuss \u0027Webhook Design\u0027: How do you ensure \u0027Idempotency\u0027 and \u0027Security\u0027 (signatures)?",
+        "answer":  "1. **Security**: You should sign the webhook payload using a secret key (HMAC). The client verifies the signature to ensure the request actually came from your server. \n2. **Idempotency**: Webhooks are often delivered \u0027at-least-once\u0027, meaning the client might receive the same event twice. You should include a unique \u0027Webhook-ID\u0027 or \u0027Event-ID\u0027 in the header so the client can track which events they have already processed and avoid duplicate actions (like double-charging a customer). This \u0027Defensive Design\u0027 is critical for building reliable integrations between third-party services.",
+        "analogy":  "Webhooks are like **Leaving a Message on a Door**. To be safe, the sender should sign the note (Signature) so you know it\u0027s not a prank, and if they leave the exact same note twice (Idempotency), you should be smart enough to only act on it once.",
+        "code":  "```python\n# Verifying Webhook Signature (HMAC-SHA256)\nimport hmac, hashlib\n\ndef verify_signature(payload, sig, secret):\n    expected = hmac.new(\n        secret.encode(), \n        payload.encode(), \n        hashlib.sha256\n    ).hexdigest()\n    return hmac.compare_digest(sig, expected)\n```",
+        "counterQuestion":  "What is a \u0027Webhook Secret\u0027?",
+        "counterQuestionAnswer":  "A Webhook Secret is a private key shared only between the sender and the receiver. It is used to generate the cryptographic signature of the payload. If the secret is leaked, an attacker could send \u0027fake\u0027 webhooks, which is why secrets should be rotated regularly and never exposed in client-side code.",
+        "category":  "api_standards",
+        "topic":  "webhooks",
+        "difficulty":  "hard",
+        "tags":  [
+                     "webhooks",
+                     "security",
+                     "reliability",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  15,
+        "question":  "What is \u0027JSON:API\u0027 or \u0027OData\u0027?",
+        "answer":  "These are standardized specifications for building REST APIs. \n1. **JSON:API**: Focuses on reducing the number of requests and the size of data packages. It provides a strict structure for how resources and relationships should be represented. \n2. **OData (Open Data Protocol)**: A REST-based protocol that allows for complex querying and data manipulation directly via the URL (e.g., filtering, sorting, and expanding relationships). Using a standard like JSON:API or OData reduces the time spent on \u0027bikeshedding\u0027 API design and provides a predictable, high-quality interface that third-party tools can easily consume.",
+        "analogy":  "JSON:API is like a **Standardized Shipping Container**. No matter what\u0027s inside (the data), the outside has standard dimensions and connectors, so any crane (library) in any port (language) can handle it without special instructions.",
+        "code":  "```json\n// JSON:API format: Clear separation of attributes and relationships\n{\n  \"data\": {\n    \"type\": \"articles\",\n    \"id\": \"1\",\n    \"attributes\": { \"title\": \"JSON:API paints my bikeshed!\" },\n    \"relationships\": {\n      \"author\": { \"data\": { \"type\": \"people\", \"id\": \"9\" } }\n    }\n  }\n}\n```",
+        "counterQuestion":  "Why would you choose JSON:API over a custom REST design?",
+        "counterQuestionAnswer":  "JSON:API provides a \u0027zero-decision\u0027 framework for handling things like pagination, side-loading related data, and error reporting. This saves hundreds of hours of design meetings and ensures that your API follows industry best practices out-of-the-box, making it much easier for other developers to integrate with.",
+        "category":  "api_standards",
+        "topic":  "specifications",
+        "difficulty":  "medium",
+        "tags":  [
+                     "api_design",
+                     "json_api",
+                     "odata"
+                 ]
+    },
+    {
+        "id":  16,
+        "question":  "How do you design an \u0027API Gateway\u0027 that supports both REST and GraphQL?",
+        "answer":  "An API Gateway acts as the single entry point for all your microservices. To support both REST and GraphQL: \n1. **REST Proxy**: The gateway routes standard HTTP requests to their respective microservices. \n2. **GraphQL Orchestration**: The gateway hosts a GraphQL server that \u0027stitches\u0027 together data from multiple backend services (which could be REST or gRPC) and exposes them through a single GraphQL endpoint. Tools like **Apollo Router** or **Kong** can handle this, providing a unified security, logging, and rate-limiting layer regardless of the underlying protocol used by each individual service.",
+        "analogy":  "An API Gateway is like a **Hotel Concierge**. Whether you want a taxi (REST), a dinner reservation (GraphQL), or a wakeup call (gRPC), you only talk to the concierge. They handle the complex logistics with the different departments (microservices) behind the scenes to give you exactly what you need.",
+        "code":  "```yaml\n# API Gateway Configuration (Conceptual)\nroutes:\n  - path: /api/v1/users\n    backend: http://user-service:8080\n  - path: /graphql\n    backend: http://graphql-engine:4000\n  - path: /api/v1/billing\n    backend: grpc://billing-service:50051\n```",
+        "counterQuestion":  "What is \u0027Protocol Translation\u0027 in an API Gateway?",
+        "counterQuestionAnswer":  "Protocol Translation is where the gateway receives a request in one format (e.g., REST/JSON) and converts it to another format (e.g., gRPC/Protobuf) before sending it to the backend service. This allows you to use high-performance protocols internally while still exposing a developer-friendly REST API to the outside world.",
+        "category":  "api_standards",
+        "topic":  "architecture",
+        "difficulty":  "hard",
+        "tags":  [
+                     "api_gateway",
+                     "architecture",
+                     "microservices"
+                 ]
+    },
+    {
+        "id":  17,
+        "question":  "Explain \u0027HATEOAS\u0027. Is it still relevant in modern REST APIs?",
+        "answer":  "HATEOAS (Hypermedia As The Engine Of Application State) is the idea that an API response should include links to all available actions for a resource. While it is a core part of the original REST definition, it is **less relevant** in modern, high-speed development. Most developers prefer \u0027Contract-First\u0027 development with OpenAPI/Swagger, where the available actions are documented in a static file rather than discovered dynamically. However, HATEOAS is still useful for extremely long-lived APIs where the server needs to change URLs without breaking clients, providing a level of decoupling that is hard to achieve with hardcoded paths.",
+        "analogy":  "HATEOAS is like a **Restaurant Menu** that also has buttons next to the dishes to order them. Instead of needing to know where the kitchen is or how to talk to a waiter (documentation), you just press the button (link) right there on the menu to take the next action.",
+        "code":  "```json\n// REST response with HATEOAS controls\n{\n  \"account_number\": \"12345\",\n  \"balance\": 1000.00,\n  \"_links\": {\n    \"deposit\": { \"href\": \"/accounts/12345/deposit\", \"method\": \"POST\" },\n    \"withdraw\": { \"href\": \"/accounts/12345/withdraw\", \"method\": \"POST\" }\n  }\n}\n```",
+        "counterQuestion":  "What is the \u0027Richardson Maturity Model\u0027?",
+        "counterQuestionAnswer":  "The Richardson Maturity Model is a way to grade how \u0027RESTful\u0027 an API is. Level 0 is \u0027The Swamp of POX\u0027 (simple RPC over HTTP), and Level 3 is \u0027Hypermedia Controls\u0027 (HATEOAS). Most modern production APIs aim for Level 2 (proper use of HTTP verbs and status codes).",
+        "category":  "api_standards",
+        "topic":  "rest",
+        "difficulty":  "hard",
+        "tags":  [
+                     "rest",
+                     "architecture",
+                     "hateoas"
+                 ]
+    },
+    {
+        "id":  18,
+        "question":  "How do you use Apollo Federation to stitch multiple microservice GraphQL APIs into a single supergraph?",
+        "answer":  "Apollo Federation allows you to split your GraphQL schema across multiple \u0027subgraphs\u0027 (microservices). Each microservice is responsible for its own piece of the data (e.g., a \u0027Users\u0027 service and a \u0027Products\u0027 service). The **Gateway (or Router)** then \u0027composes\u0027 these subgraphs into a single **Supergraph**. It uses special directives (like \u0027@key\u0027 and \u0027@extends\u0027) to know how to join data between services (e.g., joining a \u0027User\u0027 with their \u0027Orders\u0027). This allows you to scale your GraphQL API horizontally across multiple teams and services while still providing a single, seamless endpoint for the frontend.",
+        "analogy":  "Apollo Federation is like a **Mega-Mall**. Each shop (microservice) is independent and managed by its own team, but to the customer (the frontend), it looks like one single building with a unified directory (the Supergraph) that lets them find anything they need in one place.",
+        "code":  "```graphql\n# Subgraph: Users Service\ntype User @key(fields: \"id\") {\n  id: ID!\n  username: String!\n}\n\n# Subgraph: Reviews Service (Extending User)\nextend type User @key(fields: \"id\") {\n  id: ID! @external\n  reviews: [Review]\n}\n```",
+        "counterQuestion":  "What is the \u0027Query Planner\u0027 in Apollo Federation?",
+        "counterQuestionAnswer":  "The Query Planner is the part of the Gateway that analyzes an incoming GraphQL query and decides exactly which subgraphs need to be called and in what order to fetch the requested data. It optimizes the requests to ensure the data is gathered as efficiently as possible with minimal network overhead.",
+        "category":  "api_standards",
+        "topic":  "graphql",
+        "difficulty":  "hard",
+        "tags":  [
+                     "graphql",
+                     "microservices",
+                     "apollo"
+                 ]
+    },
+    {
+        "id":  19,
+        "question":  "How do you design an API that handles network retries safely without double-charging (Idempotency Keys)?",
+        "answer":  "You implement **Idempotency Keys**. The client generates a unique, one-time key (e.g., a UUID) and sends it in the request header (e.g., \u0027Idempotency-Key: abc-123\u0027). On the server, you check if you have already processed a request with that key. \n1. **If yes**: Return the cached result of the previous operation. \n2. **If no**: Process the request and store the result along with the key. This ensures that if a network timeout occurs and the client retries, the server won\u0027t perform the action (like a credit card charge) twice, providing a critical layer of safety for financial and state-changing transactions.",
+        "analogy":  "An Idempotency Key is like a **Confirmation Number** for a pizza order. If the phone cuts out and you call back, you give them the number. If they already have that number in their system, they know not to bake a second pizza; they just tell you the first one is already in the oven.",
+        "code":  "```http\n# Client sends unique key to prevent duplicate charges\nPOST /api/v1/payments\nIdempotency-Key: 550e8400-e29b-41d4-a716-446655440000\nContent-Type: application/json\n\n{ \"amount\": 100.00, \"currency\": \"USD\" }\n```",
+        "counterQuestion":  "How long should you store an Idempotency Key?",
+        "counterQuestionAnswer":  "Idempotency keys should have a TTL (Time To Live), typically between 24 to 72 hours. This is long enough to cover any reasonable retry attempts due to network instability but prevents your database from growing indefinitely with old keys that are no longer relevant.",
+        "category":  "api_standards",
+        "topic":  "reliability",
+        "difficulty":  "hard",
+        "tags":  [
+                     "idempotency",
+                     "api_design",
+                     "reliability",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  20,
+        "question":  "What is \u0027GraphQL\u0027 and how does it differ from a traditional REST API?",
+        "answer":  "GraphQL is a query language for APIs and a runtime for fulfilling those queries. It allows clients to request exactly the data they need, preventing over-fetching and under-fetching. Unlike REST, which uses multiple endpoints, GraphQL typically uses a single `/graphql` endpoint and provides a self-documenting schema.",
+        "analogy":  "REST is like ordering a fixed combo meal; you get exactly what\u0027s in the combo. GraphQL is like a customizable salad bar; you pick exactly which ingredients (fields) go into your bowl.",
+        "code":  "```graphql\n# GraphQL: Single request, specific fields\nquery {\n  user(id: \"123\") {\n    name\n    posts {\n      title\n    }\n  }\n}\n```",
+        "counterQuestion":  "What is the biggest downside of GraphQL compared to REST?",
+        "counterQuestionAnswer":  "Caching is more complex. REST leverages standard HTTP caching via URLs, while GraphQL uses POST requests with a body, requiring specialized client-side caches (like Apollo Client) or server-side persistent queries.",
+        "category":  "api",
+        "topic":  "graphql",
+        "difficulty":  "medium",
+        "tags":  [
+                     "graphql",
+                     "api",
+                     "architecture"
+                 ]
+    },
+    {
+        "id":  21,
+        "question":  "What are \u0027Mutations\u0027 and \u0027Subscriptions\u0027 in GraphQL?",
+        "answer":  "**Mutations:** Used for write operations (Create, Update, Delete). Unlike queries, mutations are executed serially to avoid race conditions.\n**Subscriptions:** Used for real-time updates. They use WebSockets to maintain a long-lived connection and push data from the server to the client whenever a specific event occurs.",
+        "analogy":  "Mutations are like **Sending a Letter** that requests a change (like updating your address). Subscriptions are like **Tuning into a Live Stream** â€” you don\u0027t ask for the content; it just appears on your screen the moment it happens.",
+        "code":  "```graphql\n# Subscription Example: Listen for new messages in a chat room\nsubscription OnNewMessage($roomId: ID!) {\n  newMessage(roomId: $roomId) {\n    id\n    content\n    sender {\n      username\n    }\n  }\n}\n```",
+        "counterQuestion":  "When would you use a Subscription vs a Polling strategy?",
+        "counterQuestionAnswer":  "Subscriptions are better for low-latency, high-frequency updates (like a chat app). Polling is better for low-frequency updates or when you want to keep the server stateless and avoid the overhead of maintaining thousands of open WebSocket connections.",
+        "category":  "api",
+        "topic":  "graphql",
+        "difficulty":  "medium",
+        "tags":  [
+                     "graphql",
+                     "real_time",
+                     "websockets"
+                 ]
+    },
+    {
+        "id":  22,
+        "question":  "What is OAuth2? Explain the Authorization Code flow.",
+        "answer":  "OAuth2 is an **authorization framework** that allows a third-party application to access resources on behalf of a user, without sharing the user\u0027s password.\n\n**Authorization Code Flow (most secure, for server-side apps):**\n\n```\n1. User clicks \u0027Login with Google\u0027\n2. App redirects to Google\u0027s authorization server with:\n   - client_id, redirect_uri, scope, response_type=code, state (CSRF token)\n3. User authenticates on Google and grants permissions\n4. Google redirects back with a one-time \u0027Authorization Code\u0027\n5. App\u0027s backend exchanges the code for tokens (POST to Google\u0027s token endpoint)\n   - Sends: code, client_id, client_secret, redirect_uri\n   - Receives: access_token + refresh_token\n6. App uses access_token to call Google APIs on behalf of user\n```\n\nThe code is short-lived and exchanged server-side, keeping tokens out of the browser.",
+        "analogy":  "OAuth2 is like a **Valet Key** for your car. You give the valet a special key that only allows them to park the car (limited scope), but doesn\u0027t let them open the trunk or glovebox, and you never have to give them your master key (password).",
+        "code":  "```http\n# Step 1: Requesting the Authorization Code\nGET /authorize?response_type=code\u0026client_id=CLIENT_ID\u0026redirect_uri=CALLBACK_URL\u0026scope=profile+email\n\n# Step 2: Exchanging the Code for a Token (Server-to-Server)\nPOST /token\nContent-Type: application/x-www-form-urlencoded\n\ngrant_type=authorization_code\u0026code=AUTHORIZATION_CODE\u0026client_id=CLIENT_ID\u0026client_secret=CLIENT_SECRET\n```",
+        "counterQuestion":  "Why is the \u0027Implicit Flow\u0027 considered insecure and deprecated?",
+        "counterQuestionAnswer":  "The Implicit Flow returned the access_token directly in the URL fragment (exposed in browser history and server logs). It also didn\u0027t support refresh tokens. The Authorization Code Flow with PKCE is now the recommended replacement even for SPAs and mobile apps, providing the same user experience with significantly better security.",
+        "category":  "oauth",
+        "topic":  "oauth2",
+        "difficulty":  "medium",
+        "tags":  [
+                     "oauth2",
+                     "security",
+                     "authentication",
+                     "authorization",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  23,
+        "question":  "What is PKCE (Proof Key for Code Exchange) and why is it needed for SPAs and mobile apps?",
+        "answer":  "PKCE (RFC 7636) is an extension to the Authorization Code Flow that protects against **authorization code interception attacks**.\n\n**Why it\u0027s needed for SPAs/Mobile:** These apps cannot safely store a `client_secret` (it would be exposed in source code). PKCE replaces the secret with a dynamically generated, per-request proof.\n\n**Flow:**\n1. App generates a random `code_verifier` string.\n2. App hashes it: `code_challenge = SHA256(code_verifier)` (Base64URL encoded).\n3. `code_challenge` is sent with the auth request.\n4. Auth server stores the challenge.\n5. App exchanges the code, sending the original `code_verifier`.\n6. Auth server verifies: `SHA256(code_verifier) == stored code_challenge`.\n\nAn intercepted authorization code is useless without the original `code_verifier`.",
+        "analogy":  "PKCE is like a **Secret Handshake** agreed upon at the start of a conversation. Even if an attacker steals your ID card (the Authorization Code), they don\u0027t know the secret handshake (the Code Verifier) required to actually use it, so the guard (the Auth Server) will turn them away.",
+        "code":  "```javascript\n// PKCE: Creating a Code Challenge from a Verifier (Pseudo-code)\nconst verifier = \"random_string_12345\";\nconst challenge = base64UrlEncode(sha256(verifier));\n\n// Send \u0027challenge\u0027 to /authorize\n// Send \u0027verifier\u0027 to /token\n```",
+        "counterQuestion":  "What is the \u0027state\u0027 parameter in OAuth2 and what does it prevent?",
+        "counterQuestionAnswer":  "The `state` parameter is a random, unique value generated by the client before redirecting to the auth server. It is returned unchanged in the callback. The client verifies it matches. This prevents **CSRF attacks** where a malicious site tricks your browser into initiating a fake auth flow that associates the attacker\u0027s account with yours.",
+        "category":  "oauth",
+        "topic":  "pkce",
+        "difficulty":  "hard",
+        "tags":  [
+                     "oauth2",
+                     "pkce",
+                     "security",
+                     "spa",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  24,
+        "question":  "What is OpenID Connect (OIDC)? How does it differ from OAuth2?",
+        "answer":  "**OAuth2** is an **authorization** framework: it grants an app permission to access resources (e.g., \u0027read your Google Drive files\u0027).\n\n**OpenID Connect (OIDC)** is an **identity layer** built on top of OAuth2 that adds **authentication**: it tells you *who the user is*.\n\n**How OIDC extends OAuth2:**\n- Adds an `ID Token` (a JWT) that contains user identity claims: `sub` (user ID), `email`, `name`, `picture`.\n- Adds a `/userinfo` endpoint to fetch additional profile data.\n- Defines standard scopes: `openid`, `profile`, `email`.\n\n```\nOAuth2: \u0027This app can access your files\u0027\nOIDC:   \u0027This app can access your files AND knows you are user@gmail.com\u0027\n```\n\nMost \u0027Login with Google/GitHub/Apple\u0027 implementations use OIDC, not pure OAuth2.",
+        "analogy":  "OAuth2 is like a **Keycard** that lets you into specific rooms in a building (Authorization). OIDC is like that same keycard having your **Photo and Name** printed on it (Authentication). One proves you\u0027re allowed in; the other proves *who you are*.",
+        "code":  "```javascript\n// OIDC ID Token (JWT) structure\n{\n  \"iss\": \"https://accounts.google.com\",\n  \"sub\": \"1234567890\", // Unique User ID\n  \"email\": \"john.doe@gmail.com\",\n  \"name\": \"John Doe\",\n  \"iat\": 1353601026,\n  \"exp\": 1353604926\n}\n```",
+        "counterQuestion":  "What is the difference between an ID Token and an Access Token?",
+        "counterQuestionAnswer":  "**ID Token** (OIDC): A JWT for the *client application* to read. It contains user identity claims. You should NOT use it to call APIs — it\u0027s proof of authentication. **Access Token** (OAuth2): A token for the *resource server* (API) to validate. It grants specific permissions (scopes). The client should treat it as opaque — don\u0027t decode it, just send it in the Authorization header.",
+        "category":  "oauth",
+        "topic":  "oidc",
+        "difficulty":  "medium",
+        "tags":  [
+                     "oidc",
+                     "oauth2",
+                     "jwt",
+                     "authentication",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  25,
+        "question":  "What is the difference between authentication and authorization?",
+        "answer":  "**Analogy:** At an airport:\n- **Authentication:** Showing your passport to verify *who you are*.\n- **Authorization:** Showing your boarding pass to verify *what you are allowed to do* (board Flight 101 to London, not a random plane).\n\n**Technical definition:**\n- **Authentication (AuthN):** Verifying the identity of a user. \u0027Are you who you claim to be?\u0027 (Passwords, MFA, biometrics, OIDC).\n- **Authorization (AuthZ):** Verifying what an authenticated user is permitted to do. \u0027Are you allowed to access this resource?\u0027 (RBAC, ABAC, OAuth2 scopes).\n\n**In practice:**\n1. User logs in ? Authentication creates a session/token.\n2. User requests a resource ? Authorization checks if the token grants access to that resource.",
+        "analogy":  "**Authentication** is like your Passport (proof of identity). **Authorization** is like your Boarding Pass (proof of permission). You need the Passport to get the Boarding Pass, but you can\u0027t get on the plane with just a Passport alone.",
+        "code":  "```python\n# Authentication vs Authorization in Django\nif user.is_authenticated: # Authentication Check\n    if user.has_perm(\u0027blog.add_post\u0027): # Authorization Check\n        return create_post()\n```",
+        "counterQuestion":  "What is RBAC vs ABAC?",
+        "counterQuestionAnswer":  "**RBAC (Role-Based Access Control):** Permissions are assigned to roles, and roles are assigned to users. Simple and scalable: `admin`, `editor`, `viewer`. **ABAC (Attribute-Based Access Control):** Permissions are based on attributes of the user, resource, and environment. More flexible: \u0027A user with `department=HR` can read records with `classification=HR-only` during `business_hours`\u0027. RBAC is simpler; ABAC is more fine-grained and powerful for complex enterprise policies.",
+        "category":  "oauth",
+        "topic":  "fundamentals",
+        "difficulty":  "easy",
+        "tags":  [
+                     "authentication",
+                     "authorization",
+                     "rbac",
+                     "security",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  26,
+        "question":  "What is \u0027refresh token rotation\u0027 and why is it a security best practice?",
+        "answer":  "Access tokens are short-lived (15 minutes). To avoid re-authentication, apps use **refresh tokens** (long-lived, stored securely) to obtain new access tokens.\n\n**Refresh Token Rotation:** Every time a refresh token is used to get a new access token, the old refresh token is **invalidated** and a **new one** is issued.\n\n**Why it matters — detecting token theft:**\n1. Attacker steals a refresh token.\n2. Attacker uses it to get a new access token + new refresh token.\n3. Legitimate user tries to use the old refresh token ? server detects **reuse of an already-used token** ? invalidates the entire token family.\n4. User is forced to re-authenticate.\n\nThis limits the window of damage from a stolen refresh token significantly.",
+        "analogy":  "Refresh Token Rotation is like **Changing the Locks** every time you use a key. If a thief makes a copy of your key and uses it, the lock changes. The next time you try to use your original key, it won\u0027t work, signaling to the system that a security breach has occurred.",
+        "code":  "```javascript\n// Pseudo-code for Token Rotation\nif (refreshToken.isUsed) {\n    // Potential theft detected!\n    revokeAllTokensForUser(user.id);\n    throw new SecurityError(\"Token reuse detected\");\n}\n\nconst newAccessToken = generateAccessToken(user);\nconst newRefreshToken = generateAndRotate(refreshToken);\n```",
+        "counterQuestion":  "Where should refresh tokens be stored in a browser-based SPA?",
+        "counterQuestionAnswer":  "The safest option is **HttpOnly, Secure cookies** (not accessible via JavaScript, preventing XSS attacks). The alternative — localStorage — is accessible to any JavaScript on the page and is vulnerable to XSS. The \u0027BFF (Backend for Frontend)\u0027 pattern avoids storing tokens in the browser entirely by handling token exchange server-side.",
+        "category":  "oauth",
+        "topic":  "tokens",
+        "difficulty":  "hard",
+        "tags":  [
+                     "refresh_tokens",
+                     "security",
+                     "oauth2",
+                     "jwt",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  27,
+        "question":  "What is Multi-Factor Authentication (MFA) and what are its factor types?",
+        "answer":  "MFA requires users to prove identity using two or more independent factors before granting access. Even if one factor is compromised, the attacker needs the others.\n\n**Factor types:**\n1. **Something you know:** Password, PIN, security questions.\n2. **Something you have:** TOTP app (Google Authenticator), hardware key (YubiKey), SMS code.\n3. **Something you are:** Biometrics (fingerprint, Face ID).\n\n**Common implementations:**\n- **TOTP (Time-based OTP):** `otp = HMAC-SHA1(secret, floor(time/30))`. App and server independently compute the same 6-digit code.\n- **FIDO2/WebAuthn:** Hardware key or device biometric. Most phishing-resistant MFA.\n- **SMS OTP:** Convenient but weakest (SIM swapping attacks).\n\n**Best practice:** Prefer TOTP or hardware keys over SMS.",
+        "analogy":  "MFA is like a **Bank Vault**. To open it, you need a **Physical Key** (something you have) and the **Combination** (something you know). Even if a thief steals your key, they still don\u0027t know the code, and even if they trick you into telling them the code, they still don\u0027t have the physical key.",
+        "code":  "```python\n# Generating a TOTP Code (Time-based One-Time Password)\nimport pyotp\ntotp = pyotp.TOTP(\"JBSWY3DPEHPK3PXP\") # Shared Secret\nprint(\"Current OTP:\", totp.now())\n```",
+        "counterQuestion":  "What is a SIM Swapping attack and how does it defeat SMS-based MFA?",
+        "counterQuestionAnswer":  "SIM swapping is when an attacker socially engineers a mobile carrier into transferring a victim\u0027s phone number to the attacker\u0027s SIM card. The attacker then receives all SMS messages, including OTP codes, bypassing SMS-based MFA entirely. This is why security professionals strongly recommend TOTP apps or hardware keys over SMS for sensitive accounts.",
+        "category":  "oauth",
+        "topic":  "mfa",
+        "difficulty":  "medium",
+        "tags":  [
+                     "mfa",
+                     "totp",
+                     "security",
+                     "authentication",
+                     "#highly_asked"
+                 ]
+    },
+    {
+        "id":  28,
+        "question":  "Cookie-based sessions vs Token-based (JWT) authentication — when do you choose each?",
+        "answer":  "**Cookie-based sessions (Stateful):**\n```\nLogin ? Server creates session in DB/Redis ? Sends session_id cookie ? Browser auto-sends cookie on every request ? Server looks up session\n```\n- ? Easy to invalidate (just delete from Redis)\n- ? Cookie is HttpOnly — JS can\u0027t steal it\n- ? Works naturally with browsers\n- ? Requires shared session store across servers (Redis)\n- ? CSRF attacks possible (mitigated with SameSite cookie + CSRF token)\n\n**Token-based (JWT / Stateless):**\n```\nLogin ? Server creates signed JWT ? Client stores token ? Sends in Authorization: Bearer header ? Server validates signature (no DB lookup)\n```\n- ? Stateless — no shared session store needed\n- ? Perfect for APIs and mobile apps (no automatic cookie sending)\n- ? Scalable horizontally with no sticky sessions\n- ? Cannot be instantly revoked without a blocklist\n- ? If stored in localStorage: vulnerable to XSS\n\n**Rule:** Traditional web apps with server-side rendering ? sessions. REST APIs for mobile/SPAs ? JWT. For hybrid (Next.js), use the **BFF pattern**: server manages JWT behind cookie.",
+        "analogy":  "Sessions are like a **Checkbook** at a specific bank â€” the bank keeps a record of every transaction in their ledger (the database). JWT is like a **Gift Card** â€” the value is written right on the card, and you can spend it at any branch without the cashier having to call the bank to verify your identity.",
+        "code":  "```http\n# Token-based (JWT in Header)\nAuthorization: Bearer \u003ctoken\u003e\n\n# Session-based (Cookie in Header)\nCookie: sessionid=xyz123abc456\n```",
+        "counterQuestion":  "How does Django handle sessions by default?",
+        "counterQuestionAnswer":  "Django uses **cookie-based session IDs** by default (`SESSION_ENGINE = \u0027django.contrib.sessions.backends.db\u0027`). The session_id is stored in a cookie (`sessionid`), and the actual session data lives in the `django_session` database table. For production scale, switch to `backends.cache` (Redis) to avoid hitting the DB on every request. `SESSION_COOKIE_SECURE=True` + `SESSION_COOKIE_HTTPONLY=True` + `SESSION_COOKIE_SAMESITE=\u0027Lax\u0027` are essential production security settings.",
+        "category":  "oauth",
+        "topic":  "sessions",
+        "difficulty":  "medium",
+        "tags":  [
+                     "sessions",
+                     "cookies",
+                     "jwt",
+                     "authentication",
+                     "django",
+                     "#highly_asked"
+                 ]
+    }
+]

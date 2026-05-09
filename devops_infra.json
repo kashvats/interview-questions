@@ -1,0 +1,1746 @@
+[
+  {
+    "id": 1,
+    "question": "What is 'Virtualization' vs 'Containerization'?",
+    "answer": "1. **Virtualization**: Uses a **Hypervisor** to run multiple virtual machines (VMs) on a single physical server. Each VM includes its own full guest OS, making them heavy and slow to start. \n2. **Containerization**: Containers share the **host OS kernel** and package only the application and its dependencies. They are extremely lightweight, start in seconds, and ensure the application runs identically in every environment. In short: VMs virtualize the hardware, while containers virtualize the operating system.",
+    "counterQuestion": "What is 'Docker Desktop' and how does it work on Windows/Mac if containers need a Linux kernel?",
+    "counterQuestionAnswer": "On non-Linux systems, Docker Desktop runs a small, lightweight Linux VM in the background (using Hyper-V or Apple's Virtualization framework) to provide the necessary Linux kernel for the containers to run.",
+    "category": "infrastructure",
+    "topic": "containers",
+    "difficulty": "easy",
+    "tags": [
+      "docker",
+      "virtualization",
+      "fundamentals",
+      "#highly_asked"
+    ],
+    "analogy": "Virtualization is like renting an entire apartment building (Guest OS) just to house one family (App). Containerization is like renting an apartment in a shared building (Host OS); you have your own private space, but you share the plumbing and foundation (Kernel), making it much more efficient.",
+    "code": "# Example of the lightweight nature of containers vs VMs\n# In a VM, you'd need to boot 2GB+ of OS just to run 'echo hello'.\n# In Docker, it's just a process:\n\n# Run a tiny alpine container that just prints a message\ndocker run --rm alpine echo \"Hello from a container!\"\n\n# Check the size of the alpine image (usually ~5MB)\ndocker images alpine"
+  },
+  {
+    "id": 2,
+    "question": "Explain the basic Docker commands: 'build', 'run', 'ps', 'stop'.",
+    "answer": "1. **docker build**: Creates a Docker image from a Dockerfile. \n2. **docker run**: Creates and starts a container from an image. \n3. **docker ps**: Lists all running containers (use '-a' to see stopped ones). \n4. **docker stop**: Gracefully shuts down a running container. These four commands form the core workflow for local container development and management.",
+    "counterQuestion": "What is the difference between 'docker stop' and 'docker kill'?",
+    "counterQuestionAnswer": "'docker stop' sends a 'SIGTERM' signal, giving the application time to perform cleanup and shut down gracefully. 'docker kill' sends a 'SIGKILL', forcing the container to stop immediately, which can lead to data corruption if the app was mid-write.",
+    "category": "infrastructure",
+    "topic": "docker",
+    "difficulty": "easy",
+    "tags": [
+      "docker",
+      "cli",
+      "basics"
+    ],
+    "analogy": "Building a Docker image is like following a recipe to bake a cake (Image). Running a container is like taking that cake out of the oven and serving it (Container). 'ps' is like checking the dining room to see who is eating, and 'stop' is asking a guest to leave politely.",
+    "code": "# 1. Build an image named 'my-app' from the current directory\ndocker build -t my-app .\n\n# 2. Run the container in detached mode, mapping port 8080 to 80\ndocker run -d -p 8080:80 --name web-server my-app\n\n# 3. List running containers\ndocker ps\n\n# 4. Stop the container gracefully\ndocker stop web-server"
+  },
+  {
+    "id": 3,
+    "question": "What is a 'Dockerfile'? What are 'Layers' in a Docker image?",
+    "answer": "A Dockerfile is a text document containing all the commands required to assemble a Docker image. Every instruction in a Dockerfile (like 'RUN', 'COPY', or 'ADD') creates a new **Layer** in the image. These layers are **read-only** and are stacked on top of each other. This layered architecture is what allows Docker to cache builds and share common base layers between different images, significantly saving time and disk space.",
+    "counterQuestion": "What is the 'Writable Layer'?",
+    "counterQuestionAnswer": "When you start a container from an image, Docker adds a thin 'Writable Layer' (also known as the Container Layer) on top of the read-only image layers. All changes made to the running container (like writing new files) are stored in this layer and are lost when the container is deleted unless persisted via volumes.",
+    "category": "infrastructure",
+    "topic": "docker",
+    "difficulty": "medium",
+    "tags": [
+      "docker",
+      "layers",
+      "architecture",
+      "#highly_asked"
+    ],
+    "analogy": "Think of Docker layers like a transparent stack of overhead projector slides. Each slide adds a specific piece of information (like 'Install Python' or 'Copy code'). When you look from the top, you see the complete image. If you change a middle slide, you only have to replace that one and everything above it.",
+    "code": "# Inspecting layers of an image\ndocker history my-python-app\n\n# Example output showing layer sizes and commands:\n# IMAGE          CREATED          CREATED BY                                      SIZE\n# <id>           2 days ago       COPY . .                                        1.2MB\n# <id>           2 days ago       RUN pip install -r requirements.txt             45MB\n# <id>           2 weeks ago      WORKDIR /app                                    0B"
+  },
+  {
+    "id": 4,
+    "question": "Explain the difference between 'ENTRYPOINT' and 'CMD' in a Dockerfile.",
+    "answer": "1. **ENTRYPOINT**: Defines the main command that will always be executed when the container starts. It is difficult to override. \n2. **CMD**: Defines the default arguments for the entrypoint. It can be easily overridden by passing arguments at the end of the 'docker run' command. **Best Practice**: Use 'ENTRYPOINT' for the executable (e.g., 'python') and 'CMD' for the default script or flags (e.g., 'app.py'), giving the user flexibility to run different scripts while keeping the base command consistent.",
+    "counterQuestion": "What is the 'Shell' vs 'Exec' form for these instructions?",
+    "counterQuestionAnswer": "The 'Exec' form ('[\"executable\", \"param1\"]') is preferred because it allows Docker to send OS signals (like SIGTERM) directly to the application. The 'Shell' form ('executable param1') wraps the command in '/bin/sh -c', which often swallows signals and prevents graceful shutdowns.",
+    "category": "infrastructure",
+    "topic": "docker",
+    "difficulty": "medium",
+    "tags": [
+      "docker",
+      "configuration",
+      "best_practices"
+    ],
+    "analogy": "ENTRYPOINT is like the 'Fixed Menu' at a restaurant (it's what the restaurant serves), while CMD is like the 'Side Dish' options. You can easily swap the side dish (CMD), but you can't easily change the fact that you're at a Steakhouse (ENTRYPOINT).",
+    "code": "# Dockerfile example\nFROM python:3.9-slim\n\n# Fixed executable\nENTRYPOINT [\"python\"]\n\n# Default arguments (can be overridden by 'docker run <image> other_script.py')\nCMD [\"app.py\"]"
+  },
+  {
+    "id": 5,
+    "question": "What is the 'Docker Build Cache' and how do you optimize a Dockerfile to use it?",
+    "answer": "Docker caches the result of each step in a Dockerfile. If a layer and all previous layers haven't changed, Docker reuses the cached version instead of re-running the command. **To optimize**: \n1. Order your commands from 'least frequent change' to 'most frequent change'. \n2. Copy your dependency files (like 'package.json' or 'requirements.txt') and install dependencies **before** copying your actual source code. This ensures that you don't have to re-install all your dependencies every time you make a one-line change to your code.",
+    "counterQuestion": "What happens to the cache if you change a single file that is copied via 'COPY . . '?",
+    "counterQuestionAnswer": "If any file in the build context changes, the 'COPY . . ' layer and **every subsequent layer** in the Dockerfile will have their cache invalidated and will be forced to re-run. This is why copying only necessary files early in the process is critical.",
+    "category": "infrastructure",
+    "topic": "docker",
+    "difficulty": "hard",
+    "tags": [
+      "docker",
+      "performance",
+      "optimization",
+      "#highly_asked"
+    ],
+    "analogy": "Imagine you're building a LEGO castle. If you realize you forgot a brick at the bottom, you have to tear down everything above it to fix it. To avoid this, you build the 'foundation' (OS and dependencies) first, as they rarely change, and put the 'decorations' (your code) at the very top.",
+    "code": "# Optimized Dockerfile for Caching\nFROM python:3.9-slim\n\nWORKDIR /app\n\n# 1. Copy dependencies first (Cache layer)\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\n\n# 2. Copy source code last (Invalidates only this and below)\nCOPY . .\n\nCMD [\"python\", \"main.py\"]"
+  },
+  {
+    "id": 6,
+    "question": "Explain 'ENV' vs 'ARG'. Which one is available during the container runtime?",
+    "answer": "1. **ARG**: Build-time variables. They are only available while the image is being built ('docker build') and are not persisted in the final image or available in the running container. \n2. **ENV**: Environment variables. They are available both during the build process and **during the container runtime**. They are persisted in the image metadata. **Use ARG** for things like version numbers used during build, and **use ENV** for configuration values that the application needs to run (like database URLs).",
+    "counterQuestion": "Can you set an ENV variable using an ARG value?",
+    "counterQuestionAnswer": "Yes. This is a common pattern: 'ARG VERSION' followed by 'ENV APP_VERSION=$VERSION'. This allows you to pass a value during the build that becomes a persistent environment variable in the final container.",
+    "category": "infrastructure",
+    "topic": "docker",
+    "difficulty": "medium",
+    "tags": [
+      "docker",
+      "environment",
+      "configuration"
+    ],
+    "analogy": "ARG is like a 'Contractor's Blueprint' (only used during the construction of the house). ENV is like the 'Thermostat' inside the house (used by the people living in it every day). You can't change the blueprint once the house is built, but the thermostat is always there while you're in the house.",
+    "code": "# Use ARG to pass a build-time version, and ENV to make it available at runtime\nARG BUILD_VERSION=1.0.0\n\nFROM alpine\n\n# Pass the ARG to an ENV so the app can see it\nENV APP_VERSION=${BUILD_VERSION}\n\n# At runtime, this will print 1.0.0\nCMD echo \"Running version $APP_VERSION\""
+  },
+  {
+    "id": 7,
+    "question": "Explain the purpose of a 'Load Balancer'.",
+    "answer": "A Load Balancer acts as a 'traffic cop' that sits in front of your servers and distributes incoming client requests across all servers capable of fulfilling those requests. This ensures that no single server becomes overwhelmed, improves the overall **Availability** and **Reliability** of your application (by redirecting traffic away from unhealthy servers), and provides the flexibility to add or remove servers as demand changes (scaling).",
+    "counterQuestion": "What is 'Sticky Sessions' (Session Affinity)?",
+    "counterQuestionAnswer": "Sticky Sessions is a configuration where the load balancer ensures that all requests from a specific user are sent to the same server. This is necessary for applications that store user state in local server memory rather than a shared database or Redis cache.",
+    "category": "infrastructure",
+    "topic": "networking",
+    "difficulty": "easy",
+    "tags": [
+      "networking",
+      "scalability",
+      "availability",
+      "#highly_asked"
+    ],
+    "analogy": "A Load Balancer is like a host at a busy restaurant. They stand at the front and guide incoming guests to whichever tables (servers) are free, ensuring no single waiter gets overwhelmed while others are idle.",
+    "code": "# Simple Nginx Load Balancer Configuration (nginx.conf)\nhttp {\n    upstream my_app_servers {\n        server 10.0.0.1:8000; # Server A\n        server 10.0.0.2:8000; # Server B\n    }\n\n    server {\n        listen 80;\n        location / {\n            proxy_pass http://my_app_servers;\n        }\n    }\n}"
+  },
+  {
+    "id": 8,
+    "question": "What is 'CI/CD'? Give an example of a simple pipeline.",
+    "answer": "1. **CI (Continuous Integration)**: Automatically building and testing code every time a developer pushes to the repository. \n2. **CD (Continuous Deployment/Delivery)**: Automatically deploying those changes to production or staging. **Simple Pipeline**: \n1. Developer pushes code. \n2. **Lint/Format** check. \n3. **Unit Tests** run. \n4. **Docker Image** built. \n5. Image pushed to **Registry**. \n6. Server triggered to **Pull and Restart** with the new image. This ensures high code quality and fast, reliable releases.",
+    "counterQuestion": "What is the difference between 'Continuous Delivery' and 'Continuous Deployment'?",
+    "counterQuestionAnswer": "In Continuous Delivery, the code is always ready to be deployed, but a manual 'button press' is required for the final move to production. In Continuous Deployment, every change that passes the automated tests is deployed to production automatically with no human intervention.",
+    "category": "infrastructure",
+    "topic": "devops",
+    "difficulty": "easy",
+    "tags": [
+      "ci_cd",
+      "automation",
+      "workflow",
+      "#highly_asked"
+    ],
+    "analogy": "CI/CD is like an automated car assembly line. Every time a part (code) is added, robots automatically check its fit (Lint/Test) and paint it (Build). If everything passes, the car is driven off the lot to the showroom (Deploy). If a robot finds a flaw, the line stops, and the engineers are alerted immediately.",
+    "code": "# Simple GitHub Actions Workflow (.github/workflows/main.yml)\nname: CI/CD Pipeline\non: [push]\n\njobs:\n  build-and-test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v2\n      - name: Run Tests\n        run: npm test\n      - name: Build Docker Image\n        run: docker build -t my-app:latest .\n      - name: Deploy to Prod\n        if: github.ref == 'refs/heads/main'\n        run: ./deploy.sh"
+  },
+  {
+    "id": 9,
+    "question": "Explain 'Docker Compose' and how it manages multi-container applications.",
+    "answer": "Docker Compose is a tool for defining and running multi-container applications using a single YAML file ('docker-compose.yml'). Instead of running 5 separate 'docker run' commands with complex network and volume flags, you define your services (app, db, redis, etc.) in the YAML and start everything with **'docker-compose up'**. It automatically creates a shared network for the services and handles the lifecycle of the entire application as a single unit.",
+    "counterQuestion": "What is 'depends_on' in a docker-compose.yml?",
+    "counterQuestionAnswer": "'depends_on' defines the order in which services are started. For example, you can tell your 'app' to wait until the 'db' container has started. However, it only waits for the *container* to start, not for the application *inside* the container (like Postgres) to be fully ready to accept connections.",
+    "category": "infrastructure",
+    "topic": "docker",
+    "difficulty": "medium",
+    "tags": [
+      "docker_compose",
+      "orchestration",
+      "dev"
+    ],
+    "analogy": "If Docker is like a single musician, Docker Compose is like a Conductor. Instead of telling each musician when to play, the Conductor holds a score (docker-compose.yml) that tells the whole orchestra (Database, API, Frontend) how to play together in harmony.",
+    "code": "# docker-compose.yml example\nversion: '3.8'\nservices:\n  web:\n    build: .\n    ports:\n      - \"8000:8000\"\n    depends_on:\n      - db\n  db:\n    image: postgres:13\n    environment:\n      POSTGRES_PASSWORD: secret"
+  },
+  {
+    "id": 10,
+    "question": "What is the difference between 'Bind Mounts' and 'Named Volumes'?",
+    "answer": "1. **Bind Mounts**: Maps a specific path on the **host machine** to a path in the container. Great for development (e.g., syncing source code) but depends on the host's file system structure. \n2. **Named Volumes**: Managed entirely by Docker. The data is stored in a part of the host file system that is managed by Docker and is not intended to be accessed by users directly. **Volumes** are preferred for production data (like databases) because they are more portable, safer, and offer better performance on non-Linux systems.",
+    "counterQuestion": "What is a 'Tmpfs' mount?",
+    "counterQuestionAnswer": "A 'tmpfs' mount is a temporary mount that exists only in the host's system **memory** (RAM), never written to the disk. It is extremely fast and is used for storing sensitive data or temporary files that you want to ensure are wiped when the container stops.",
+    "category": "infrastructure",
+    "topic": "docker",
+    "difficulty": "medium",
+    "tags": [
+      "docker",
+      "storage",
+      "persistence"
+    ],
+    "analogy": "A Bind Mount is like a 'Window' from the container looking directly at a folder on your desk (Host). A Named Volume is like a 'Safe' that Docker manages; you don't care exactly where it is in the building, but you know your valuables will still be there even if the container is replaced.",
+    "code": "# 1. Bind Mount (Mapping local code for dev)\ndocker run -v $(pwd)/src:/app/src my-app\n\n# 2. Named Volume (Persisting DB data)\n# Create volume: docker volume create pg_data\ndocker run -v pg_data:/var/lib/postgresql/data postgres\n\n# List volumes\ndocker volume ls"
+  },
+  {
+    "id": 11,
+    "question": "Explain Docker 'Networking Drivers': Bridge, Host, None, and Overlay.",
+    "answer": "1. **Bridge**: The default driver; creates a private internal network on the host so containers can communicate with each other but are isolated from the outside unless ports are mapped. \n2. **Host**: Removes network isolation; the container shares the host's networking namespace directly. \n3. **None**: Disables all networking for the container. \n4. **Overlay**: Enables communication between containers running on **different** Docker hosts (Swarm or Kubernetes), which is essential for distributed applications.",
+    "counterQuestion": "What is 'Port Mapping' (-p 80:8080)?",
+    "counterQuestionAnswer": "Port mapping maps a port on the host machine (e.g., 80) to a port inside the container (e.g., 8080). This is what allows external traffic to reach an application running inside an isolated bridge network.",
+    "category": "infrastructure",
+    "topic": "docker_networking",
+    "difficulty": "hard",
+    "tags": [
+      "docker",
+      "networking",
+      "drivers"
+    ],
+    "analogy": "Bridge mode is like giving each container its own extension in an office building. Host mode is like the container using the CEO's direct office line. Overlay mode is like a walkie-talkie system that works even if the containers are in different cities (different hosts).",
+    "code": "# 1. Create a custom bridge network\ndocker network create my-net\n\n# 2. Run a container on that network\ndocker run -d --name db --network my-net postgres\n\n# 3. Use 'Host' mode for maximum performance (no isolation)\ndocker run --network host my-high-perf-app"
+  },
+  {
+    "id": 12,
+    "question": "How do 'Multi-stage Builds' help in creating production-ready images?",
+    "answer": "Multi-stage builds allow you to use multiple 'FROM' statements in a single Dockerfile. You use one large stage (e.g., with compilers and build tools) to build your application, and then **copy only the final executable** into a second, much smaller stage (e.g., an alpine-based image). This ensures that your production image doesn't contain source code, build tools, or intermediate files, resulting in significantly smaller, faster, and more secure images.",
+    "counterQuestion": "What is an 'Alpine' image and why is it popular?",
+    "counterQuestionAnswer": "Alpine Linux is a security-oriented, lightweight Linux distribution based on musl libc and busybox. An Alpine-based Docker image is often under 5MB, making it perfect for reducing the attack surface and download time of your production containers.",
+    "category": "infrastructure",
+    "topic": "docker",
+    "difficulty": "medium",
+    "tags": [
+      "docker",
+      "performance",
+      "security",
+      "#highly_asked"
+    ],
+    "analogy": "Multi-stage builds are like a professional kitchen. You have one large, messy room (Build Stage) where you peel, chop, and cook the food using heavy machinery. Once the meal is ready, you plate it and carry only the clean, finished plate (Production Stage) out to the customer's table, leaving all the mess and tools behind.",
+    "code": "# Multi-stage Dockerfile example\n# Stage 1: Build\nFROM golang:1.16-alpine AS builder\nWORKDIR /app\nCOPY . .\nRUN go build -o main .\n\n# Stage 2: Final (Production)\nFROM alpine:latest\nWORKDIR /root/\n# Copy ONLY the binary from the builder stage\nCOPY --from=builder /app/main .\nCMD [\"./main\"]"
+  },
+  {
+    "id": 13,
+    "question": "Explain the 'Docker Architecture': What are the roles of 'containerd' and 'runc'?",
+    "answer": "1. **Docker Engine**: The high-level API and CLI we interact with. \n2. **containerd**: An industry-standard container runtime that manages the complete container lifecycle (image transfer, storage, execution). \n3. **runc**: A lightweight, low-level tool that actually creates and runs the container according to the OCI (Open Container Initiative) specification. Docker uses 'containerd' to manage containers, and containerd uses 'runc' to start them. This modular architecture allows other tools (like Kubernetes) to use containerd directly without needing the full Docker engine.",
+    "counterQuestion": "What is the 'OCI' (Open Container Initiative)?",
+    "counterQuestionAnswer": "The OCI is an open governance structure for creating industry standards around container formats and runtimes. It ensures that containers created with one tool (like Docker) can be run by another (like Podman or Kubernetes).",
+    "category": "infrastructure",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "docker",
+      "architecture",
+      "oci"
+    ],
+    "analogy": "Docker Engine is the 'Storefront' where customers (Users) place orders. 'containerd' is the 'Manager' who coordinates the kitchen. 'runc' is the 'Cook' who actually follows the recipe (OCI spec) to make the meal (Container).",
+    "code": "# Checking the runtime components on a Linux system\n# containerd is usually a systemd service\nsystemctl status containerd\n\n# runc is a low-level CLI tool\nrunc --version"
+  },
+  {
+    "id": 14,
+    "question": "How does Docker handle 'Signals' (e.g., SIGTERM)? What is the importance of PID 1?",
+    "answer": "In Linux, the process with **PID 1** (the init process) is responsible for reaping 'zombie' processes and handling signals. When you 'docker stop', Docker sends a 'SIGTERM' to PID \n1. If your application is running as PID 1 (via Exec form), it receives the signal and can shut down gracefully. However, if you use the Shell form, '/bin/sh' becomes PID 1, and it often **ignores signals**, causing Docker to eventually 'SIGKILL' your app after 10 seconds, which can lead to data loss or corrupted states.",
+    "counterQuestion": "What is 'tini' and why is it used in some Docker images?",
+    "counterQuestionAnswer": "'tini' is a tiny init process specifically designed for containers. You add it to your Dockerfile to act as PID 1, ensuring that signals are correctly forwarded to your application and that zombie processes are reaped even if your app wasn't designed to handle those responsibilities.",
+    "category": "infrastructure",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "docker",
+      "signals",
+      "linux"
+    ],
+    "analogy": "PID 1 is the 'Parent' of the house. When someone knocks on the door and says 'Time to leave!' (SIGTERM), the Parent is responsible for waking up all the children and making sure everyone has their shoes on before leaving. If you don't have a Parent (PID 1), the children might just ignore the knock and get 'kicked out' (SIGKILL) abruptly 10 seconds later.",
+    "code": "# Using 'tini' as an init process in a Dockerfile\nFROM node:14-slim\n\n# Install tini\nRUN apt-get update && apt-get install -y tini\n\n# Use tini as the entrypoint\nENTRYPOINT [\"/usr/bin/tini\", \"--\"]\n\n# Your app runs as a child of tini\nCMD [\"node\", \"server.js\"]"
+  },
+  {
+    "id": 15,
+    "question": "What is 'Kubernetes' (K8s)? Explain the role of a 'Pod', 'Service', and 'Deployment'.",
+    "answer": "Kubernetes is an **Orchestration** platform for managing containerized applications across a cluster of servers. \n1. **Pod**: The smallest unit; a wrapper around one or more containers. \n2. **Deployment**: Manages the desired state of your pods (e.g., 'ensure 3 replicas are always running'); it handles scaling and rolling updates. \n3. **Service**: An abstract way to expose a set of Pods as a network service (providing a stable IP and load balancing). Together, they allow you to automate the deployment, scaling, and operation of application containers at scale.",
+    "counterQuestion": "What is the 'Control Plane' in Kubernetes?",
+    "counterQuestionAnswer": "The Control Plane is the 'brain' of the cluster. It includes components like the **API Server** (for communication), **etcd** (the key-value store for cluster state), and the **Scheduler** (which decides which node a Pod should run on).",
+    "category": "infrastructure",
+    "topic": "kubernetes",
+    "difficulty": "medium",
+    "tags": [
+      "kubernetes",
+      "orchestration",
+      "basics",
+      "#highly_asked"
+    ],
+    "analogy": "In a fleet of delivery trucks (K8s Cluster), a 'Pod' is the 'Crate' that contains one or more packages (Containers). The 'Deployment' is the 'Fleet Manager' who ensures that if a truck breaks down, a new one is sent immediately. The 'Service' is the 'Dispatch Center' that gives customers a single phone number to reach the fleet, regardless of which truck is currently carrying their package.",
+    "code": "# Basic Kubernetes manifest (deployment.yaml)\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: my-app\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: my-app\n  template:\n    metadata:\n      labels:\n        app: my-app\n    spec:\n      containers:\n      - name: my-app\n        image: my-app:v1\n        ports:\n        - containerPort: 8080"
+  },
+  {
+    "id": 16,
+    "question": "How do you manage 'Secrets' and 'Configs' in Kubernetes?",
+    "answer": "1. **ConfigMaps**: Store non-sensitive configuration data (like environment variables or config files) as key-value pairs. \n2. **Secrets**: Store sensitive data (like passwords, tokens, or SSH keys). Secrets are base64 encoded but are **not encrypted by default** in etcd. Both can be injected into containers as environment variables or mounted as files in a volume, allowing you to decouple your application logic from its configuration and sensitive credentials.",
+    "counterQuestion": "How do you secure Kubernetes Secrets in production?",
+    "counterQuestionAnswer": "You should enable **Encryption at Rest** for the etcd store and use tools like **HashiCorp Vault**, AWS Secrets Manager, or Sealed Secrets to manage and inject secrets more securely, ensuring they are never stored in plain text in your version control or cluster metadata.",
+    "category": "infrastructure",
+    "topic": "kubernetes",
+    "difficulty": "hard",
+    "tags": [
+      "kubernetes",
+      "security",
+      "configuration"
+    ],
+    "analogy": "A ConfigMap is like a 'Public Notice Board' where you post the office hours and lunch menu (Non-sensitive info). A Secret is like a 'Key Safe' where you keep the building keys and bank codes. Both allow the staff (Pods) to get what they need without carrying everything in their pockets (Hardcoded in code).",
+    "code": "# Using a Secret as an environment variable in a Pod\nspec:\n  containers:\n  - name: my-app\n    env:\n    - name: DB_PASSWORD\n      valueFrom:\n        secretKeyRef:\n          name: my-db-secrets\n          key: password"
+  },
+  {
+    "id": 17,
+    "question": "Explain 'Infrastructure as Code' (IaC). How do you use Terraform or CloudFormation?",
+    "answer": "IaC is the practice of managing and provisioning infrastructure through machine-readable definition files rather than manual processes. \n1. **Terraform**: An open-source, cloud-agnostic tool that uses HCL (HashiCorp Configuration Language). It is highly portable across AWS, GCP, Azure, etc. \n2. **CloudFormation**: An AWS-native service that uses JSON or YAML. **Benefits**: Version control for infrastructure, reproducible environments, and 'Self-documenting' architecture that reduces human error and speeds up deployments.",
+    "counterQuestion": "What is 'State' in Terraform?",
+    "counterQuestionAnswer": "Terraform keeps track of the resources it has created in a 'State file' (terraform.tfstate). This file maps your configuration to real-world resources. It is critical to store this state remotely (e.g., in S3 with locking) to allow team collaboration and prevent state corruption.",
+    "category": "infrastructure",
+    "topic": "iac",
+    "difficulty": "hard",
+    "tags": [
+      "terraform",
+      "cloudformation",
+      "automation",
+      "#highly_asked"
+    ],
+    "analogy": "IaC is like having a 'Blueprint' for a Lego set. Instead of trying to remember where every piece goes (Manual configuration), you write down the exact steps and piece types in a file. If you want to build the exact same set again, you just follow the blueprint. Terraform is like a 'Master Architect' who can read blueprints for Lego, Mega Bloks, and K'NEX (AWS, GCP, Azure).",
+    "code": "# Simple Terraform Resource (main.tf)\nresource \"aws_instance\" \"web_server\" {\n  ami           = \"ami-0c55b159cbfafe1f0\"\n  instance_type = \"t2.micro\"\n\n  tags = {\n    Name = \"HelloWorld\"\n  }\n}"
+  },
+  {
+    "id": 18,
+    "question": "What is 'Blue-Green Deployment' vs 'Canary Deployment'?",
+    "answer": "1. **Blue-Green**: You have two identical production environments. 'Blue' is the current version, and 'Green' is the new one. Once Green is tested, you flip the router to point all traffic to Green. If something breaks, you flip back to Blue instantly. \n2. **Canary**: You roll out the new version to a **small subset of users** first. If the metrics look good, you slowly increase the traffic until 100% of users are on the new version. Canary is better for high-traffic sites where you want to minimize the 'blast radius' of potential bugs.",
+    "counterQuestion": "What is a 'Blast Radius'?",
+    "counterQuestionAnswer": "The blast radius is the maximum potential impact of a failure. In deployment, it refers to the number of users or services affected if the new version contains a critical bug. Deployment strategies like Canary are designed specifically to keep the blast radius as small as possible.",
+    "category": "infrastructure",
+    "topic": "deployment",
+    "difficulty": "medium",
+    "tags": [
+      "deployment_strategies",
+      "reliability",
+      "devops",
+      "#highly_asked"
+    ],
+    "analogy": "Blue-Green is like having two identical stages (A and B). While the band plays on Stage A, you set up Stage B. Once ready, you turn off the lights on A and turn them on on B. Canary is like releasing a new brand of coffee to just one small cafe; if customers like it and don't get sick, you roll it out to every cafe in the city.",
+    "code": "# Conceptual Canary with Nginx\nupstream backend {\n    server production-srv weight=95;\n    server canary-srv     weight=5;\n}\n\nserver {\n    location / {\n        proxy_pass http://backend;\n    }\n}"
+  },
+  {
+    "id": 19,
+    "question": "How do you monitor infrastructure health (Prometheus, Grafana, Datadog)?",
+    "answer": "Monitoring involves gathering metrics and visualizing them to understand system health. \n1. **Prometheus**: An open-source time-series database that pulls metrics from your services using a 'scrape' model. \n2. **Grafana**: A visualization tool that connects to Prometheus to create beautiful, real-time dashboards. \n3. **Datadog**: A managed SaaS platform that provides monitoring, tracing, and logging in a single integrated interface. Effective monitoring allows you to set up **Alerts** that notify you before a small issue becomes a major outage.",
+    "counterQuestion": "What is 'Pull' vs 'Push' monitoring?",
+    "counterQuestionAnswer": "In a 'Pull' model (Prometheus), the monitoring server requests data from the services. In a 'Push' model (Datadog/CloudWatch), the services send their data to the monitoring server. Pull is generally easier to manage in dynamic environments like Kubernetes, while Push is often better for short-lived tasks like Lambda functions.",
+    "category": "infrastructure",
+    "topic": "monitoring",
+    "difficulty": "medium",
+    "tags": [
+      "monitoring",
+      "prometheus",
+      "grafana"
+    ],
+    "analogy": "Prometheus is like a 'Security Guard' who walks around every 15 seconds and asks each room 'Is everything okay? How many people are inside?' (Scraping). Grafana is the 'CCTV Control Room' that takes those answers and turns them into beautiful charts and graphs for the building manager to see.",
+    "code": "# Prometheus Metric Example (Python)\nfrom prometheus_client import Counter, start_http_server\n\n# Create a metric to track HTTP requests\nREQUEST_COUNT = Counter('http_requests_total', 'Total HTTP Requests')\n\n# Start the metrics server\nstart_http_server(8000)\n\n# In your request handler:\nREQUEST_COUNT.inc()"
+  },
+  {
+    "id": 20,
+    "question": "Explain 'Reverse Proxy' (Nginx) vs 'API Gateway' (Kong, Traefik).",
+    "answer": "1. **Reverse Proxy (Nginx)**: Sits in front of your web servers and handles concerns like SSL termination, caching, and simple load balancing. \n2. **API Gateway (Kong, Traefik)**: A more specialized proxy designed for microservices. It handles advanced concerns like **Authentication, Rate Limiting, Request Transformation, and Service Discovery**. While Nginx is a 'Swiss Army Knife' for web traffic, an API Gateway provides the deep, programmable control needed for complex API ecosystems.",
+    "counterQuestion": "What is 'SSL Termination'?",
+    "counterQuestionAnswer": "SSL Termination is the process where the reverse proxy decrypts the incoming HTTPS traffic and passes it to the internal backend servers as plain HTTP. This offloads the expensive CPU work of encryption from your application servers to the specialized proxy.",
+    "category": "infrastructure",
+    "topic": "networking",
+    "difficulty": "medium",
+    "tags": [
+      "nginx",
+      "api_gateway",
+      "networking",
+      "#highly_asked"
+    ],
+    "analogy": "A Reverse Proxy is like a 'Security Desk' at a building entrance that checks IDs and points people to the right elevator. An API Gateway is like a 'Concierge Service' that not only checks IDs but also handles your mail, makes restaurant reservations (Rate limiting), and translates languages (Request transformation) for you.",
+    "code": "# Nginx Reverse Proxy\nlocation /api/ {\n    proxy_pass http://backend_api:8080/;\n    proxy_set_header Host $host;\n}\n\n# API Gateway (e.g., Kong) - configured via API/YAML\n# routes:\n#   - name: my-service\n#     paths: [\"/v1\"]\n#     plugins:\n#       - name: rate-limiting\n#         config: { second: 5 }"
+  },
+  {
+    "id": 21,
+    "question": "How do you implement 'Centralized Logging' (ELK Stack, Loki)?",
+    "answer": "Centralized logging collects logs from all your containers and servers into a single searchable store. \n1. **ELK Stack (Elasticsearch, Logstash, Kibana)**: The traditional heavyweight; very powerful searching but resource-intensive. \n2. **Loki**: A modern, lightweight alternative (by Grafana) that indexes only metadata (labels) rather than the full log text, making it much cheaper to run. This allows developers to debug issues across a distributed system without having to SSH into individual machines.",
+    "counterQuestion": "What is 'Structured Logging' and why is it important for centralized systems?",
+    "counterQuestionAnswer": "Structured logging is the practice of outputting logs as **JSON** objects instead of plain strings. This allows logging systems to easily parse and index specific fields ( like 'user_id' or 'error_code'), enabling much faster and more accurate searching and alerting.",
+    "category": "infrastructure",
+    "topic": "logging",
+    "difficulty": "medium",
+    "tags": [
+      "elk",
+      "loki",
+      "observability"
+    ],
+    "analogy": "ELK is like a 'Library' that indexes every word of every book, making it very powerful but needing huge bookshelves. Loki is like a 'Card Catalog' that only stores the book titles and authors (labels); it's much faster and cheaper, and you only go to the actual shelf to read the book when you find what you need.",
+    "code": "# Python structured logging (JSON) for ELK/Loki\nimport logging\nimport json\n\nlogger = logging.getLogger(__name__)\n\ndef log_event(user_id, event_type):\n    # Structured logs are easily searchable in ELK/Loki\n    log_data = {\n        \"user_id\": user_id,\n        \"event\": event_type,\n        \"status\": \"success\"\n    }\n    logger.info(json.dumps(log_data))"
+  },
+  {
+    "id": 22,
+    "question": "What is 'Autoscaling' (HPA in Kubernetes)? How does it trigger?",
+    "answer": "Autoscaling automatically adjusts the number of running pods based on resource usage. The **Horizontal Pod Autoscaler (HPA)** monitors metrics like CPU or memory usage. When usage exceeds a defined threshold (e.g., 70% CPU), HPA tells the Deployment to spin up more replicas. Once usage drops, it scales back down to save costs. This ensures your application can handle traffic spikes without manual intervention while minimizing wasted resources during quiet periods.",
+    "counterQuestion": "What is the 'Vertical Pod Autoscaler' (VPA)?",
+    "counterQuestionAnswer": "While HPA adds more Pods, VPA increases the **CPU and Memory limits** of the existing Pods. VPA is useful for applications that cannot be easily scaled horizontally (like some legacy databases) or to find the optimal resource settings for your services.",
+    "category": "infrastructure",
+    "topic": "kubernetes",
+    "difficulty": "medium",
+    "tags": [
+      "kubernetes",
+      "scaling",
+      "hpa"
+    ],
+    "analogy": "HPA is like adding more checkout lines at a grocery store when the queue gets too long. VPA is like replacing a single cashier with a 'Super-Cashier' who can work much faster and handle more items at once. Both ensure customers don't wait too long.",
+    "code": "# Kubernetes HPA manifest\napiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: my-app-hpa\nspec:\n  scaleTargetRef:\n    apiVersion: apps/v1\n    kind: Deployment\n    name: my-app\n  minReplicas: 2\n  maxReplicas: 10\n  metrics:\n  - type: Resource\n    resource:\n      name: cpu\n      target:\n        type: Utilization\n        averageUtilization: 70"
+  },
+  {
+    "id": 23,
+    "question": "Explain 'VPC', 'Subnets', and 'Security Groups' in a cloud environment (AWS/GCP).",
+    "answer": "1. **VPC (Virtual Private Cloud)**: A private, isolated section of the cloud where you can launch resources. \n2. **Subnets**: Subdivisions of a VPC. **Public Subnets** have a route to the internet; **Private Subnets** do not (usually used for databases). \n3. **Security Groups**: Virtual firewalls that control inbound and outbound traffic at the instance level. Together, these provide the networking foundation and security perimeters for your cloud infrastructure.",
+    "counterQuestion": "What is a 'NAT Gateway'?",
+    "counterQuestionAnswer": "A NAT Gateway allows resources in a **Private Subnet** (like a backend server) to connect to the internet (e.g., for software updates) while preventing the internet from initiating a connection back to those resources, maintaining high security.",
+    "category": "infrastructure",
+    "topic": "cloud_networking",
+    "difficulty": "medium",
+    "tags": [
+      "vpc",
+      "aws",
+      "security",
+      "#highly_asked"
+    ],
+    "analogy": "A VPC is like a 'Gated Community'. Subnets are individual 'Neighborhoods' within the community (some public, some private). Security Groups are the 'Doormen' at each house who only let in people with an invitation (Inbound rules).",
+    "code": "# Terraform for a basic VPC structure\nresource \"aws_vpc\" \"main\" {\n  cidr_block = \"10.0.0.0/16\"\n}\n\nresource \"aws_subnet\" \"public\" {\n  vpc_id     = aws_vpc.main.id\n  cidr_block = \"10.0.1.0/24\"\n  map_public_ip_on_launch = true\n}"
+  },
+  {
+    "id": 24,
+    "question": "How do you design a 'Global Load Balancing' strategy across multiple regions?",
+    "answer": "Global Load Balancing (e.g., AWS Global Accelerator or Cloudflare) uses **Anycast IP** or **DNS-based routing** to direct users to the nearest healthy datacenter. \n1. **Latency-based routing**: Directs users to the region with the lowest ping. \n2. **Failover**: If one region goes down, traffic is automatically rerouted to the next closest region. This ensures high performance for a global user base and provides maximum resilience against regional cloud outages.",
+    "counterQuestion": "What is 'Geo-Proximity' routing?",
+    "counterQuestionAnswer": "Geo-proximity routing allows you to direct traffic based on the geographic location of your users and your resources. You can also apply 'biases' to favor certain regions, which is useful for regulatory compliance (e.g., keeping European user data in EU regions).",
+    "category": "infrastructure",
+    "topic": "networking",
+    "difficulty": "hard",
+    "tags": [
+      "load_balancing",
+      "latency",
+      "reliability"
+    ],
+    "analogy": "Global Load Balancing is like having a 'Concierge' for a hotel chain. When you call the central number, the Concierge checks which hotel is closest to you and has empty rooms, then directs you there. If the hotel in your city is full, they send you to the one in the next city over.",
+    "code": "# Conceptual Latency Routing with AWS Route53 (Terraform)\nresource \"aws_route53_record\" \"global_app\" {\n  zone_id = aws_route53_zone.primary.zone_id\n  name    = \"app.example.com\"\n  type    = \"A\"\n\n  latency_routing_policy {\n    region = \"us-east-1\"\n  }\n\n  set_identifier = \"us-east-1-endpoint\"\n  alias {\n    name                   = aws_lb.us_east_lb.dns_name\n    zone_id                = aws_lb.us_east_lb.zone_id\n    evaluate_target_health = true\n  }\n}"
+  },
+  {
+    "id": 25,
+    "question": "Discuss 'Kubernetes Networking' (CNI, Service Mesh like Istio/Linkerd).",
+    "answer": "1. **CNI (Container Network Interface)**: The low-level plugin (like Flannel or Calico) that gives every Pod a unique IP and allows them to talk to each other across nodes. \n2. **Service Mesh**: An infrastructure layer (like Istio) that manages service-to-service communication. It uses **Sidecars** to handle concerns like mTLS (encryption), retry logic, and fine-grained traffic shifting without modifying the application code. While CNI handles basic connectivity, a Service Mesh provides the deep observability and security needed for complex microservices architectures.",
+    "counterQuestion": "What is 'mTLS' in the context of a Service Mesh?",
+    "counterQuestionAnswer": "Mutual TLS (mTLS) ensures that both the client and the server verify each other's certificates before communicating. A service mesh automates the rotation and management of these certificates, ensuring that all traffic within your cluster is encrypted and authenticated by default.",
+    "category": "infrastructure",
+    "topic": "kubernetes",
+    "difficulty": "hard",
+    "tags": [
+      "kubernetes",
+      "networking",
+      "service_mesh"
+    ],
+    "analogy": "CNI is the 'Postal Service' that ensures every house (Pod) has a unique address and can send letters to any other house. A Service Mesh is like having a 'Personal Assistant' for every house who reads the letters, checks if the sender is allowed to talk to you, retries sending if the letter gets lost, and keeps a log of all communication.",
+    "code": "# Istio Service Mesh: Restricting traffic (VirtualService)\napiVersion: networking.istio.io/v1alpha3\nkind: VirtualService\nmetadata:\n  name: my-app-route\nspec:\n  hosts:\n  - my-app\n  http:\n  - route:\n    - destination:\n        host: my-app\n        subset: v1\n      weight: 90\n    - destination:\n        host: my-app\n        subset: v2\n      weight: 10"
+  },
+  {
+    "id": 26,
+    "question": "How do you handle 'Stateful Sets' and 'Persistent Volumes' in Kubernetes?",
+    "answer": "1. **Persistent Volumes (PV)**: A piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned using Storage Classes. \n2. **StatefulSets**: A workload API used to manage stateful applications (like databases). Unlike Deployments, StatefulSets provide a **Stable Network ID** (e.g., 'db-0', 'db-1') and ensure that each pod is attached to the same Persistent Volume even if it's rescheduled to a different node. This is essential for maintaining data consistency in distributed databases and message brokers.",
+    "counterQuestion": "What is a 'Persistent Volume Claim' (PVC)?",
+    "counterQuestionAnswer": "A PVC is a request for storage by a user. It's like a Pod; while a Pod consumes node resources, a PVC consumes PV resources. Kubernetes automatically matches a PVC to an available PV that meets the requested size and access mode.",
+    "category": "infrastructure",
+    "topic": "kubernetes",
+    "difficulty": "hard",
+    "tags": [
+      "kubernetes",
+      "storage",
+      "stateful_sets"
+    ],
+    "analogy": "A Deployment is like a 'Cattle' farm; if a cow is sick, you replace it with another identical cow and don't care about its name. A StatefulSet is like a 'Pet' shelter; each animal has a name (db-0, db-1) and a specific cage (Persistent Volume) that belongs to it. If a pet leaves and comes back, it must go back to its specific cage.",
+    "code": "# Kubernetes StatefulSet for a Database\napiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: postgres\nspec:\n  serviceName: \"postgres\"\n  replicas: 1\n  template:\n    # ... container spec ...\n  volumeClaimTemplates:\n  - metadata:\n      name: data\n    spec:\n      accessModes: [ \"ReadWriteOnce\" ]\n      resources:\n        requests:\n          storage: 10Gi"
+  },
+  {
+    "id": 27,
+    "question": "Discuss 'Disaster Recovery' (RTO/RPO) strategies for cloud-native apps.",
+    "answer": "1. **RTO (Recovery Time Objective)**: The maximum acceptable time your system can be down after a failure. \n2. **RPO (Recovery Point Objective)**: The maximum acceptable amount of data loss (measured in time) after a failure. **Strategies**: \n1. **Backup & Restore** (High RTO/RPO). \n2. **Pilot Light** (Running a minimal version of the app in another region). \n3. **Warm Standby** (Scaling up the other region on demand). \n4. **Multi-Site Active-Active** (Zero RTO/RPO but highest cost).",
+    "counterQuestion": "What is 'Cross-Region Replication' (CRR)?",
+    "counterQuestionAnswer": "CRR is a feature (often in S3 or RDS) that automatically copies data from one geographic region to another in real-time. This is the foundation for high-availability and disaster recovery strategies, ensuring your data survives even a total regional cloud outage.",
+    "category": "infrastructure",
+    "topic": "reliability",
+    "difficulty": "hard",
+    "tags": [
+      "disaster_recovery",
+      "rto",
+      "rpo"
+    ],
+    "analogy": "RTO is 'How long can we stay closed?' (Time until the shop reopens). RPO is 'How much work can we afford to lose?' (How many hours of sales data were lost between the last backup and the crash). A Pilot Light is like keeping the stove on low; it's cheap, and you can start cooking very quickly if the main kitchen fails.",
+    "code": "# AWS RDS Cross-Region Read Replica (Terraform)\nresource \"aws_db_instance\" \"replica\" {\n  replicate_source_db = aws_db_instance.primary.arn\n  instance_class      = \"db.t3.micro\"\n  # Replica can be in a different region for DR\n  provider            = aws.secondary_region\n}"
+  },
+  {
+    "id": 28,
+    "question": "How do you implement 'GitOps' using tools like ArgoCD or Flux?",
+    "answer": "GitOps is a paradigm where **Git is the Single Source of Truth** for your infrastructure and application state. \n1. You define your Kubernetes manifests in a Git repository. \n2. An operator (like **ArgoCD**) runs inside your cluster and constantly compares the Git state with the actual cluster state. \n3. If they differ, the operator automatically pulls the changes and 'syncs' the cluster. This ensures that your infrastructure is versioned, auditable, and can be easily rolled back or recreated simply by interacting with Git.",
+    "counterQuestion": "What is 'Configuration Drift' and how does GitOps prevent it?",
+    "counterQuestionAnswer": "Configuration drift occurs when someone manually changes the cluster state (e.g., using 'kubectl edit') without updating the source files. GitOps tools detect this drift and automatically overwrite the manual changes with the state defined in Git, ensuring the cluster remains in its desired, documented state.",
+    "category": "infrastructure",
+    "topic": "gitops",
+    "difficulty": "hard",
+    "tags": [
+      "gitops",
+      "argocd",
+      "kubernetes"
+    ],
+    "analogy": "GitOps is like having a 'Smart Thermostat' for your entire infrastructure. You set the desired temperature (Desired state in Git). If someone opens a window (Manual change in cluster), the thermostat detects the difference and automatically turns on the heater (Sync) to bring the house back to the set temperature.",
+    "code": "# ArgoCD Application Manifest (Desired State)\napiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: my-app\nspec:\n  destination:\n    server: 'https://kubernetes.default.svc'\n    namespace: default\n  source:\n    repoURL: 'https://github.com/my-org/my-infra-gitops'\n    path: apps/my-app\n    targetRevision: HEAD\n  syncPolicy:\n    automated: { prune: true, selfHeal: true }"
+  },
+  {
+    "id": 29,
+    "question": "What is an 'EC2 Instance'? Discuss the different instance families (Compute, Memory, Storage optimized).",
+    "answer": "EC2 (Elastic Compute Cloud) provides scalable computing capacity in the AWS cloud. AWS offers different instance families tailored for specific workloads: \n1. **General Purpose (T/M)**: Balanced CPU and memory. \n2. **Compute Optimized (C)**: High-performance processors for batch processing or web servers. \n3. **Memory Optimized (R/X)**: For large datasets and in-memory caches (like Redis). \n4. **Storage Optimized (I/D)**: For high-speed local storage needs (like NoSQL databases). Choosing the right family ensures you get the best performance for the lowest possible cost.",
+    "counterQuestion": "What are 'Spot Instances'?",
+    "counterQuestionAnswer": "Spot Instances allow you to bid on spare AWS capacity at a significant discount (up to 90%). However, AWS can reclaim them with a 2-minute notice. They are perfect for fault-tolerant, stateless workloads like batch processing or CI/CD workers.",
+    "category": "cloud",
+    "topic": "aws_ec2",
+    "difficulty": "medium",
+    "tags": [
+      "aws",
+      "ec2",
+      "cost_optimization"
+    ],
+    "analogy": "Choosing an EC2 instance is like renting a vehicle. A T-series is like a 'Commuter Car' (great for daily use, but has a small engine). An R-series is like a 'Moving Truck' (huge cargo space for memory-heavy apps). A C-series is like a 'Formula 1 Car' (extremely fast engine for high-speed processing).",
+    "code": "# AWS CLI to describe instances filtered by type\naws ec2 describe-instances \\\n    --filters \"Name=instance-type,Values=t3.*\" \\\n    --query \"Reservations[*].Instances[*].{ID:InstanceId,Type:InstanceType}\""
+  },
+  {
+    "id": 30,
+    "question": "Explain 'EBS' (Elastic Block Store) vs. 'Instance Store'.",
+    "answer": "1. **EBS**: Network-attached storage that persists even if the instance is stopped or terminated. It supports snapshots and can be easily moved between instances. \n2. **Instance Store**: Physically attached to the host computer. It offers the **highest possible IOPS** and lowest latency, but it is **ephemeral**\u2014data is lost if the instance is stopped or fails. **Use EBS** for almost everything (databases, boot volumes), and **use Instance Store** only for temporary data like buffers, caches, and scratch files.",
+    "counterQuestion": "What is an 'EBS Snapshot'?",
+    "counterQuestionAnswer": "An EBS Snapshot is an incremental backup of your EBS volume stored in S\n3. It only stores the blocks that have changed since the last snapshot, making it a very cost-effective way to handle long-term data backup and recovery.",
+    "category": "cloud",
+    "topic": "aws_storage",
+    "difficulty": "medium",
+    "tags": [
+      "aws",
+      "ebs",
+      "persistence"
+    ],
+    "analogy": "EBS is like an 'External Hard Drive' that you plug into your laptop; if the laptop breaks, you just unplug the drive and plug it into a new one. Instance Store is like the 'RAM Disk' inside the laptop; it's incredibly fast, but if you turn off the power, everything on it is gone forever.",
+    "code": "# Terraform for EBS volume attachment\nresource \"aws_ebs_volume\" \"db_data\" {\n  availability_zone = \"us-east-1a\"\n  size              = 100\n  type              = \"gp3\"\n}\n\nresource \"aws_volume_attachment\" \"ebs_att\" {\n  device_name = \"/dev/sdh\"\n  volume_id   = aws_ebs_volume.db_data.id\n  instance_id = aws_instance.db_server.id\n}"
+  },
+  {
+    "id": 31,
+    "question": "How do 'Auto Scaling Groups' (ASG) work with 'Elastic Load Balancers' (ELB)?",
+    "answer": "ASG and ELB work together to provide high availability and scalability. \n1. **ELB**: Distributes incoming traffic across all healthy instances in the group. \n2. **ASG**: Automatically adds or removes instances based on demand (e.g., CPU usage). When ASG adds a new instance, it automatically registers it with the ELB. If an instance becomes unhealthy, ELB stops sending traffic to it, and ASG eventually terminates it and replaces it with a new one. This ensures your application stays running and responsive regardless of load or individual server failures.",
+    "counterQuestion": "What is a 'Target Group' in ELB?",
+    "counterQuestionAnswer": "A Target Group is a logical grouping of resources (like EC2 instances, IP addresses, or Lambda functions) that an ELB routes traffic to. It defines the health check settings and protocol (HTTP/HTTPS/TCP) used to communicate with the backend resources.",
+    "category": "cloud",
+    "topic": "aws_ec2",
+    "difficulty": "medium",
+    "tags": [
+      "aws",
+      "autoscaling",
+      "load_balancing"
+    ],
+    "analogy": "An ASG is like a 'Backup Squad' of musicians. The ELB is the 'Sound Engineer' who feeds the microphone signal to whoever is on stage. If a musician faints from exhaustion (Unhealthy), the Backup Squad immediately sends a replacement, and the Sound Engineer switches the mic to the new person seamlessly.",
+    "code": "# AWS CLI to create an Auto Scaling Group\naws autoscaling create-auto-scaling-group \\\n    --auto-scaling-group-name my-asg \\\n    --launch-template LaunchTemplateId=lt-0123456789abcdef0 \\\n    --min-size 2 --max-size 5 \\\n    --target-group-arns arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/my-targets/737ff8014c1d7330"
+  },
+  {
+    "id": 32,
+    "question": "What are 'IAM Roles' and why should you use them instead of 'Access Keys' on EC2?",
+    "answer": "IAM Roles allow you to grant permissions to AWS resources (like EC2 instances) without having to store long-lived credentials (Access Keys) on the instance itself. \n1. **Access Keys**: Risky if the instance is compromised; difficult to rotate. \n2. **IAM Roles**: Use **Temporary Security Credentials** that are automatically rotated by AWS. This is a critical security best practice that prevents credential leakage and ensures your infrastructure follows the 'Principle of Least Privilege'.",
+    "counterQuestion": "What is the 'Instance Metadata Service' (IMDS)?",
+    "counterQuestionAnswer": "IMDS is a service that runs on every EC2 instance (at 169.254.169.254) and provides information about the instance, including its IAM role credentials. Accessing this service is how SDKs and CLIs automatically pick up the role permissions without manual configuration.",
+    "category": "cloud",
+    "topic": "aws_iam",
+    "difficulty": "hard",
+    "tags": [
+      "aws",
+      "iam",
+      "security",
+      "#highly_asked"
+    ],
+    "analogy": "An Access Key is like a 'Master Key' that you carry in your pocket; if you lose your pants, someone can enter your house forever. An IAM Role is like a 'Face ID' system; the building knows who you are and unlocks the door automatically for you, but only while you're standing in front of it.",
+    "code": "# Terraform: Attaching an IAM Role to an EC2 Instance\nresource \"aws_iam_instance_profile\" \"web_profile\" {\n  name = \"web_instance_profile\"\n  role = aws_iam_role.web_role.name\n}\n\nresource \"aws_instance\" \"web\" {\n  # ... other params ...\n  iam_instance_profile = aws_iam_instance_profile.web_profile.name\n}"
+  },
+  {
+    "id": 33,
+    "question": "Explain 'S3 Storage Classes' (Standard, IA, Glacier, Deep Archive). When to use which?",
+    "answer": "1. **Standard**: High availability and performance; use for active data. \n2. **Intelligent-Tiering**: Automatically moves data to the most cost-effective tier based on access patterns. \n3. **Standard-IA (Infrequent Access)**: Lower cost for data accessed less often but still needs rapid access. \n4. **Glacier/Deep Archive**: Extremely low cost for long-term archiving; data retrieval takes minutes to hours. Choosing the right class can reduce your storage costs by 80% or more without changing how your application works.",
+    "counterQuestion": "What is the 'Retrieval Fee' in S3 IA and Glacier?",
+    "counterQuestionAnswer": "While storage costs are lower in IA and Glacier, AWS charges a 'Retrieval Fee' every time you access the data. This is why you should only use these classes for data you truly don't expect to access frequently, otherwise the retrieval costs can outweigh the storage savings.",
+    "category": "cloud",
+    "topic": "aws_s3",
+    "difficulty": "medium",
+    "tags": [
+      "aws",
+      "s3",
+      "cost_optimization",
+      "#highly_asked"
+    ],
+    "analogy": "S3 Standard is like the 'Fridge' in your kitchen (you open it every day). IA is like the 'Pantry' (you only go there once a week for pasta). Glacier is like the 'Basement' (you put things there you might only need once a year, and it takes time to go down and find them).",
+    "code": "# AWS S3 Lifecycle Configuration (Terraform)\nresource \"aws_s3_bucket_lifecycle_configuration\" \"example\" {\n  bucket = aws_s3_bucket.bucket.id\n\n  rule {\n    id      = \"archive\"\n    status  = \"Enabled\"\n\n    transition {\n      days          = 30\n      storage_class = \"STANDARD_IA\"\n    }\n\n    transition {\n      days          = 90\n      storage_class = \"GLACIER\"\n    }\n  }\n}"
+  },
+  {
+    "id": 34,
+    "question": "What are 'S3 Bucket Policies' vs. 'ACLs'?",
+    "answer": "1. **Bucket Policies**: Resource-based policies written in JSON. They are the modern, recommended way to manage access to a bucket and its objects at scale (e.g., 'grant access to everyone in this VPC'). \n2. **ACLs (Access Control Lists)**: An older method for granting permissions on individual objects. **Best Practice**: Use Bucket Policies for almost all use cases and keep ACLs disabled unless you have a specific need to manage permissions at the per-object level for cross-account access.",
+    "counterQuestion": "What is 'Object Ownership' in S3?",
+    "counterQuestionAnswer": "Object Ownership is a setting that determines who owns an object uploaded to your bucket. By default, the uploader owns the object. However, you can (and should) set it to 'Bucket Owner Enforced' to ensure that the bucket owner has full control over all objects, regardless of who uploaded them.",
+    "category": "cloud",
+    "topic": "aws_s3",
+    "difficulty": "hard",
+    "tags": [
+      "aws",
+      "s3",
+      "security"
+    ],
+    "analogy": "An ACL is like a 'Guest List' for a single party (one specific object). A Bucket Policy is like the 'House Rules' posted on the front door; they apply to everyone who enters and everything inside the house, which is much easier to manage.",
+    "code": "# AWS S3 Bucket Policy (Allowing public read for a specific folder)\n{\n    \"Version\": \"2012-10-17\",\n    \"Statement\": [\n        {\n            \"Sid\": \"PublicReadGetObject\",\n            \"Effect\": \"Allow\",\n            \"Principal\": \"*\",\n            \"Action\": \"s3:GetObject\",\n            \"Resource\": \"arn:aws:s3:::my-bucket/public/*\"\n        }\n    ]\n}"
+  },
+  {
+    "id": 35,
+    "question": "How do you implement 'S3 Versioning' and 'Lifecycle Rules' to save costs?",
+    "answer": "1. **Versioning**: Keeps multiple versions of an object, allowing you to recover from accidental deletions or overwrites. \n2. **Lifecycle Rules**: Automatically manage your data over time (e.g., 'Move objects to IA after 30 days' or 'Delete non-current versions after 90 days'). Combining these allows you to keep a 'safety net' of data while ensuring that old, unused versions don't drive up your monthly storage bill indefinitely.",
+    "counterQuestion": "What is a 'Delete Marker' in S3 Versioning?",
+    "counterQuestionAnswer": "When you delete an object in a versioned bucket, AWS doesn't actually remove the data. Instead, it adds a 'Delete Marker'. The object appears deleted, but you can still access previous versions or remove the marker to 'undelete' the object.",
+    "category": "cloud",
+    "topic": "aws_s3",
+    "difficulty": "medium",
+    "tags": [
+      "aws",
+      "s3",
+      "data_management"
+    ],
+    "analogy": "Versioning is like 'Save History' in a Word document; if you accidentally delete a paragraph, you can go back to yesterday's version. Lifecycle rules are like a 'Shredding Schedule'; they automatically move documents to the archive or the shredder based on how old they are.",
+    "code": "# Enable Versioning via AWS CLI\naws s3api put-bucket-versioning \\\n    --bucket my-precious-data \\\n    --versioning-configuration Status=Enabled"
+  },
+  {
+    "id": 36,
+    "question": "What is 'S3 Select' and how does it optimize data retrieval?",
+    "answer": "S3 Select is a feature that allows you to use SQL statements to filter the contents of an S3 object and retrieve only the subset of data that you need. Instead of downloading a massive 1GB CSV or JSON file and then filtering it in your application, you tell S3 to only send the rows/columns you care about. This significantly reduces the amount of data transferred and the CPU/memory needed on your application side, making data processing much faster and cheaper.",
+    "counterQuestion": "Does S3 Select work with encrypted objects?",
+    "counterQuestionAnswer": "Yes. S3 Select works with objects encrypted at rest with server-side encryption (SSE-S3, SSE-KMS, and SSE-C). The filtering happens after the object is decrypted by the S3 service internally.",
+    "category": "cloud",
+    "topic": "aws_s3",
+    "difficulty": "hard",
+    "tags": [
+      "aws",
+      "s3",
+      "sql"
+    ],
+    "analogy": "Standard S3 retrieval is like buying a whole box of 1,000 Legos just to get one specific blue brick. S3 Select is like asking the store clerk to open the box and just sell you that one blue brick. You save money, and you don't have to carry the heavy box home.",
+    "code": "# Using S3 Select with Python (Boto3)\nimport boto3\n\ns3 = boto3.client('s3')\n\nresp = s3.select_object_content(\n    Bucket='my-data-bucket',\n    Key='large_file.csv',\n    ExpressionType='SQL',\n    Expression=\"SELECT * FROM s3object s WHERE s.id = '123'\",\n    InputSerialization={'CSV': {\"FileHeaderInfo\": \"USE\"}},\n    OutputSerialization={'JSON': {}},\n)"
+  },
+  {
+    "id": 37,
+    "question": "Explain 'VPC Peering' vs. 'Transit Gateway'.",
+    "answer": "1. **VPC Peering**: A one-to-one connection between two VPCs. It is simple but becomes a 'mesh' nightmare as the number of VPCs grows (10 VPCs require 45 peering connections). \n2. **Transit Gateway**: A central hub that connects multiple VPCs and on-premises networks. It acts as a **Cloud Router**, simplifying network topology and making it much easier to manage traffic and security policies at scale across dozens or hundreds of accounts.",
+    "counterQuestion": "Is VPC Peering transitive?",
+    "counterQuestionAnswer": "No. VPC Peering is **not transitive**. If VPC A is peered with VPC B, and VPC B is peered with VPC C, VPC A cannot talk to VPC C through VPC B. This is one of the main reasons why companies move to Transit Gateway as their infrastructure grows.",
+    "category": "cloud",
+    "topic": "aws_networking",
+    "difficulty": "hard",
+    "tags": [
+      "aws",
+      "vpc",
+      "networking"
+    ],
+    "analogy": "VPC Peering is like building a 'Private Bridge' between two houses. If you have 10 houses and want them all to talk, you'll have bridges crossing everywhere. Transit Gateway is like a 'Grand Central Station'; every house just needs one road to the station, and the station handles the rest.",
+    "code": "# Transit Gateway Attachment (Terraform)\nresource \"aws_ec2_transit_gateway_vpc_attachment\" \"example\" {\n  subnet_ids         = [aws_subnet.example.id]\n  transit_gateway_id = aws_ec2_transit_gateway.example.id\n  vpc_id             = aws_vpc.example.id\n}"
+  },
+  {
+    "id": 38,
+    "question": "How do you secure an EC2 instance using 'Security Groups' and 'Network ACLs'?",
+    "answer": "1. **Security Groups**: Stateful firewalls at the **Instance** level. You only define 'Allow' rules. Since it's stateful, if you allow inbound traffic on port 80, the outbound response is automatically allowed. \n2. **Network ACLs (NACLs)**: Stateless firewalls at the **Subnet** level. You define both 'Allow' and 'Deny' rules. Since it's stateless, you must explicitly allow both inbound and outbound traffic. **Best Practice**: Use Security Groups as your primary defense and NACLs as an additional 'coarse-grained' layer of security for the entire subnet.",
+    "counterQuestion": "What does 'Stateful' mean in a firewall context?",
+    "counterQuestionAnswer": "Stateful means the firewall keeps track of the 'state' of network connections. If a request is allowed in, the firewall remembers that connection and automatically allows the corresponding response to go back out, regardless of the outbound rules.",
+    "category": "cloud",
+    "topic": "aws_security",
+    "difficulty": "medium",
+    "tags": [
+      "aws",
+      "security",
+      "firewall",
+      "#highly_asked"
+    ],
+    "analogy": "A Security Group is like a 'Bouncer' who remembers who you are; once they let you in, they also let you out. A NACL is like a 'Security Turnstile' that doesn't remember anything; it checks your ID when you enter AND when you try to leave, even if you just walked in a second ago.",
+    "code": "# AWS Security Group Rule (Terraform)\nresource \"aws_security_group_rule\" \"allow_http\" {\n  type              = \"ingress\"\n  from_port         = 80\n  to_port           = 80\n  protocol          = \"tcp\"\n  cidr_blocks       = [\"0.0.0.0/0\"]\n  security_group_id = aws_security_group.web_sg.id\n}"
+  },
+  {
+    "id": 39,
+    "question": "What is 'Serverless Computing'? Discuss the 'Cold Start' problem in AWS Lambda.",
+    "answer": "Serverless allows you to build and run applications without managing infrastructure. You pay only for the compute time you consume. **Cold Start**: When a Lambda function is called after being idle, AWS must provision a new execution environment and initialize your code. This causes a significant delay (latency) in the first request. Subsequent requests use the 'warm' environment and are nearly instantaneous. Cold starts are particularly noticeable in languages like Java or C#, and in functions inside a VPC.",
+    "counterQuestion": "What is 'Provisioned Concurrency'?",
+    "counterQuestionAnswer": "Provisioned Concurrency is an AWS feature that keeps a specified number of Lambda execution environments 'warm' and ready to respond immediately. This completely eliminates cold starts for those instances, but you pay for them even if they aren't being used.",
+    "category": "serverless",
+    "topic": "aws_lambda",
+    "difficulty": "medium",
+    "tags": [
+      "aws",
+      "lambda",
+      "performance",
+      "#highly_asked"
+    ],
+    "analogy": "A Cold Start is like a 'Sleepy Chef'. If no one has ordered food in a while, the Chef goes to sleep. When the first order comes in, the Chef has to wake up, wash their hands, and sharpen their knives before they can start cooking. Subsequent orders are fast because the Chef is already awake and in the kitchen.",
+    "code": "# Monitoring Cold Starts with AWS X-Ray (Python)\nimport aws_xray_sdk.core\n\ndef lambda_handler(event, context):\n    # The 'Initialization' phase in X-Ray shows the cold start duration\n    return {\"status\": \"ok\"}"
+  },
+  {
+    "id": 40,
+    "question": "How do you optimize 'Lambda Performance' (Memory allocation, VPC vs. non-VPC)?",
+    "answer": "1. **Memory Allocation**: Increasing memory also increases CPU and network bandwidth proportionally. Sometimes, giving a function more memory actually makes it **cheaper** because it finishes much faster. \n2. **VPC vs. Non-VPC**: Functions inside a VPC used to have much longer cold starts due to ENI (Elastic Network Interface) attachment. AWS has since optimized this with Hyperplane, but placing functions outside a VPC is still faster if they don't need access to private resources like RDS or ElastiCache.",
+    "counterQuestion": "What is the 'Handler' in a Lambda function?",
+    "counterQuestionAnswer": "The Handler is the specific function in your code that AWS calls when the Lambda is triggered. It receives an 'event' object (containing the input data) and a 'context' object (containing runtime information).",
+    "category": "serverless",
+    "topic": "aws_lambda",
+    "difficulty": "medium",
+    "tags": [
+      "aws",
+      "lambda",
+      "optimization"
+    ],
+    "analogy": "Giving a Lambda more memory is like giving a worker a 'Faster Computer' and 'Better Tools'. Even if the job is simple, the worker finishes so much faster that they can handle more work in the same amount of time, often making the total cost lower.",
+    "code": "# Adjusting Lambda Memory via AWS CLI\naws lambda update-function-configuration \\\n    --function-name my-function \\\n    --memory-size 1024 # Increases CPU and Network proportionally"
+  },
+  {
+    "id": 41,
+    "question": "Explain 'AWS Step Functions'. When to use them over simple Lambda chaining?",
+    "answer": "AWS Step Functions is a low-code **Visual Workflow Orchestrator**. \n1. **Lambda Chaining**: One Lambda calls another. This is difficult to debug, lacks error handling, and creates tight coupling. \n2. **Step Functions**: You define a state machine with built-in retry logic, parallel execution, and branching. It is much better for complex, multi-step business processes (like order fulfillment) because it provides a visual audit trail and handles long-running tasks (up to a year) that a single Lambda could never manage.",
+    "counterQuestion": "What is the difference between 'Standard' and 'Express' Step Functions?",
+    "counterQuestionAnswer": "Standard workflows are for long-running, auditable processes (up to 1 year). Express workflows are for high-volume, short-lived processes (up to 5 minutes) like IoT data ingestion or streaming. Express is much cheaper but doesn't provide the same visual debugging and execution history as Standard.",
+    "category": "serverless",
+    "topic": "orchestration",
+    "difficulty": "hard",
+    "tags": [
+      "aws",
+      "step_functions",
+      "orchestration"
+    ],
+    "analogy": "Lambda chaining is like a 'Relay Race' where if one runner drops the baton, the whole race is ruined. Step Functions is like a 'Project Manager' who has a flowchart. They check if each task is done, handle errors, retry if someone fails, and keep a record of exactly what happened at every step.",
+    "code": "# AWS Step Functions (ASL) definition snippet\n{\n  \"StartAt\": \"ProcessOrder\",\n  \"States\": {\n    \"ProcessOrder\": {\n      \"Type\": \"Task\",\n      \"Resource\": \"arn:aws:lambda:us-east-1:1234:function:ProcessOrder\",\n      \"Retry\": [{ \"ErrorEquals\": [\"States.ALL\"], \"IntervalSeconds\": 2 }],\n      \"Next\": \"ShipOrder\"\n    },\n    \"ShipOrder\": { \"Type\": \"Task\", \"Resource\": \"...\", \"End\": true }\n  }\n}"
+  },
+  {
+    "id": 42,
+    "question": "What is 'EventBridge' and how does it facilitate event-driven architecture?",
+    "answer": "AWS EventBridge is a serverless **Event Bus** that makes it easy to connect applications using data from your own apps, integrated SaaS apps, and AWS services. It decouples systems by allowing a 'Producer' to send an event to the bus without knowing who the 'Consumers' are. Consumers simply create 'Rules' to listen for specific events. This is the foundation of modern, scalable, event-driven architectures where services can evolve independently.",
+    "counterQuestion": "What is 'Schema Discovery' in EventBridge?",
+    "counterQuestionAnswer": "Schema Discovery automatically detects the structure of the events being sent to your bus and generates code bindings for languages like Java, Python, or TypeScript. This allows developers to use events as strongly-typed objects in their code, reducing errors and speeding up development.",
+    "category": "serverless",
+    "topic": "events",
+    "difficulty": "medium",
+    "tags": [
+      "aws",
+      "eventbridge",
+      "event_driven"
+    ],
+    "analogy": "EventBridge is like a 'Radio Tower'. Any service can broadcast a message (Event) to the tower without knowing who is listening. Other services (Listeners) tune their radios to specific frequencies (Rules) and only react when they hear a message they care about.",
+    "code": "# Sending a custom event to EventBridge (Python/Boto3)\nimport boto3\nimport json\n\nevents = boto3.client('events')\n\nresp = events.put_events(\n    Entries=[\n        {\n            'Source': 'my.app.orders',\n            'DetailType': 'OrderCreated',\n            'Detail': json.dumps({'order_id': '123', 'status': 'new'}),\n            'EventBusName': 'default'\n        }\n    ]\n)"
+  },
+  {
+    "id": 43,
+    "question": "Discuss 'Lambda Layers' and how they help with dependency management.",
+    "answer": "Lambda Layers are a distribution mechanism for libraries, custom runtimes, or other function dependencies. You package your common code (like a database client or utility library) into a Layer and attach it to multiple functions. **Benefits**: \n1. Reduces the size of your deployment package (making deployments faster). \n2. Allows you to share code across hundreds of functions without duplicating it in every repository. \n3. Simplifies dependency updates across a large serverless ecosystem.",
+    "counterQuestion": "How many layers can you attach to a single Lambda function?",
+    "counterQuestionAnswer": "You can attach up to **5 layers** to a single function. The layers are unzipped into the '/opt' directory in the order they are defined, so you must be careful about naming collisions if you use multiple layers.",
+    "category": "serverless",
+    "topic": "aws_lambda",
+    "difficulty": "medium",
+    "tags": [
+      "aws",
+      "lambda",
+      "layers"
+    ],
+    "analogy": "Lambda Layers are like a 'Shared Library' in a real-world library. Instead of every student buying their own copy of a textbook (Dependency), the library keeps one copy that everyone can reference. This makes each student's backpack (Deployment package) much lighter and easier to carry.",
+    "code": "# Referencing a layer in a SAM template\nResources:\n  MyFunction:\n    Type: AWS::Serverless::Function\n    Properties:\n      Layers:\n        - !Ref MyCommonLayer\n      # App code is now just the logic, no heavy dependencies\n      CodeUri: my_app/"
+  },
+  {
+    "id": 44,
+    "question": "What is the difference between a traditional Serverless function (AWS Lambda) and an Edge Function (Cloudflare Workers / Vercel Edge)?",
+    "answer": "1. **AWS Lambda**: Runs in a specific region (like us-east-1). It has full access to Node.js/Python runtimes but suffers from cold starts. \n2. **Edge Functions**: Run on **CDN nodes** (Edge locations) closest to the user. They use **V8 Isolates** instead of full VMs, resulting in **Zero Cold Starts**. However, they have a limited runtime environment (no full Node.js API) and very tight memory/execution time limits. Use Edge for things like A/B testing, authentication checks, and header manipulation to minimize user latency.",
+    "counterQuestion": "Can Edge Functions connect to a database?",
+    "counterQuestionAnswer": "Yes, but they usually require a **Connection Pooler** (like Prisma Accelerate or Supabase) or an HTTP-based database API (like Upstash Redis), because standard TCP connections are too slow and resource-heavy for short-lived Edge environments.",
+    "category": "serverless",
+    "topic": "edge_computing",
+    "difficulty": "hard",
+    "tags": [
+      "edge_functions",
+      "v8_isolates",
+      "performance"
+    ],
+    "analogy": "A standard Lambda is like a 'Main Warehouse' located in one city. If you live far away, delivery takes a long time. An Edge Function is like a 'Vending Machine' on your street corner. It doesn't have everything the warehouse has, but for the things it does have (Fast logic), the delivery is almost instant.",
+    "code": "# Cloudflare Worker (Edge Function) Example\naddEventListener('fetch', event => {\n  event.respondWith(handleRequest(event.request))\n})\n\nasync function handleRequest(request) {\n  return new Response('Hello from the Edge!', {\n    headers: { 'content-type': 'text/plain' },\n  })\n}"
+  },
+  {
+    "id": 45,
+    "question": "How do V8 Isolates solve the cold-start problem, and what are their limitations regarding Node.js core modules?",
+    "answer": "V8 Isolates are lightweight instances of the V8 JavaScript engine. Unlike containers/VMs that take seconds to start, an Isolate can be created in **milliseconds**. They solve cold starts by sharing the same process and memory space while maintaining strict security isolation. **Limitations**: Because they aren't a full Node.js environment, they don't support Node.js core modules that rely on native C++ bindings (like 'fs' or 'crypto'). You are restricted to a subset of standard Web APIs (like 'fetch' and 'SubtleCrypto').",
+    "counterQuestion": "What is the security model of V8 Isolates?",
+    "counterQuestionAnswer": "V8 Isolates rely on the same sandboxing technology used in the Chrome browser to separate different tabs. This allows providers like Cloudflare to run code from thousands of different customers on the same physical machine with high efficiency and strong security boundaries.",
+    "category": "serverless",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "v8_isolates",
+      "security",
+      "edge_computing"
+    ],
+    "analogy": "A Container/VM is like renting an entire apartment (Heavy, slow to move in). A V8 Isolate is like renting a 'Co-working Desk'. You have your own space and security, but you share the building's infrastructure (V8 Engine), allowing you to sit down and start working in milliseconds.",
+    "code": "# Isolates are a concept, but here's how you'd see the speed in a Worker\n# (No initialization code needed in the global scope to keep it fast)\n\nexport default {\n  async fetch(request) {\n    const start = Date.now();\n    // Logic here...\n    const end = Date.now();\n    console.log(`Execution time: ${end - start}ms`);\n    return new Response(\"Fast!\");\n  }\n};"
+  },
+  {
+    "id": 46,
+    "question": "Explain the difference between 'WSGI' and 'ASGI'. Why is ASGI necessary for modern Python?",
+    "answer": "1. **WSGI (Web Server Gateway Interface)**: The traditional standard for Python web apps (e.g., Django, Flask). It is strictly **synchronous**, meaning one worker process handles one request at a time. \n2. **ASGI (Asynchronous Server Gateway Interface)**: The modern successor designed for asynchronous Python. It allows a single worker to handle multiple concurrent requests using an event loop ('async/await'). ASGI is necessary for building real-time features like **WebSockets**, Server-Sent Events (SSE), and handling long-lived connections (like chat or streaming) without blocking the entire server, which is impossible with the synchronous WSGI model.",
+    "counterQuestion": "Can you run a Django app with an ASGI server?",
+    "counterQuestionAnswer": "Yes, modern Django (3.0+) supports ASGI out-of-the-box. You typically use an ASGI server like 'Uvicorn' or 'Daphne' to serve your project, allowing you to use both traditional views and async features like Django Channels in the same application.",
+    "category": "web_servers",
+    "topic": "interfaces",
+    "difficulty": "medium",
+    "tags": [
+      "wsgi",
+      "asgi",
+      "python_web",
+      "#highly_asked"
+    ],
+    "analogy": "WSGI is like a 'One-lane Bridge'; only one car (Request) can cross at a time per worker. ASGI is like a 'Multi-lane Highway'; cars can pass each other, and if one car is slow (I/O wait), others can keep moving in the other lanes, allowing for much higher throughput.",
+    "code": "# asgi.py (Django 3.0+)\nimport os\nfrom django.core.asgi import get_asgi_application\nfrom channels.routing import ProtocolTypeRouter, URLRouter\n\nos.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')\n\napplication = ProtocolTypeRouter({\n    \"http\": get_asgi_application(),\n    \"websocket\": URLRouter(websocket_urlpatterns),\n})"
+  },
+  {
+    "id": 47,
+    "question": "How do Gunicorn 'Worker Classes' differ? (Sync, Gevent, Eventlet). When would you use Gevent?",
+    "answer": "Gunicorn supports different worker types to handle requests: \n1. **Sync (Default)**: Each worker handles one request at a time. Ideal for CPU-bound tasks or simple apps. \n2. **Gevent/Eventlet**: These are 'Pseudo-thread' workers based on 'Greenlets'. They use cooperative multitasking to handle thousands of concurrent connections. Use **Gevent** when your application is I/O-bound (e.g., making many external API calls or DB queries) and you want to handle more concurrent users without the overhead of thousands of full OS threads. It 'patches' the standard library to make I/O non-blocking, dramatically increasing throughput for I/O-heavy workloads.",
+    "counterQuestion": "What is the 'Monkey Patching' requirement for Gevent?",
+    "counterQuestionAnswer": "Gevent requires 'monkey patching' the Python standard library (e.g., 'gevent.monkey.patch_all()') at the very beginning of your application. This replaces standard blocking calls (like 'time.sleep' or 'socket.recv') with non-blocking Gevent versions, enabling the cooperative multitasking that makes Gevent so efficient.",
+    "category": "web_servers",
+    "topic": "gunicorn",
+    "difficulty": "hard",
+    "tags": [
+      "gunicorn",
+      "gevent",
+      "concurrency"
+    ],
+    "analogy": "A Sync worker is a 'Single-tasking Waiter' who waits for the chef to cook before taking the next order. A Gevent worker is a 'Multi-tasking Waiter' who, while the chef is cooking one meal, goes and takes orders from five other tables, making the restaurant much more efficient.",
+    "code": "# Running Gunicorn with Gevent workers\ngunicorn --worker-class gevent --workers 4 myapp:app\n\n# Inside your app (automatically patched):\nimport requests\ndef fetch_data():\n    # This call is normally blocking, but Gevent makes it non-blocking\n    return requests.get(\"https://api.example.com\").json()"
+  },
+  {
+    "id": 48,
+    "question": "Why is it recommended to use Nginx in front of Gunicorn? Discuss buffering and slow-client protection.",
+    "answer": "Gunicorn is designed to handle requests as quickly as possible and is poor at managing 'slow clients' (users on bad mobile networks). Nginx acts as a high-performance **Buffer**. It receives the request from the slow client, stores it entirely in its own memory/disk buffer, and only then passes it to Gunicorn in one fast burst. This ensures that the Gunicorn worker is only occupied for a few milliseconds rather than several seconds, preventing a small number of slow clients from 'starving' your server and making it much more resilient to slow-loris style attacks.",
+    "counterQuestion": "What is 'proxy_buffers' in Nginx configuration?",
+    "counterQuestionAnswer": "'proxy_buffers' defines the size and number of buffers used for a single connection. If the response from Gunicorn is larger than the memory buffer, Nginx will save the rest to a temporary file on disk, ensuring the Gunicorn worker is freed up immediately regardless of how slow the client is to receive the data.",
+    "category": "web_servers",
+    "topic": "nginx",
+    "difficulty": "medium",
+    "tags": [
+      "nginx",
+      "gunicorn",
+      "performance"
+    ],
+    "analogy": "Nginx is like a 'Waiting Room' with a receptionist. Gunicorn is the 'Doctor'. A 'Slow Client' is a patient who takes 20 minutes to fill out their paperwork. Nginx lets them sit in the waiting room until they're finished, and only sends them to the Doctor when they are ready to be seen immediately.",
+    "code": "# Nginx config to protect Gunicorn from slow clients\nserver {\n    location / {\n        proxy_pass http://127.0.0.1:8000;\n        proxy_buffering on;\n        proxy_buffer_size 128k;\n        proxy_buffers 4 256k;\n        proxy_busy_buffers_size 256k;\n    }\n}"
+  },
+  {
+    "id": 49,
+    "question": "Explain the 'Gunicorn Master-Worker' process model. What happens if a worker dies?",
+    "answer": "Gunicorn uses a pre-fork worker model. The **Master** process starts up, loads the application code, and then 'forks' multiple **Worker** processes. The Master doesn't handle requests; it only monitors the health of the workers. If a worker process crashes or exceeds its 'max_requests', the Master detects it immediately and forks a fresh new worker to replace it. This ensures that the application remains available even if individual requests cause workers to crash, providing a robust and self-healing environment for Python web applications.",
+    "counterQuestion": "How does Gunicorn handle 'Graceful Shutdown'?",
+    "counterQuestionAnswer": "During a shutdown or restart, the Master sends a 'SIGTERM' signal to the workers. The workers stop accepting new requests but are allowed a specific 'timeout' (usually 30s) to finish processing their current ones before being forcibly killed. This ensures that users don't see '502 Bad Gateway' errors during deployments.",
+    "category": "web_servers",
+    "topic": "gunicorn",
+    "difficulty": "medium",
+    "tags": [
+      "gunicorn",
+      "architecture",
+      "reliability"
+    ],
+    "analogy": "The Gunicorn Master is like a 'Construction Foreman' who doesn't do the building himself but watches the workers. If a worker gets injured or quits (Crashes), the Foreman immediately hires a new person (Forks a new process) to keep the project on schedule.",
+    "code": "# Signals to manage Gunicorn master\n# HUP: Graceful restart (reloads config and workers)\nkill -HUP <master_pid>\n\n# TERM: Quick shutdown\nkill -TERM <master_pid>"
+  },
+  {
+    "id": 50,
+    "question": "How do you configure Nginx to serve 'Static Files' directly? Why is this more efficient?",
+    "answer": "You use the 'location /static/ { alias /path/to/static/; }' block in Nginx. This is significantly more efficient because Nginx is a C-based server optimized for high-speed file I/O and 'sendfile' system calls. By serving static files (CSS, JS, Images) directly, you completely bypass the Python interpreter and the Gunicorn/Django stack. This reduces the load on your application servers and allows Nginx to handle thousands of concurrent static file requests using minimal memory and CPU, which is far faster than any Python-based file server like 'WhiteNoise' or Django's built-in serving.",
+    "counterQuestion": "What is the 'sendfile' directive in Nginx?",
+    "counterQuestionAnswer": "The 'sendfile' directive tells Nginx to use a special kernel-level system call that copies data directly from the disk to the network card buffer, bypassing the 'application space' entirely. This is the fastest possible way to serve files on Linux systems.",
+    "category": "web_servers",
+    "topic": "nginx",
+    "difficulty": "medium",
+    "tags": [
+      "nginx",
+      "performance",
+      "static_files"
+    ],
+    "analogy": "Serving static files with Python is like asking a 'Brain Surgeon' (Python/Django) to hand you a 'Glass of Water' (Static File). It works, but it's a waste of their talent. Nginx is like a 'Vending Machine'; it's designed specifically to hand out water instantly and cheaply.",
+    "code": "# Nginx Optimized Static File Serving\nlocation /static/ {\n    alias /var/www/myproject/static/;\n    expires 30d;\n    add_header Cache-Control \"public, no-transform\";\n    tcp_nodelay on;\n    sendfile on; # Direct kernel-level file transfer\n}"
+  },
+  {
+    "id": 51,
+    "question": "What is an Nginx 'Upstream' block? How do you implement 'Round Robin' vs 'Least Conn' load balancing?",
+    "answer": "An 'upstream' block defines a group of backend servers that Nginx can load balance across. \n1. **Round Robin (Default)**: Sends requests to servers sequentially in order. \n2. **Least Conn (least_conn;)**: Sends the next request to the server with the fewest active connections, which is better for requests that take varying amounts of time to process. By using an upstream block, you can easily scale your application horizontally by adding more Gunicorn servers and letting Nginx distribute the traffic effectively while also providing health checks to automatically skip failing nodes.",
+    "counterQuestion": "What is 'IP Hash' load balancing and when should you use it?",
+    "counterQuestionAnswer": "IP Hash ('ip_hash;') ensures that requests from the same client IP address are always sent to the same backend server. This is used for applications that store 'session state' in the server's local memory rather than a shared database (though shared sessions are generally a better practice).",
+    "category": "web_servers",
+    "topic": "nginx",
+    "difficulty": "hard",
+    "tags": [
+      "nginx",
+      "load_balancing",
+      "scalability"
+    ],
+    "analogy": "An Upstream block is like a 'Team Registry'. When a request comes in, Nginx looks at the registry to see who is on the team (Servers) and uses a strategy (like Round Robin) to decide who gets the next task. If a teammate is 'sick' (Failing health checks), Nginx automatically stops giving them tasks.",
+    "code": "# Nginx Upstream with Least Connections\nupstream backend_cluster {\n    least_conn; # Send to server with fewest active connections\n    server 10.0.0.10:8000 max_fails=3 fail_timeout=30s;\n    server 10.0.0.11:8000 max_fails=3 fail_timeout=30s;\n    server 10.0.0.12:8000 backup; # Only used if others fail\n}"
+  },
+  {
+    "id": 52,
+    "question": "Discuss 'Unix Domain Sockets' vs 'TCP Sockets' for communication between Nginx and Gunicorn.",
+    "answer": "1. **Unix Domain Sockets**: Communication happens via a file on the local filesystem. This is faster and has lower overhead because it bypasses the entire network stack (TCP/IP). Use this when Nginx and Gunicorn are on the **same server**. \n2. **TCP Sockets**: Communication happens via IP and Port (e.g., 127.0.0.1:8000). This is necessary when Nginx and Gunicorn are on **different servers** or inside separate containers. While slightly slower due to network overhead, TCP sockets are more flexible for distributed architectures. For a single-server setup, Unix sockets are the best choice for maximum performance.",
+    "counterQuestion": "What is the permission issue commonly associated with Unix Sockets?",
+    "counterQuestionAnswer": "Since the socket is a file on disk, the Nginx user must have 'write' permissions to that file, and the Gunicorn user must be able to create it. If permissions aren't set correctly (e.g., using a folder like /tmp with restricted access), Nginx will return a '502 Bad Gateway' error.",
+    "category": "web_servers",
+    "topic": "networking",
+    "difficulty": "medium",
+    "tags": [
+      "nginx",
+      "gunicorn",
+      "networking"
+    ],
+    "analogy": "A TCP Socket is like 'Calling someone on their phone'; it's reliable and works even if they're in a different house, but it has some connection overhead. A Unix Socket is like 'Passing a note through a hole in the wall'; it's much faster because you're in the same building, but it only works if you're right next to each other.",
+    "code": "# 1. Using Unix Socket (Fastest for single server)\ngunicorn --bind unix:/run/gunicorn.sock myapp.wsgi\n# Nginx config: proxy_pass http://unix:/run/gunicorn.sock;\n\n# 2. Using TCP Socket (Required for containers/multi-server)\ngunicorn --bind 0.0.0.0:8000 myapp.wsgi\n# Nginx config: proxy_pass http://127.0.0.1:8000;"
+  },
+  {
+    "id": 53,
+    "question": "How do you handle 'Large File Uploads' in Nginx? (client_max_body_size).",
+    "answer": "By default, Nginx limits client request bodies to 1MB. If a user tries to upload a larger file, they will receive a '413 Request Entity Too Large' error. You increase this limit using the **'client_max_body_size'** directive in your 'http', 'server', or 'location' block. For applications that handle large uploads (like video platforms), you might set this to '100M' or more. It's also important to tune Gunicorn's 'timeout' settings, as uploading a massive file can take longer than the default worker timeout, causing Gunicorn to kill the worker before the upload finishes.",
+    "counterQuestion": "What is 'client_body_buffer_size'?",
+    "counterQuestionAnswer": "'client_body_buffer_size' defines the size of the memory buffer Nginx uses to hold the request body. If the upload is larger than this buffer, Nginx writes the data to a temporary file on disk. Tuning this can help prevent excessive disk I/O for medium-sized uploads.",
+    "category": "web_servers",
+    "topic": "nginx",
+    "difficulty": "easy",
+    "tags": [
+      "nginx",
+      "uploads",
+      "performance"
+    ],
+    "analogy": "client_max_body_size is like a 'Security Guard' with a scale. If you try to bring a 50lb suitcase into a building that only allows 1lb bags, the guard stops you at the door before you even get to the elevator (Backend), saving everyone's time.",
+    "code": "# Nginx config for large uploads\nhttp {\n    client_max_body_size 100M; # Global limit\n\n    server {\n        location /uploads/ {\n            client_max_body_size 500M; # Specific limit\n            client_body_timeout 300s; # Allow more time for slow uploads\n        }\n    }\n}"
+  },
+  {
+    "id": 54,
+    "question": "What is 'Keep-Alive' in Nginx and how does it affect performance?",
+    "answer": "Keep-Alive allows a single TCP connection to be reused for multiple HTTP requests. Without Keep-Alive, every single request (e.g., for each image or script on a page) requires a new TCP handshake (SYN/ACK), which adds significant latency and CPU overhead. Enabling Keep-Alive in Nginx ('keepalive_timeout') dramatically improves page load times and reduces server load by keeping connections open for a short period. This is especially critical for HTTPS connections, where the SSL/TLS handshake is even more expensive than a standard TCP handshake.",
+    "counterQuestion": "What is the 'Keepalive' directive in an Nginx Upstream block?",
+    "counterQuestionAnswer": "The 'keepalive' directive in an upstream block tells Nginx to maintain a pool of open connections to the *backend* servers (Gunicorn). This reduces the overhead of Nginx opening a new connection to Gunicorn for every incoming request, providing another layer of performance optimization for high-traffic sites.",
+    "category": "web_servers",
+    "topic": "nginx",
+    "difficulty": "medium",
+    "tags": [
+      "nginx",
+      "performance",
+      "networking"
+    ],
+    "analogy": "Without Keep-Alive, every request is like a 'First Date'; you have to introduce yourself, build trust, and then ask for what you want, every single time. With Keep-Alive, it's like a 'Long-term Relationship'; the trust is already there, so you can just ask for things directly whenever you need them.",
+    "code": "# Nginx Keep-Alive configuration\nkeepalive_timeout 65;\nkeepalive_requests 100;\n\n# In upstream block for backend connections\nupstream backend {\n    server 127.0.0.1:8000;\n    keepalive 32; # Keep 32 connections open to backend\n}"
+  },
+  {
+    "id": 55,
+    "question": "Explain 'X-Forwarded-For' and 'X-Real-IP' headers. Why are they critical for backend logging?",
+    "answer": "When Nginx acts as a proxy, the 'Source IP' seen by Gunicorn/Django is always the IP of the Nginx server itself, not the end user. To fix this, Nginx adds headers: \n1. **X-Forwarded-For**: A list containing the original client IP and any subsequent proxies. \n2. **X-Real-IP**: Typically used to hold the single, most-trusted client IP. These headers are critical because they allow your backend application to perform rate limiting, geo-location, and accurate logging of who is actually accessing your site, rather than seeing all traffic as coming from '127.0.0.1'.",
+    "counterQuestion": "What is 'Header Spoofing' and how do you prevent it?",
+    "counterQuestionAnswer": "Header spoofing is when an attacker sends their own 'X-Forwarded-For' header to trick your server. You prevent this by configuring Nginx to *overwrite* or *sanitize* these headers based on only the connection it directly receives, ensuring that your application only trusts the IP addresses validated by your own infrastructure.",
+    "category": "web_servers",
+    "topic": "proxying",
+    "difficulty": "hard",
+    "tags": [
+      "nginx",
+      "security",
+      "proxying"
+    ],
+    "analogy": "Nginx is like a 'Receptionist' who answers the phone for the whole company. When they transfer a call to an employee (Backend), they say 'I have a call from Mr. Smith' (X-Forwarded-For). Without that note, the employee would only see the internal office number on their caller ID.",
+    "code": "# Nginx config to pass real IP to backend\nproxy_set_header Host $host;\nproxy_set_header X-Real-IP $remote_addr;\nproxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\nproxy_set_header X-Forwarded-Proto $scheme;"
+  },
+  {
+    "id": 56,
+    "question": "What is the difference between 'Daphne' and 'Uvicorn'? When should you choose one over the other?",
+    "answer": "Both are ASGI servers for Python. \n1. **Uvicorn**: Built on 'uvloop' and 'httptools', it is extremely fast and focused on performance. It is the gold standard for FastAPI and general-purpose async apps. \n2. **Daphne**: The original ASGI server built for the **Django Channels** project. It has native support for both HTTP and WebSockets and is often considered the 'reference implementation'. **Choose Uvicorn** for maximum raw performance in modern async apps. **Choose Daphne** if you are heavily invested in the Django Channels ecosystem and want the most stable, battle-tested server for complex WebSocket-heavy Django projects.",
+    "counterQuestion": "Can you run Uvicorn as a Gunicorn worker?",
+    "counterQuestionAnswer": "Yes. You can use 'gunicorn -k uvicorn.workers.UvicornWorker'. This gives you the best of both worlds: Gunicorn's robust process management (master/worker model) and Uvicorn's high-speed asynchronous request handling.",
+    "category": "web_servers",
+    "topic": "asgi",
+    "difficulty": "hard",
+    "tags": [
+      "uvicorn",
+      "daphne",
+      "asgi"
+    ],
+    "analogy": "Uvicorn is like a 'Sprinter'\u2014it's built for raw speed and is the fastest way to handle modern async tasks. Daphne is like a 'Decathlete'\u2014it might not be the fastest runner, but it's built to handle many different things (HTTP, WebSockets, etc.) reliably in the Django ecosystem.",
+    "code": "# Running Uvicorn as a Gunicorn worker for best performance\ngunicorn myapp.asgi:application \\\n    -w 4 \\\n    -k uvicorn.workers.UvicornWorker"
+  },
+  {
+    "id": 57,
+    "question": "Explain 'Channel Layers' in Django Channels. Why is Redis typically used as the backing store?",
+    "answer": "Channel Layers provide a communication abstraction that allows multiple instances of your application to talk to each other. For example, if User A sends a chat message on Server 1, Server 1 needs to tell Server 2 to deliver that message to User B. **Redis** is used as the backing store because it is fast, supports 'pub/sub' patterns, and can handle high-frequency message exchange with very low latency. Without a channel layer, WebSockets would only work if all users were connected to the exact same server instance, making horizontal scaling impossible.",
+    "counterQuestion": "What is the 'InMemoryChannelLayer' and when should you use it?",
+    "counterQuestionAnswer": "The InMemoryChannelLayer stores all messages in the server's local RAM. You should ONLY use it for local development or automated testing. It cannot communicate between separate server processes, so it is completely unsuitable for production environments where you have multiple workers or containers.",
+    "category": "web_servers",
+    "topic": "django_channels",
+    "difficulty": "hard",
+    "tags": [
+      "django_channels",
+      "redis",
+      "scalability"
+    ],
+    "analogy": "The Channel Layer is like a 'Company Radio System'. If an employee in the warehouse (Server A) needs to talk to an employee in the office (Server B), they use the radio (Redis). Without the radio, people can only talk to those in the same room as them.",
+    "code": "# settings.py configuration for Redis Channel Layer\nCHANNEL_LAYERS = {\n    \"default\": {\n        \"BACKEND\": \"channels_redis.core.RedisChannelLayer\",\n        \"CONFIG\": {\n            \"hosts\": [(\"127.0.0.1\", 6379)],\n        },\n    },\n}"
+  },
+  {
+    "id": 58,
+    "question": "What is a 'Consumer' in Channels? Discuss 'SyncConsumer' vs 'AsyncConsumer'.",
+    "answer": "A Consumer is the Channels equivalent of a Django View; it's the code that handles an incoming WebSocket connection or message. \n1. **SyncConsumer**: Blocks the thread while processing. Use this if you need to call many synchronous libraries (like standard Django ORM calls) that aren't yet async-compatible. \n2. **AsyncConsumer**: Uses 'async/await' and doesn't block the worker thread. Use this for maximum performance and scalability, especially for features that involve lots of waiting (like waiting for external API responses or long-lived connections), as a single worker can handle thousands of concurrent async consumers.",
+    "counterQuestion": "How do you call the Django ORM inside an AsyncConsumer?",
+    "counterQuestionAnswer": "You must wrap the ORM call in 'database_sync_to_async'. This utility runs the synchronous ORM query in a separate thread pool and returns an awaitable result, allowing you to use Django's database features without blocking the main async event loop.",
+    "category": "web_servers",
+    "topic": "django_channels",
+    "difficulty": "medium",
+    "tags": [
+      "django_channels",
+      "async",
+      "concurrency"
+    ],
+    "analogy": "An AsyncConsumer is like a 'Juggler'. They can keep many balls (Connections) in the air at once. If one ball is 'waiting' at the top of its arc, the juggler uses that time to handle other balls. A SyncConsumer is like a 'Weightlifter'; they can only hold one heavy thing at a time and are stuck until they put it down.",
+    "code": "# Calling the ORM safely in an AsyncConsumer\nfrom channels.db import database_sync_to_async\n\nclass ChatConsumer(AsyncWebsocketConsumer):\n    async def receive(self, text_data):\n        # Do NOT call ORM directly here\n        user = await self.get_user(123)\n\n    @database_sync_to_async\n    def get_user(self, user_id):\n        return User.objects.get(id=user_id)"
+  },
+  {
+    "id": 59,
+    "question": "Explain the 'ProtocolTypeRouter'. How do you handle HTTP and WebSockets in the same application?",
+    "answer": "The 'ProtocolTypeRouter' is the entry point of a Django Channels application. It looks at the type of incoming connection (e.g., 'http' or 'websocket') and routes it to the appropriate handler. You configure it in your 'asgi.py' file: standard HTTP requests go to the normal Django WSGI application, while WebSocket requests are routed to your 'URLRouter' and consumers. This allows you to serve a traditional REST API or HTML pages side-by-side with real-time WebSocket features in a single, unified codebase and deployment.",
+    "counterQuestion": "What happens if a request type is sent that isn't in your ProtocolTypeRouter?",
+    "counterQuestionAnswer": "Channels will return a '500 Internal Server Error' or simply close the connection because it doesn't know how to handle the protocol. You should always ensure that 'http' is mapped to 'get_asgi_application()' to maintain standard web functionality.",
+    "category": "web_servers",
+    "topic": "django_channels",
+    "difficulty": "medium",
+    "tags": [
+      "django_channels",
+      "routing",
+      "asgi"
+    ],
+    "analogy": "ProtocolTypeRouter is like a 'Sorting Machine' at the post office. It looks at the package and says 'This is an Airmail letter (HTTP), send it to the regular mail sorter' or 'This is a Special Delivery (WebSocket), send it to the fast-track team'.",
+    "code": "# asgi.py router setup\napplication = ProtocolTypeRouter({\n    \"http\": get_asgi_application(),\n    \"websocket\": AuthMiddlewareStack(\n        URLRouter([\n            path(\"ws/chat/\", ChatConsumer.as_asgi()),\n        ])\n    ),\n})"
+  },
+  {
+    "id": 60,
+    "question": "How do you handle 'Authentication' in WebSockets with Django Channels?",
+    "answer": "WebSocket connections happen after the initial HTTP handshake, but they don't automatically share the same session middleware. In Channels, you use **'AuthMiddlewareStack'** in your routing configuration. This automatically populates the 'scope' (equivalent to 'request') with the authenticated 'user' object based on the cookies or session ID sent during the handshake. This allows you to restrict certain WebSocket channels to only logged-in users or specific roles using standard 'user.is_authenticated' checks inside your consumer's 'connect' method.",
+    "counterQuestion": "How do you handle Token-based authentication (like JWT) in Channels?",
+    "counterQuestionAnswer": "Since WebSockets don't always send standard HTTP headers after the handshake, you typically pass the token in the URL query string (e.g., 'ws://site.com/chat/?token=abc'). You then write a custom 'TokenAuthMiddleware' that extracts the token from the scope and manually authenticates the user before passing the connection to the consumer.",
+    "category": "web_servers",
+    "topic": "django_channels",
+    "difficulty": "hard",
+    "tags": [
+      "django_channels",
+      "security",
+      "authentication"
+    ],
+    "analogy": "AuthMiddlewareStack is like a 'VIP Badge' system. When a guest arrives at the door, the middleware checks their ID (Session Cookie) and pins a badge on them (sets scope['user']). Now, every room they enter (Consumer) knows exactly who they are without asking again.",
+    "code": "# Custom JWT Middleware snippet for Channels\nclass JWTAuthMiddleware(BaseMiddleware):\n    async def __call__(self, scope, receive, send):\n        # 1. Extract token from query string\n        # 2. Validate token\n        # 3. Set scope['user']\n        return await super().__call__(scope, receive, send)"
+  },
+  {
+    "id": 61,
+    "question": "What is 'WebSocket Heartbeats' (Ping/Pong)? Why are they necessary for long-lived connections?",
+    "answer": "Heartbeats are small control messages sent between the client and server to verify the connection is still alive. \n1. **Ping**: Sent by one party (usually the server). \n2. **Pong**: The required response from the other party. They are necessary because idle WebSocket connections can be silently dropped by intermediate firewalls, load balancers, or proxies that assume the connection has timed out. Regular heartbeats keep the connection 'warm' and ensure that both sides detect a broken connection immediately (e.g., if a user goes through a tunnel) so they can attempt to reconnect without waiting for a TCP timeout.",
+    "counterQuestion": "What is 'Ghosting' in WebSockets?",
+    "counterQuestionAnswer": "'Ghosting' is when the server thinks a user is still connected because it hasn't received a 'close' frame, but the client has actually lost connection. Without heartbeats, these ghost connections can linger for hours, wasting server resources and showing users as 'online' when they are actually gone.",
+    "category": "web_servers",
+    "topic": "networking",
+    "difficulty": "medium",
+    "tags": [
+      "websockets",
+      "networking",
+      "reliability"
+    ],
+    "analogy": "A Heartbeat is like saying 'Are you still there?' every few seconds on a long phone call. If you don't hear a 'Yes' (Pong) back, you know the line has gone dead and you should hang up and call again, rather than talking to yourself for an hour.",
+    "code": "# Example heartbeat logic in a WebSocket client (JS)\nconst socket = new WebSocket('ws://example.com');\n\nsetInterval(() => {\n  if (socket.readyState === WebSocket.OPEN) {\n    socket.send(JSON.stringify({ type: 'ping' }));\n  }\n}, 30000);"
+  },
+  {
+    "id": 62,
+    "question": "How do 'Groups' work in Django Channels for broadcasting messages?",
+    "answer": "Groups are a mechanism for broadcasting messages to multiple WebSocket consumers at once. You can add a channel (connection) to a group (e.g., 'room_chat_123') and then send a message to that group. The channel layer automatically delivers the message to all consumers currently in that group. This is the foundation for building chat rooms, live notifications, and real-time collaboration features where one event needs to be seen by many users simultaneously.",
+    "counterQuestion": "Do you need to manually remove a channel from a group when the user disconnects?",
+    "counterQuestionAnswer": "Yes, it is best practice to call 'group_discard' in your consumer's 'disconnect' method. While some channel layers have a TTL for group membership, explicitly removing the channel ensures you don't waste resources trying to send messages to a connection that no longer exists.",
+    "category": "web_servers",
+    "topic": "django_channels",
+    "difficulty": "medium",
+    "tags": [
+      "django_channels",
+      "broadcasting",
+      "pub_sub"
+    ],
+    "analogy": "Groups are like 'Chat Rooms'. When you enter a room (Add to group), you start hearing everything said in that room. When you leave (Discard from group), you stop hearing those messages. It allows one person to shout a message that everyone in the room hears simultaneously.",
+    "code": "# Adding a channel to a group in a Consumer\nasync def connect(self):\n    self.room_name = \"chat_room_1\"\n    await self.channel_layer.group_add(\n        self.room_name,\n        self.channel_name\n    )\n    await self.accept()"
+  },
+  {
+    "id": 63,
+    "question": "Discuss 'ASGI Scope'. How does it differ from a standard Django Request object?",
+    "answer": "The 'Scope' is a dictionary containing all the metadata about an ASGI connection (type, path, headers, user, etc.). Unlike a standard Django 'HttpRequest' which is built for a single, short-lived request-response cycle, the Scope exists for the **entire duration** of a connection (e.g., for as long as a WebSocket is open). This makes it more persistent and allows it to hold connection-specific state. It is the fundamental data structure used by ASGI servers to pass information to your consumers and middleware.",
+    "counterQuestion": "How do you modify the scope in a custom middleware?",
+    "counterQuestionAnswer": "In an ASGI middleware, you simply modify the 'scope' dictionary before passing it to the inner application. For example, a custom auth middleware would verify a token and then set 'scope[\"user\"] = authenticated_user', making that user available to all subsequent consumers.",
+    "category": "web_servers",
+    "topic": "asgi",
+    "difficulty": "hard",
+    "tags": [
+      "asgi",
+      "django_channels",
+      "internals"
+    ],
+    "analogy": "The ASGI Scope is like a 'Check-in Form' at a hotel. It contains your name, room number, and how long you're staying. Every employee you meet (Middleware/Consumer) looks at this form to know who you are and what services you're allowed to use during your stay.",
+    "code": "# Accessing scope data in a Consumer\nclass MyConsumer(AsyncWebsocketConsumer):\n    async def connect(self):\n        # Scope contains headers, path, user, etc.\n        client_ip = self.scope['client'][0]\n        user = self.scope['user']\n        print(f\"Connection from {user} at {client_ip}\")"
+  },
+  {
+    "id": 64,
+    "question": "Explain the difference between a 'Process' and a 'Thread' at the OS level.",
+    "answer": "1. **Process**: An independent program in execution. It has its own private memory space, stack, and resources. Processes are isolated from each other; if one crashes, the others are unaffected. \n2. **Thread**: A 'lightweight process' that exists inside a process. Threads share the same memory and resources of the parent process but have their own registers and stack. Creating and switching between threads is much faster than processes, but a crash in one thread can potentially crash the entire process.",
+    "counterQuestion": "What is a 'Context Switch'?",
+    "counterQuestionAnswer": "A context switch is the process of the CPU saving the state of a running process or thread so that it can be restored and resumed later. This allows multiple processes to share a single CPU (multi-tasking). Context switching has overhead (CPU cycles), which is why too many active threads can actually degrade performance.",
+    "category": "linux_os",
+    "topic": "fundamentals",
+    "difficulty": "medium",
+    "tags": [
+      "process",
+      "thread",
+      "os"
+    ],
+    "analogy": "A Process is like a 'Different Building'\u2014it has its own electricity and plumbing. A Thread is like a 'Person' working inside that building. All people in the same building share the same fridge and bathroom (Memory), but if the building collapses (Process crashes), everyone inside is gone.",
+    "code": "# Python example: Threading vs Multiprocessing\nfrom threading import Thread\nfrom multiprocessing import Process\n\ndef work():\n    print(\"Working...\")\n\n# Shares memory space with parent\nThread(target=work).start()\n\n# Has its own memory space (OS level isolation)\nProcess(target=work).start()"
+  },
+  {
+    "id": 65,
+    "question": "How do you check CPU and Memory usage in Linux (top, htop, free)?",
+    "answer": "1. **top**: A real-time, interactive system monitor. \n2. **htop**: A more user-friendly, colorized version of top with a visual bar graph for CPU/RAM usage. \n3. **free -m**: Displays the total, used, and free memory in Megabytes. It also shows the 'Available' memory, which is a better indicator of how much RAM is actually free for new processes (including cached/buffered memory).",
+    "counterQuestion": "What is 'Load Average' in top?",
+    "counterQuestionAnswer": "Load average shows the average number of processes in the 'runnable' or 'uninterruptible' state over 1, 5, and 15 minutes. A load average of 1.0 on a single-core machine means the CPU is 100% utilized; on a 4-core machine, it means the CPU is 25% utilized.",
+    "category": "linux_os",
+    "topic": "monitoring",
+    "difficulty": "easy",
+    "tags": [
+      "linux",
+      "monitoring",
+      "performance"
+    ],
+    "analogy": "htop is like the 'Dashboard' of your car. It shows you exactly how fast the engine is turning (CPU), how much gas is left (RAM), and which parts of the car are working the hardest (Process list), all in one color-coded view.",
+    "code": "# Linux monitoring commands\n# 1. See memory in MB\nfree -m\n\n# 2. See top processes by memory usage\nps aux --sort=-%mem | head -n 5\n\n# 3. Disk usage summary\ndf -h"
+  },
+  {
+    "id": 66,
+    "question": "Explain Linux 'File Permissions' (chmod, chown, umask).",
+    "answer": "1. **chmod**: Changes access permissions (Read, Write, Execute) for Owner, Group, and Others (e.g., `chmod 755 file`). \n2. **chown**: Changes the owner and/or group of a file or directory. \n3. **umask**: Sets the default permissions for newly created files and directories by 'masking' (disabling) specific bits. For example, a umask of 022 ensures that new files are not writable by others.",
+    "counterQuestion": "What does 'chmod 777' represent?",
+    "counterQuestionAnswer": "It gives Read, Write, and Execute permissions to everyone (Owner, Group, and Others). This is generally considered a **huge security risk** and should almost never be used in a production environment, as it allows any user on the system to modify or delete the file.",
+    "category": "linux_os",
+    "topic": "security",
+    "difficulty": "easy",
+    "tags": [
+      "linux",
+      "permissions",
+      "security"
+    ],
+    "analogy": "File permissions are like a 'Badge Access' system. 'Owner' is the person who owns the office, 'Group' is the team working there, and 'Others' is everyone else in the city. chmod is how you decide who gets a key to the door and what they're allowed to do once inside (Read, Write, or Execute).",
+    "code": "# Linux permission examples\n# Give owner full access, group/others read-only\nchmod 744 script.sh\n\n# Change owner to 'www-data' for web server access\nchown www-data:www-data /var/www/html/index.html"
+  },
+  {
+    "id": 67,
+    "question": "What is a 'Symbolic Link' (symlink) vs. a 'Hard Link'?",
+    "answer": "1. **Symbolic Link**: A special file that points to the path of another file. If the original file is deleted, the symlink becomes 'broken'. It can point to files on different filesystems. \n2. **Hard Link**: A pointer to the underlying **inode** of a file. It is indistinguishable from the original file. If you delete the original file, the data remains as long as at least one hard link exists. Hard links cannot point to directories or across different filesystems.",
+    "counterQuestion": "What is an 'inode'?",
+    "counterQuestionAnswer": "An inode (index node) is a data structure on a Linux filesystem that stores all the metadata about a file (size, owner, permissions, timestamps, data block pointers) *except* for its filename and the actual data. Filenames are stored in directory entries which point to inodes.",
+    "category": "linux_os",
+    "topic": "filesystem",
+    "difficulty": "medium",
+    "tags": [
+      "linux",
+      "filesystem",
+      "links"
+    ],
+    "analogy": "A Symbolic Link is like a 'Desktop Shortcut'; if you delete the original file, the shortcut points to nothing. A Hard Link is like having 'Two identical keys' to the same safe; as long as you have at least one key, you can still open the safe and get your data.",
+    "code": "# Creating links in Linux\n# 1. Symbolic Link (ln -s)\nln -s /path/to/original /path/to/link\n\n# 2. Hard Link (ln)\nln /path/to/original /path/to/hardlink"
+  },
+  {
+    "id": 68,
+    "question": "How do you find a specific string in a directory of files using grep or ripgrep?",
+    "answer": "1. **grep**: `grep -r 'search_string' /path/to/dir`. The `-r` flag makes it recursive. \n2. **ripgrep (rg)**: `rg 'search_string'`. Ripgrep is significantly faster than grep, respects `.gitignore` by default, and is built in Rust. It's the modern standard for searching large codebases from the command line.",
+    "counterQuestion": "What is the difference between 'grep' and 'find'?",
+    "counterQuestionAnswer": "`grep` searches for **content** inside files. `find` searches for the **files themselves** based on metadata like filename, size, or modification date. You often combine them, e.g., `find . -name '*.py' | xargs grep 'import django'`.",
+    "category": "linux_os",
+    "topic": "cli_tools",
+    "difficulty": "easy",
+    "tags": [
+      "linux",
+      "grep",
+      "ripgrep"
+    ],
+    "analogy": "grep is like searching for a word in a book by turning every page yourself. ripgrep is like using a 'Digital Index'; it's incredibly fast, knows what parts of the library to skip (respects gitignore), and finds exactly what you're looking for in a fraction of the time.",
+    "code": "# Searching for 'TODO' in the current directory\n# 1. Standard grep\ngrep -rn \"TODO\" .\n\n# 2. Ripgrep (Faster, ignores node_modules/etc automatically)\nrg \"TODO\""
+  },
+  {
+    "id": 69,
+    "question": "What is 'SSH' and how do 'Public/Private Keys' work for authentication?",
+    "answer": "SSH (Secure Shell) is a protocol for secure remote access. **Key-based Auth**: \n1. You generate a key pair locally. \n2. You place the **Public Key** in the `~/.ssh/authorized_keys` file on the remote server. \n3. When you connect, the server sends a challenge that only your **Private Key** can sign. This is much more secure than passwords, as private keys are virtually impossible to brute-force and can be further protected by a passphrase.",
+    "counterQuestion": "What is the '.ssh/known_hosts' file?",
+    "counterQuestionAnswer": "The `known_hosts` file stores the public keys of all the servers you have previously connected to. When you reconnect, SSH verifies that the server's key matches the one in this file, protecting you against 'Man-in-the-Middle' attacks where an attacker might try to intercept your connection by impersonating the server.",
+    "category": "linux_os",
+    "topic": "security",
+    "difficulty": "medium",
+    "tags": [
+      "ssh",
+      "security",
+      "linux"
+    ],
+    "analogy": "SSH keys are like a 'Lock and Key'. You keep the Key (Private Key) safe in your pocket, and you install the Lock (Public Key) on the remote door. No matter how many people try to pick the lock, only your specific key can open it, making it much safer than a simple password.",
+    "code": "# 1. Generate a key pair\nssh-keygen -t ed25519 -C \"my_email@example.com\"\n\n# 2. Copy the public key to a remote server\nssh-copy-id user@remote-host\n\n# 3. Connect securely\nssh user@remote-host"
+  },
+  {
+    "id": 70,
+    "question": "Explain the role of 'systemd' and how to manage services (systemctl).",
+    "answer": "systemd is the modern 'init' system for Linux, responsible for starting the system and managing processes. `systemctl` is the command-line tool used to interact with it. \n1. **start/stop**: `systemctl start nginx`. \n2. **enable/disable**: Sets whether a service starts automatically at boot. \n3. **status**: Shows if a service is running and its recent logs. systemd also handles dependency management between services, ensuring that a database starts before the application that depends on it.",
+    "counterQuestion": "What is a '.service' file?",
+    "counterQuestionAnswer": "A `.service` file is a configuration file used by systemd to define how a process should be managed. it contains sections like `[Unit]` (metadata and dependencies), `[Service]` (the actual command to run, user, and restart policy), and `[Install]` (how the service should be enabled).",
+    "category": "linux_os",
+    "topic": "system_administration",
+    "difficulty": "medium",
+    "tags": [
+      "linux",
+      "systemd",
+      "systemctl"
+    ],
+    "analogy": "systemd is like a 'Building Superintendent'. They are the first one in the building in the morning, they make sure the lights and heat (Services) are on, and if a pipe bursts (Service crashes), they are responsible for fixing it or restarting the system.",
+    "code": "# Managing a service with systemctl\n# 1. Reload config after change\nsystemctl daemon-reload\n\n# 2. Start and enable (start on boot)\nsystemctl enable --now nginx\n\n# 3. Check logs for a specific service\njournalctl -u nginx -f"
+  },
+  {
+    "id": 71,
+    "question": "What are 'Signals' in Linux (SIGTERM, SIGKILL, SIGINT)? How do they differ?",
+    "answer": "Signals are software interrupts sent to a process. \n1. **SIGTERM (15)**: The default signal to request a graceful shutdown. The process can catch it and perform cleanup. \n2. **SIGKILL (9)**: Forces the process to exit immediately. The process cannot catch or ignore this. \n3. **SIGINT (2)**: Sent when you press `Ctrl+C`. It's used to interrupt a running process. Always try SIGTERM first to allow for proper resource cleanup before resorting to SIGKILL.",
+    "counterQuestion": "What is 'SIGHUP'?",
+    "counterQuestionAnswer": "SIGHUP (Signal Hang Up) was originally used to notify a process that its controlling terminal had closed. Today, many daemons (like Nginx or Apache) use SIGHUP as a signal to **reload their configuration files** without needing to fully restart the service.",
+    "category": "linux_os",
+    "topic": "process_management",
+    "difficulty": "medium",
+    "tags": [
+      "linux",
+      "signals",
+      "processes"
+    ],
+    "analogy": "SIGTERM is like a 'Polite Request' to leave a party; you have time to finish your drink and say goodbye. SIGKILL is like being 'Thrown out by the bouncer'; you're gone instantly, and you might leave your coat and keys behind (Un-cleared resources).",
+    "code": "# Sending signals to a process\n# 1. Graceful stop (default)\nkill <pid>\n\n# 2. Forced stop (no cleanup)\nkill -9 <pid>\n\n# 3. Reload config (if supported)\nkill -HUP <pid>"
+  },
+  {
+    "id": 72,
+    "question": "Explain the 'Linux File Hierarchy Standard' (e.g., /etc, /var, /usr, /bin).",
+    "answer": "1. **/etc**: Configuration files for the system. \n2. **/var**: Variable data like logs, caches, and database files. \n3. **/usr**: User programs and data. \n4. **/bin**: Essential command binaries (like `ls` or `cp`). \n5. **/home**: Personal directories for users. \n6. **/root**: The home directory for the root user. Following this standard ensures that different Linux distributions remain somewhat consistent and that applications know where to find their files.",
+    "counterQuestion": "What is the purpose of '/tmp' vs. '/var/tmp'?",
+    "counterQuestionAnswer": "Both are used for temporary files. However, files in `/tmp` are usually cleared upon every system reboot, while files in `/var/tmp` are intended to be persistent across reboots and are only deleted if they haven't been accessed for a certain period (often 30 days).",
+    "category": "linux_os",
+    "topic": "filesystem",
+    "difficulty": "easy",
+    "tags": [
+      "linux",
+      "filesystem",
+      "fhs"
+    ],
+    "analogy": "The Linux File System is like an 'Organized Office'. /etc is the 'File Cabinet' for rules and settings. /var is the 'Trash and Outbox' for things that change constantly (Logs). /home is the 'Personal Desk' of each employee.",
+    "code": "# Exploring the hierarchy\nls -F / # See all root directories\nls /etc/*.conf | head # View config files\ndu -sh /var/log # See size of logs"
+  },
+  {
+    "id": 73,
+    "question": "How do you pipe outputs between commands (|) and redirect to files (>, >>)?",
+    "answer": "1. **Pipe (|)**: Sends the standard output (stdout) of one command as the standard input (stdin) to another (e.g., `cat log.txt | grep 'Error'`). \n2. **Redirect (>)**: Overwrites a file with the output of a command. \n3. **Append (>>)**: Adds the output to the end of a file without overwriting. \n4. **2>&1**: Redirects standard error (stderr) to the same place as stdout. These operators are the building blocks of powerful shell one-liners.",
+    "counterQuestion": "What is the 'tee' command?",
+    "counterQuestionAnswer": "The `tee` command reads from standard input and writes to both standard output and one or more files simultaneously. It's very useful when you want to see the output of a command on your screen while also saving it to a log file at the same time.",
+    "category": "linux_os",
+    "topic": "cli_tools",
+    "difficulty": "easy",
+    "tags": [
+      "linux",
+      "shell",
+      "piping"
+    ],
+    "analogy": "Piping is like a 'Conveyor Belt' in a factory. One machine (Command) processes the raw material and passes it to the next machine to refine it further. Redirection is like putting the final product into a 'Box' (File) for storage.",
+    "code": "# One-liner to find top 5 largest files in a dir\ndu -ah . | sort -rh | head -n 5\n\n# Redirect output and error to a log\n./my_script.sh > output.log 2>&1"
+  },
+  {
+    "id": 74,
+    "question": "What is eBPF (Extended Berkeley Packet Filter), and how is it replacing traditional sidecar proxies for service meshes (e.g., Cilium)?",
+    "answer": "eBPF is a revolutionary technology that allows you to run sandboxed programs inside the **Linux Kernel** without changing kernel source code or loading modules. **Service Mesh Role**: Traditional meshes (like Istio) use sidecar proxies (Envoy) in every pod, which adds significant latency and CPU overhead. eBPF-based meshes (like Cilium) handle networking, security, and observability directly in the kernel. This eliminates the need for sidecars, drastically reducing overhead and providing deeper visibility into system calls and network packets.",
+    "counterQuestion": "How does eBPF improve security observability?",
+    "counterQuestionAnswer": "Because eBPF runs at the kernel level, it can see every system call, file access, and network connection made by any process on the system. This allows for 'Runtime Security' tools (like Falco or Tetragon) to detect malicious behavior (like a web server suddenly trying to run `bash`) with near-zero overhead and before the action even completes.",
+    "category": "linux_os",
+    "topic": "advanced",
+    "difficulty": "hard",
+    "tags": [
+      "ebpf",
+      "cilium",
+      "kernel",
+      "networking"
+    ],
+    "analogy": "A traditional Service Mesh is like having a 'Translator' (Sidecar) following every person (Pod) to help them talk. eBPF is like teaching the 'Brain' (Kernel) of the whole building to understand all languages perfectly; no individual translators are needed anymore.",
+    "code": "# Verifying eBPF support on Linux\n# Check if the kernel supports bpf syscall\ngrep BPF /boot/config-$(uname -r)\n\n# List running BPF programs (requires bpftool)\nbpftool prog show"
+  },
+  {
+    "id": 75,
+    "question": "How do tools based on eBPF (like Falco, Hubble, or Tetragon) allow tracing and monitoring without altering code or kernel?",
+    "answer": "eBPF allows you to attach 'probes' (kprobes for kernel, uprobes for user-space) to specific functions or events. When the event occurs, the eBPF program runs, collects data, and sends it to user-space via a high-speed 'Perf Ring Buffer'. **Benefits**: \n1. **Non-intrusive**: No need to restart or recompile apps. \n2. **Performance**: Minimal overhead compared to traditional ptrace or logging. \n3. **Visibility**: Can see everything from system calls to network packets with full context of the process that triggered them.",
+    "counterQuestion": "What is the 'Verifier' in eBPF?",
+    "counterQuestionAnswer": "The Verifier is a critical safety component of the eBPF subsystem. It analyzes the eBPF code before it's allowed to run in the kernel to ensure it doesn't have infinite loops, doesn't crash, and doesn't access unauthorized memory. This ensures that a poorly written eBPF program cannot destabilize the entire operating system.",
+    "category": "linux_os",
+    "topic": "advanced",
+    "difficulty": "hard",
+    "tags": [
+      "ebpf",
+      "tracing",
+      "observability",
+      "security"
+    ],
+    "analogy": "Traditional monitoring is like a 'Security Camera' that only sees what's in its line of sight. eBPF tracing is like having a 'Nerve Sensor' on every single part of the body; it feels the slightest touch or movement instantly and knows exactly what caused it.",
+    "code": "# Simple eBPF-based trace using bpftrace (one-liner)\n# Trace all open() system calls system-wide\nbpftrace -e 'tracepoint:syscalls:sys_enter_open { printf(\"%s %s\\n\", comm, str(args->filename)); }'"
+  },
+  {
+    "id": 76,
+    "question": "Explain the 'OSI Model' and its 7 layers.",
+    "answer": "The OSI model is a conceptual framework used to understand network interactions. \n1. **Physical**: Hardware (cables). \n2. **Data Link**: MAC addresses, switches. \n3. **Network**: IP addresses, routing. \n4. **Transport**: TCP/UDP (ports). \n5. **Session**: Connection management. \n6. **Presentation**: Data encryption/formatting. \n7. **Application**: HTTP, FTP, SMTP. While the actual internet uses the simpler TCP/IP model, the OSI model is essential for troubleshooting where in the 'stack' a networking issue is occurring.",
+    "counterQuestion": "At which layer do 'Load Balancers' operate?",
+    "counterQuestionAnswer": "Load balancers typically operate at **Layer 4 (Transport)**, where they route traffic based on IP and Port, or **Layer 7 (Application)**, where they can look at HTTP headers, cookies, and URLs to make much more intelligent routing decisions.",
+    "category": "networking",
+    "topic": "fundamentals",
+    "difficulty": "medium",
+    "tags": [
+      "osi_model",
+      "networking",
+      "troubleshooting"
+    ],
+    "analogy": "The OSI model is like 'International Mail'. Layer 1 is the physical Plane. Layer 2 is the Airport. Layer 3 is the Address on the envelope. Layer 4 is the Priority (Express or Regular). Layer 7 is the actual Letter written in a language both people understand.",
+    "code": "# Networking tools per layer\n# L3 (IP): ping 8.8.8.8\n# L4 (Port): telnet google.com 80\n# L7 (HTTP): curl -I https://google.com"
+  },
+  {
+    "id": 77,
+    "question": "Describe the 'TCP 3-Way Handshake' (SYN, SYN-ACK, ACK).",
+    "answer": "The handshake establishes a reliable connection before data is sent. \n1. **SYN**: The client sends a 'Synchronize' packet with a sequence number. \n2. **SYN-ACK**: The server responds with a 'Synchronize-Acknowledgment' packet, acknowledging the client's number and sending its own. \n3. **ACK**: The client sends an 'Acknowledgment' packet back. Now the connection is 'Established'. This ensures that both sides are ready and able to communicate before the actual application data flows.",
+    "counterQuestion": "What is a 'SYN Flood' attack?",
+    "counterQuestionAnswer": "A SYN flood is a DoS attack where an attacker sends a massive number of SYN packets but never responds to the server's SYN-ACKs. The server keeps these 'half-open' connections in its memory, eventually exhausting its resources and preventing legitimate users from connecting.",
+    "category": "networking",
+    "topic": "tcp",
+    "difficulty": "medium",
+    "tags": [
+      "tcp",
+      "handshake",
+      "networking"
+    ],
+    "analogy": "The TCP handshake is like a 'Polite Conversation'. \n1. Client: 'Hello, can you hear me?' (SYN)\n2. Server: 'Yes, I can hear you. Can you hear me?' (SYN-ACK)\n3. Client: 'Yes, I can hear you too. Let's talk!' (ACK)",
+    "code": "# Viewing the handshake with tcpdump\ntcpdump -i any 'tcp[tcpflags] & (tcp-syn|tcp-ack) != 0'"
+  },
+  {
+    "id": 78,
+    "question": "What is 'DNS' and how does a 'Recursive Lookup' work?",
+    "answer": "DNS (Domain Name System) translates human-readable names (google.com) into IP addresses. **Recursive Lookup**: \n1. Your device asks a **Recursive Resolver** (like 8.8.8.8). \n2. The resolver asks the **Root Servers**. \n3. Root points to the **TLD Server** (.com). \n4. TLD points to the **Authoritative Name Server** for the domain. \n5. The Authoritative server returns the IP. The resolver then caches the result and sends it back to your device.",
+    "counterQuestion": "What is an 'A Record' vs. a 'CNAME'?",
+    "counterQuestionAnswer": "An **A Record** maps a domain name directly to an IPv4 address. A **CNAME (Canonical Name)** maps one domain name to another domain name (an alias). CNAMEs are often used to point a subdomain to a third-party service like Heroku or Cloudfront.",
+    "category": "networking",
+    "topic": "dns",
+    "difficulty": "medium",
+    "tags": [
+      "dns",
+      "networking",
+      "infrastructure"
+    ],
+    "analogy": "DNS is like a 'Phone Book'. A recursive lookup is like calling an 'Operator' and asking for a number. If they don't know it, they call the main directory, then the city directory, then the local branch, until they finally get the number and give it back to you.",
+    "code": "# Using 'dig' to trace a recursive lookup\ndig +trace google.com"
+  },
+  {
+    "id": 79,
+    "question": "Explain the difference between an 'A Record', 'CNAME', 'TXT', and 'MX' record.",
+    "answer": "1. **A Record**: Maps a domain to an IPv4 address. \n2. **CNAME**: An alias; maps one domain to another (e.g., 'www.google.com' to 'google.com'). \n3. **TXT Record**: Stores arbitrary text, commonly used for SPF/DKIM to verify email security and ownership. \n4. **MX Record**: Specifies the mail servers responsible for receiving email for the domain. Together, these records define how the world interacts with your domain for web, email, and security purposes.",
+    "counterQuestion": "What is an 'AAAA Record'?",
+    "counterQuestionAnswer": "An AAAA record is the IPv6 equivalent of an A record. It maps a domain name to a 128-bit IPv6 address. As the world transitions away from the limited pool of IPv4 addresses, AAAA records are becoming increasingly important for global connectivity.",
+    "category": "networking",
+    "topic": "dns",
+    "difficulty": "medium",
+    "tags": [
+      "dns",
+      "records",
+      "email"
+    ],
+    "analogy": "DNS records are like 'Business Card' fields. The A-record is the Physical Address. The MX-record is the Email Address. The CNAME is a 'Nickname' or alias. The TXT-record is a 'Note' written on the back for verification.",
+    "code": "# Querying specific DNS records\n# 1. Get IP address (A Record)\ndig A google.com +short\n\n# 2. Get mail servers (MX Record)\ndig MX google.com +short"
+  },
+  {
+    "id": 80,
+    "question": "What is 'TTL' (Time To Live) in the context of DNS?",
+    "answer": "TTL is a setting on a DNS record that tells resolvers how many seconds to cache the record before asking for it again. **High TTL** (e.g., 24 hours) reduces DNS traffic and improves speed but makes it slow to propagate changes. **Low TTL** (e.g., 60 seconds) allows for fast updates (useful during migrations) but increases load on your DNS servers and slightly slows down the first request for users.",
+    "counterQuestion": "What is 'DNS Propagation'?",
+    "counterQuestionAnswer": "DNS propagation is the time it takes for a change to a DNS record to be updated across all DNS servers globally. Because of caching and varying TTLs, it can take anywhere from a few minutes to 48 hours for a change to be fully 'propagated' and visible to every user on the internet.",
+    "category": "networking",
+    "topic": "dns",
+    "difficulty": "medium",
+    "tags": [
+      "dns",
+      "ttl",
+      "caching"
+    ],
+    "analogy": "TTL is like the 'Expiration Date' on a carton of milk. If the milk is still fresh (TTL hasn't expired), you drink it from the fridge (Cache). If it's expired, you have to go back to the store (DNS Server) to get a new one.",
+    "code": "# Checking TTL with dig\ndig google.com | grep \"ANSWER SECTION\" -A 1\n# Output will show the remaining TTL in seconds"
+  },
+  {
+    "id": 81,
+    "question": "Explain the difference between 'HTTP/1.1', 'HTTP/2', and 'HTTP/3' (QUIC).",
+    "answer": "1. **HTTP/1.1**: Simple, text-based. Suffers from 'Head-of-Line Blocking' (only one request per connection). \n2. **HTTP/2**: Binary, multiplexed (many requests over one TCP connection), uses header compression (HPACK). **Problem**: TCP packet loss still blocks all requests. \n3. **HTTP/3**: Uses **QUIC** over **UDP**. It solves the HOL blocking problem at the transport layer; a single lost packet only affects its own stream, not the whole connection. It also enables faster handshakes (0-RTT).",
+    "counterQuestion": "What is 'Server Push' in HTTP/2?",
+    "counterQuestionAnswer": "Server Push is a feature where the server sends resources (like CSS or JS) to the client before the client even asks for them, anticipating they will be needed. While it sounds efficient, it's often hard to implement correctly and can waste bandwidth if the client already has the resources cached, leading to it being deprecated or unused in many modern setups.",
+    "category": "networking",
+    "topic": "http",
+    "difficulty": "hard",
+    "tags": [
+      "http",
+      "quic",
+      "networking"
+    ],
+    "analogy": "HTTP/1.1 is like a 'One-item-at-a-time' conveyor belt. HTTP/2 is like a 'Multi-item' belt where different things move together. HTTP/3 is like 'Self-driving Delivery Drones'; if one drone crashes (Packet loss), all the other drones keep flying to their destination without stopping.",
+    "code": "# Checking HTTP version of a site\ncurl -I --http2 https://google.com | grep \"HTTP/\"\ncurl -I --http3 https://google.com | grep \"HTTP/\""
+  },
+  {
+    "id": 82,
+    "question": "What is 'TLS/SSL' and how does the 'Handshake' establish a secure connection?",
+    "answer": "TLS (Transport Layer Security) encrypts data between client and server. **Handshake**: \n1. **ClientHello**: Client sends supported cipher suites and a random number. \n2. **ServerHello**: Server chooses the cipher and sends its **Certificate**. \n3. **Validation**: Client verifies the certificate with a CA. \n4. **Key Exchange**: They use asymmetric encryption (RSA/Diffie-Hellman) to agree on a **Symmetric Session Key**. \n5. **Finished**: All further communication is encrypted using that fast symmetric key.",
+    "counterQuestion": "What is 'Perfect Forward Secrecy' (PFS)?",
+    "counterQuestionAnswer": "PFS is a feature where a unique session key is generated for every single connection. Even if the server's long-term private key is stolen later, the attacker cannot use it to decrypt past recorded traffic because the session keys were never stored and were generated independently for each session.",
+    "category": "networking",
+    "topic": "security",
+    "difficulty": "hard",
+    "tags": [
+      "tls",
+      "ssl",
+      "security"
+    ],
+    "analogy": "A TLS handshake is like 'Signing a contract'. First, you check each other's IDs (Certificates). Then, you go into a private room to agree on a 'Secret Code' (Symmetric Key). Once you leave the room, you only communicate using that secret code so no one else can understand you.",
+    "code": "# Viewing TLS certificate details with openssl\nopenssl s_client -connect google.com:443 -showcerts"
+  },
+  {
+    "id": 83,
+    "question": "Explain 'WebSockets' vs 'Server-Sent Events' (SSE) vs 'Long Polling'.",
+    "answer": "1. **WebSockets**: Bi-directional, full-duplex. Best for chats and games. **Drawback**: Stateful (harder to scale), complex to implement. \n2. **SSE (Server-Sent Events)**: Uni-directional (Server to Client). Best for live news feeds or stock tickers. It works over standard HTTP and automatically reconnects. \n3. **Long Polling**: The client requests data and the server holds the request open until it has data to send. It's the 'old' way and should only be used as a fallback for browsers that don't support WS or SSE.",
+    "counterQuestion": "Can you use WebSockets over HTTP/2?",
+    "counterQuestionAnswer": "Yes, but it requires an extension (RFC 8441). In HTTP/1.1, a WebSocket takes over the entire TCP connection. In HTTP/2, a WebSocket can be just one 'stream' among many on the same connection, which is much more efficient and allows you to share the same authentication headers and cookies as your other API calls.",
+    "category": "networking",
+    "topic": "realtime",
+    "difficulty": "medium",
+    "tags": [
+      "websockets",
+      "sse",
+      "long_polling"
+    ],
+    "analogy": "Long Polling is like asking 'Is it ready yet?' every 30 seconds. SSE is like a 'Radio Station' where the server talks and you just listen. WebSockets is like a 'Phone Call' where both people can talk and listen at the exact same time.",
+    "code": "# Server-Sent Events (SSE) Javascript client\nconst evtSource = new EventSource(\"https://example.com/events\");\nevtSource.onmessage = (event) => {\n  console.log(\"New message from server:\", event.data);\n};"
+  },
+  {
+    "id": 84,
+    "question": "What is 'DHCP' and how does a device get an IP address?",
+    "answer": "DHCP (Dynamic Host Configuration Protocol) automatically assigns IP addresses to devices on a network. **Process (DORA)**: \n1. **Discovery**: Device broadcasts a message to find a DHCP server. \n2. **Offer**: Server offers an available IP. \n3. **Request**: Device requests that IP. \n4. **Acknowledgment**: Server confirms the lease. This eliminates the need for manual IP configuration and ensures that IP addresses are managed efficiently and without conflicts.",
+    "counterQuestion": "What is a 'DHCP Lease'?",
+    "counterQuestionAnswer": "A DHCP lease is the period of time for which a DHCP server allows a device to use a specific IP address. Before the lease expires, the device must request a renewal. If the device leaves the network, the IP address eventually becomes 'free' again and can be assigned to another device.",
+    "category": "networking",
+    "topic": "fundamentals",
+    "difficulty": "medium",
+    "tags": [
+      "dhcp",
+      "ip_address",
+      "networking"
+    ],
+    "analogy": "DHCP is like a 'Hotel Receptionist'. When you arrive (Connect to network), you ask for a room (IP). They check their book (Pool), give you a key (Lease), and tell you when you need to return it or renew your stay.",
+    "code": "# Renewing DHCP lease in Linux\nsudo dhclient -r # Release\nsudo dhclient    # Request new"
+  },
+  {
+    "id": 85,
+    "question": "Explain 'NAT' (Network Address Translation) and 'Port Forwarding'.",
+    "answer": "1. **NAT**: Allows multiple devices on a private local network to share a single public IP address. The router 'translates' private IP/Port combinations to its public IP/Port and back. \n2. **Port Forwarding**: A specific NAT rule that tells the router to send all traffic arriving on a specific public port (e.g., 80) to a specific private IP/Port (e.g., 192.168.1.10:80). This allows devices on the public internet to reach a specific service (like a web server) inside a private network.",
+    "counterQuestion": "What is 'Carrier-Grade NAT' (CGNAT)?",
+    "counterQuestionAnswer": "CGNAT is a type of NAT used by ISPs to share a single public IP address across hundreds or thousands of customers. This is done to conserve the remaining pool of IPv4 addresses. For the customer, it means they don't have a unique public IP, which can make things like self-hosting or online gaming more difficult without specialized workarounds.",
+    "category": "networking",
+    "topic": "routing",
+    "difficulty": "medium",
+    "tags": [
+      "nat",
+      "port_forwarding",
+      "networking"
+    ],
+    "analogy": "NAT is like an 'Office Switchboard'. Everyone in the office has their own extension (Private IP), but the world only sees the main company number (Public IP). Port Forwarding is like a 'Direct Line'; if you call the main number and dial extension 101, it goes straight to the CEO's desk.",
+    "code": "# iptables rule for simple NAT (MASQUERADE)\niptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE\n\n# Port forwarding (Forward 80 to internal 8080)\niptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 192.168.1.10:8080"
+  },
+  {
+    "id": 86,
+    "question": "What is the difference between 'git pull' and 'git fetch'?",
+    "answer": "1. **git fetch**: Downloads the latest changes from the remote repository to your local tracking branches (e.g., `origin/main`) but does **not** change your local working files. \n2. **git pull**: Performs a `git fetch` and then immediately performs a `git merge` to integrate the changes into your current branch. `fetch` is safer because it allows you to inspect changes before merging them.",
+    "counterQuestion": "What is 'git pull --rebase'?",
+    "counterQuestionAnswer": "Instead of creating a merge commit, `git pull --rebase` fetches the changes and then reapplies your local commits on top of the newly fetched remote changes. This results in a much cleaner, linear project history, which is often preferred in professional environments.",
+    "category": "git",
+    "topic": "fundamentals",
+    "difficulty": "easy",
+    "tags": [
+      "git",
+      "fetch",
+      "pull",
+      "#highly_asked"
+    ],
+    "analogy": "git fetch is like 'Looking at the menu' to see what's new at the restaurant. git pull is like 'Ordering everything on the menu' and having it delivered to your table immediately without checking if you actually want it.",
+    "code": "# Safer alternative to git pull\ngit fetch origin\ngit log HEAD..origin/main # See what you're about to merge\ngit merge origin/main"
+  },
+  {
+    "id": 87,
+    "question": "Explain the difference between 'git merge' and 'git rebase'. When should you avoid rebasing?",
+    "answer": "1. **git merge**: Combines the histories of two branches by creating a new 'merge commit'. It preserves the full history of both branches. \n2. **git rebase**: Moves your local commits to the top of the target branch, effectively rewriting history to make it look linear. **Avoid rebasing**: Never rebase commits that have already been **pushed to a shared remote branch**, as it will break the history for everyone else on the team.",
+    "counterQuestion": "What is a 'Fast-forward' merge?",
+    "counterQuestionAnswer": "A fast-forward merge occurs when the target branch has no new commits since you branched off. Git simply moves the pointer forward to your latest commit without creating a merge commit. If you want to force a merge commit anyway (to preserve the history of the feature branch), you can use `git merge --no-ff`.",
+    "category": "git",
+    "topic": "workflow",
+    "difficulty": "medium",
+    "tags": [
+      "git",
+      "merge",
+      "rebase",
+      "#highly_asked"
+    ],
+    "analogy": "Merging is like 'Tying two ropes together'; you can clearly see the knot where they met. Rebasing is like 'Untying your rope and splicing it' onto the end of the other rope; it looks like one long, continuous rope with no visible knots.",
+    "code": "# Rebasing a feature branch onto main\ngit checkout feature\ngit rebase main\n\n# If conflicts occur:\n# 1. Resolve conflicts\n# 2. git add .\n# 3. git rebase --continue"
+  },
+  {
+    "id": 88,
+    "question": "What is 'git cherry-pick' and when is it useful?",
+    "answer": "Cherry-pick allows you to apply a specific commit from one branch onto another branch. It's useful when you've accidentally made a commit on the wrong branch, or when you want to port a specific bug fix from a development branch into a stable production branch without merging the entire history of the development branch.",
+    "counterQuestion": "What happens if a cherry-pick causes a conflict?",
+    "counterQuestionAnswer": "Like a merge, a cherry-pick can cause conflicts if the changes in the commit you are picking overlap with existing changes on your current branch. You must resolve the conflicts manually, add the files, and then run `git cherry-pick --continue` to finish the operation.",
+    "category": "git",
+    "topic": "advanced",
+    "difficulty": "medium",
+    "tags": [
+      "git",
+      "cherry_pick"
+    ],
+    "analogy": "Cherry-picking is like 'Selecting a single grape' from a bunch instead of taking the whole vine. You just want that one specific change (Commit) without bringing along everything else that happened around it.",
+    "code": "# Cherry-pick a specific commit into your current branch\ngit cherry-pick <commit-hash>"
+  },
+  {
+    "id": 89,
+    "question": "How do you resolve a 'Merge Conflict' safely?",
+    "answer": "1. Run `git status` to identify the conflicted files. \n2. Open the files and look for the conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`). \n3. Decide which changes to keep (manually edit or use a tool). \n4. Delete the markers and save the file. \n5. `git add` the resolved files. \n6. `git commit` to finish the merge. For complex conflicts, using a visual merge tool like the one built into VS Code or `meld` is highly recommended.",
+    "counterQuestion": "How do you abort a merge if it goes wrong?",
+    "counterQuestionAnswer": "If you get overwhelmed by conflicts or realize you started the merge on the wrong branch, you can run `git merge --abort`. This will return your branch to exactly how it was before you started the merge operation.",
+    "category": "git",
+    "topic": "troubleshooting",
+    "difficulty": "medium",
+    "tags": [
+      "git",
+      "conflicts",
+      "troubleshooting"
+    ],
+    "analogy": "A Merge Conflict is like two people trying to 'Edit the same line of a shared document' at the same time. Git stops and says 'I don't know whose version is better, you two need to sit down and decide which words to keep'.",
+    "code": "# Steps to resolve a conflict\ngit status # Find the files\n# Edit files (remove <<< === >>> markers)\ngit add <resolved-file>\ngit commit -m \"Resolved merge conflict\""
+  },
+  {
+    "id": 90,
+    "question": "Explain the 'GitFlow' vs 'Trunk-based Development' branching strategies.",
+    "answer": "1. **GitFlow**: A complex model with dedicated branches for `main`, `develop`, `feature/*`, `release/*`, and `hotfix/*`. Good for legacy projects with scheduled releases. \n2. **Trunk-based Development**: Developers merge small, frequent updates into a single 'trunk' (main) branch. It relies heavily on automated testing and **Feature Flags**. It is the industry standard for high-velocity teams practicing Continuous Integration and Deployment (CI/CD).",
+    "counterQuestion": "What is 'Release Flow'?",
+    "counterQuestionAnswer": "Release Flow (popularized by Microsoft) is a middle ground where teams work on a main branch (like Trunk-based) but create short-lived 'release branches' for stabilization and deployment. This allows feature development to continue on main while ensuring that the production release is stable and isolated.",
+    "category": "git",
+    "topic": "workflow",
+    "difficulty": "hard",
+    "tags": [
+      "gitflow",
+      "trunk_based",
+      "devops",
+      "#highly_asked"
+    ],
+    "analogy": "GitFlow is like a 'Book Publisher' with many stages (Draft, Edit, Proof, Print). It's slow but very controlled. Trunk-based Development is like a 'Live Blog'; you publish small updates constantly and use 'Feature Flags' to hide parts that aren't finished yet.",
+    "code": "# Simple Feature Flag logic (Python)\nimport os\n\ndef my_feature():\n    if os.getenv(\"ENABLE_NEW_ALGO\") == \"true\":\n        return new_logic()\n    return old_logic()"
+  },
+  {
+    "id": 91,
+    "question": "What is a 'Git Submodule' and what are its pitfalls?",
+    "answer": "A submodule allows you to keep another Git repository as a subdirectory of your own. **Pitfalls**: \n1. It points to a specific commit, not a branch, so it doesn't auto-update. \n2. Commands like `git clone` don't download submodules by default (requires `--recursive`). \n3. It makes the workflow more complex for other developers who might forget to update submodules. Often, using a package manager (NPM/PyPI) is a cleaner solution for dependency management.",
+    "counterQuestion": "What is 'git subtree'?",
+    "counterQuestionAnswer": "Git subtree is an alternative to submodules. It merges the external repository directly into your own project's history. It's easier for other developers to use because they don't need to learn any new commands, but it makes the repository size larger and can make it harder to push changes back to the original source repo.",
+    "category": "git",
+    "topic": "advanced",
+    "difficulty": "hard",
+    "tags": [
+      "git",
+      "submodules",
+      "dependencies"
+    ],
+    "analogy": "A Git Submodule is like 'Placing a flyer' in your window that tells people to go to another store for certain items. A Git Subtree is like 'Buying the items from the other store' and putting them on your own shelves. Submodules are lighter but more fragile; subtrees are sturdier but make your own store (Repo) bigger.",
+    "code": "# 1. Adding a submodule\ngit submodule add https://github.com/user/repo.git libs/my-lib\n\n# 2. Cloning a repo with submodules\ngit clone --recursive https://github.com/user/main-repo.git"
+  },
+  {
+    "id": 92,
+    "question": "How do you 'undo' the last commit that was already pushed to a remote branch?",
+    "answer": "1. **git revert <commit_id>**: This is the **safest** way. It creates a new commit that 'undoes' the changes of the previous one. It does not rewrite history, so it's safe for shared branches. \n2. **git reset --hard HEAD~1** followed by **git push --force**: This deletes the commit from the history. This is dangerous and should **only** be done on private branches where you are the only developer.",
+    "counterQuestion": "What is a 'Force Lease' in Git?",
+    "counterQuestionAnswer": "The `--force-with-lease` flag is a safer version of `--force`. It will only allow you to force-push if no one else has pushed any new commits to the remote branch since your last fetch. This prevents you from accidentally overwriting someone else's work while you are trying to rewrite your own history.",
+    "category": "git",
+    "topic": "troubleshooting",
+    "difficulty": "medium",
+    "tags": [
+      "git",
+      "revert",
+      "reset",
+      "undo",
+      "#highly_asked"
+    ],
+    "analogy": "git reset is like using an 'Eraser' to remove a mistake from history, which only works if no one else has seen the paper yet. git revert is like writing a 'Correction' at the bottom of the page; it keeps the mistake in the history but fixes it moving forward, which is much safer for shared work.",
+    "code": "# 1. Safely undo a commit (creates a new 'anti-commit')\ngit revert <commit-hash>\n\n# 2. Delete the last commit locally (dangerous!)\ngit reset --hard HEAD~1"
+  },
+  {
+    "id": 93,
+    "question": "What is 'git stash' and how do you use it?",
+    "answer": "Stash temporarily 'shelves' (or hides) your uncommitted changes so you can work on something else, and then come back and re-apply them later. \n1. `git stash`: Saves your work. \n2. `git stash list`: Shows your saved stashes. \n3. `git stash pop`: Re-applies the most recent stash and removes it from the list. It's incredibly useful when you need to switch branches quickly but aren't ready to commit your current work.",
+    "counterQuestion": "How do you stash only 'tracked' files?",
+    "counterQuestionAnswer": "By default, `git stash` stashes all tracked files. If you want to include **untracked** files (new files that haven't been added yet), you must use `git stash -u` (or `--include-untracked`). To include ignored files as well, use `git stash -a`.",
+    "category": "git",
+    "topic": "workflow",
+    "difficulty": "easy",
+    "tags": [
+      "git",
+      "stash",
+      "workflow"
+    ],
+    "analogy": "git stash is like a 'Workbench Tray'. When someone asks you to work on a different project, you sweep all your current tools and parts into the tray (Stash) and put it on a shelf. When you're ready to come back, you pull the tray off the shelf and put everything back exactly where it was.",
+    "code": "# Stashing changes to work on another branch\ngit stash push -m \"My work in progress\"\n\n# Switch branches, work, then come back\ngit checkout my-branch\ngit stash pop"
+  },
+  {
+    "id": 94,
+    "question": "Explain the purpose of '.gitignore' and '.gitattributes'.",
+    "answer": "1. **.gitignore**: Tells Git which files or directories to ignore (not track). Commonly used for `node_modules`, secret files, and build artifacts. \n2. **.gitattributes**: Used to define specific attributes for files, such as how to handle line endings (LF vs CRLF) or how to display diffs for binary files. It ensures that files are handled consistently across different operating systems (Windows vs Linux).",
+    "counterQuestion": "How do you 'ignore' a file that has already been committed?",
+    "counterQuestionAnswer": "Simply adding it to `.gitignore` won't work if it's already tracked. You must first remove it from the index: `git rm --cached <file_path>`. Then commit that change. The file will remain on your local disk but will no longer be tracked by Git.",
+    "category": "git",
+    "topic": "configuration",
+    "difficulty": "easy",
+    "tags": [
+      "git",
+      "gitignore",
+      "gitattributes"
+    ],
+    "analogy": ".gitignore is like a 'Do Not Enter' sign for certain rooms in your house (like the messy attic). .gitattributes is like a 'House Rules' list that tells guests exactly how to behave (e.g., 'Take off your shoes' or 'Use the guest towels'), ensuring everyone treats the house the same way.",
+    "code": "# .gitattributes example\n# Force all text files to use LF line endings\n* text=auto\n*.py text eol=lf\n*.sh text eol=lf"
+  },
+  {
+    "id": 95,
+    "question": "How do you use 'git bisect' to find the commit that introduced a bug?",
+    "answer": "`git bisect` uses a binary search to find the exact commit that introduced a bug. \n1. `git bisect start`. \n2. `git bisect bad`: Mark the current commit as broken. \n3. `git bisect good <commit_id>`: Mark a known-good commit from the past. \n4. Git will then checkout a commit in the middle; you test it and mark it as `good` or `bad`. \n5. Git repeats this until it identifies the 'first bad commit'. It's the most efficient way to debug a regression in a large history.",
+    "counterQuestion": "Can you automate 'git bisect'?",
+    "counterQuestionAnswer": "Yes! If you have a test script that returns a non-zero exit code on failure, you can run `git bisect run <script_path>`. Git will automatically perform the binary search and run the test on every step until it finds the culprit, without any manual intervention.",
+    "category": "git",
+    "topic": "troubleshooting",
+    "difficulty": "hard",
+    "tags": [
+      "git",
+      "bisect",
+      "debugging"
+    ],
+    "analogy": "git bisect is like finding a 'Broken Link' in a long chain. Instead of checking every single link one by one, you cut the chain in half and check if it's broken. You keep cutting the broken half in half until you find the exact link that failed.",
+    "code": "# Manual bisect session\ngit bisect start\ngit bisect bad HEAD\ngit bisect good v1.0.0 # A known stable version\n# ... test the code ...\ngit bisect good # or git bisect bad\n# ... repeat until culprit found ...\ngit bisect reset"
+  },
+  {
+    "id": 96,
+    "question": "How do you write a reusable GitHub Action workflow? Discuss the security implications of 'pull_request' vs 'pull_request_target'.",
+    "answer": "A reusable workflow is defined in a YAML file with the `workflow_call` trigger. It allows you to centralize CI/CD logic (e.g., a standard 'test and build' process) and call it from many repositories. **Security**: \n1. `pull_request`: Runs the workflow with the code from the PR but with **restricted permissions** (no access to secrets). \n2. `pull_request_target`: Runs with the code from the base branch (e.g., main) but with **write permissions and access to secrets**. You must be extremely careful with `pull_request_target` to ensure you aren't accidentally running untrusted code from a malicious PR that could steal your secrets.",
+    "counterQuestion": "What is 'workflow_dispatch'?",
+    "counterQuestionAnswer": "The `workflow_dispatch` trigger allows you to manually run a GitHub Action workflow from the GitHub UI or via the API. This is useful for tasks that shouldn't run on every commit, such as manual deployments to production, database migrations, or running specialized diagnostic scripts.",
+    "category": "git",
+    "topic": "cicd",
+    "difficulty": "hard",
+    "tags": [
+      "github_actions",
+      "cicd",
+      "security"
+    ],
+    "analogy": "pull_request is like letting a 'Guest' use your computer but giving them a restricted account. pull_request_target is like giving the Guest 'Admin Access' so they can help you fix the system, but you must be very careful they don't steal your passwords while they have control.",
+    "code": "# GitHub Action with restricted permissions\npermissions:\n  contents: read\n  pull-requests: write\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    # ... steps ..."
+  },
+  {
+    "id": 97,
+    "question": "Deep Dive: How does the Kubernetes Control Plane manage cluster state? (API Server, ETCD, Scheduler).",
+    "answer": "The Control Plane is the 'brain' of the cluster. \n1. **API Server**: The only component that talks to ETCD. It acts as the gateway for all internal and external requests. \n2. **ETCD**: A consistent and highly-available key-value store used as Kubernetes' backing store for all cluster data. \n3. **Scheduler**: Watches for newly created Pods with no assigned node and selects a node for them to run on based on resource requirements, policy constraints, and affinity/anti-affinity specifications. \n4. **Controller Manager**: Runs controller processes that regulate the state of the cluster (e.g., ensuring the number of replicas matches the deployment spec).",
+    "analogy": "The Control Plane is like the **Headquarters of a massive shipping company**. The **API Server** is the dispatch operator. **ETCD** is the master logbook. The **Scheduler** is the logistics expert who decides which truck (node) should carry which package (pod). The **Controller Manager** is the supervisor who constantly checks if the actual number of trucks on the road matches the schedule.",
+    "code": "```bash\n# Checking the health of control plane components\nkubectl get componentstatuses\n# Checking ETCD health directly (if accessible)\netcdctl endpoint health\n```",
+    "counterQuestion": "Why is 'etcd' critical to the cluster's survival?",
+    "counterQuestionAnswer": "ETCD is the 'Source of Truth'. If ETCD is lost and you don't have a backup, the cluster has no memory of its state\u2014it doesn't know which pods are running, where they are, or what their configurations are. Even if the nodes are healthy, the cluster cannot recover or manage itself without the data in ETCD.",
+    "category": "infrastructure",
+    "topic": "kubernetes",
+    "difficulty": "hard",
+    "tags": [
+      "kubernetes",
+      "control_plane",
+      "etcd",
+      "internals"
+    ]
+  },
+  {
+    "id": 98,
+    "question": "What are 'Kubelet' and 'Kube-Proxy'? Explain their roles on a Worker Node.",
+    "answer": "These are the two primary agents running on every worker node. \n1. **Kubelet**: The 'captain' of the node. it receives PodSpecs from the API Server and ensures that the containers described in those specs are running and healthy. It communicates with the Container Runtime (like containerd) to start/stop containers. \n2. **Kube-Proxy**: The 'network manager'. It maintains network rules on nodes. These rules allow network communication to your Pods from network sessions inside or outside of your cluster (e.g., managing the IP-tables or IPVS rules that make Services work).",
+    "analogy": "The **Kubelet** is like a **Construction Foreman** on a job site (the node). He gets the blueprints from the main office (API Server) and makes sure the workers (containers) are actually doing their jobs. The **Kube-Proxy** is like the **Security Guard/Receptionist** who directs incoming traffic and calls to the right rooms in the building.",
+    "code": "```bash\n# Checking kubelet logs for troubleshooting\njournalctl -u kubelet\n# Checking kube-proxy mode (iptables or ipvs)\nkubectl logs -n kube-system [kube-proxy-pod-name]\n```",
+    "counterQuestion": "How does Kubelet check if a container is 'Healthy'?",
+    "counterQuestionAnswer": "Kubelet uses **Liveness** and **Readiness** probes. A Liveness probe tells Kubelet if it needs to restart the container (e.g., the app is deadlocked). A Readiness probe tells Kubelet if the container is ready to start accepting traffic (e.g., it has finished loading data into memory).",
+    "category": "infrastructure",
+    "topic": "kubernetes",
+    "difficulty": "hard",
+    "tags": [
+      "kubernetes",
+      "kubelet",
+      "kube-proxy",
+      "networking"
+    ]
+  },
+  {
+    "id": 99,
+    "question": "What is the 'Container Network Interface' (CNI)? How do Pods talk to each other?",
+    "answer": "CNI is a standard that allows Kubernetes to use different networking solutions (like Calico, Flannel, or Cilium). Every Pod in a K8s cluster gets its own unique **Cluster-wide IP address**. The CNI plugin is responsible for creating the network interface for each Pod and ensuring that any Pod can communicate with any other Pod on any node without NAT. This flat, peer-to-peer network model simplifies application development as services can find each other via stable IP/DNS entries.",
+    "analogy": "The CNI is like the **Internal Phone System** in a large hotel. Every room (Pod) has its own direct extension number. You don't need to know which floor (Node) a person is on; you just dial their extension, and the CNI handles the routing through the building's wiring.",
+    "code": "```bash\n# Inspecting the CNI configuration on a node\ncat /etc/cni/net.d/10-calico.conflist\n# Pinging one pod from another (flat network)\nkubectl exec pod-a -- ping [pod-b-ip]\n```",
+    "counterQuestion": "What is a 'Service Mesh' (like Istio) compared to a CNI?",
+    "counterQuestionAnswer": "The CNI handles the 'Plumbing' (connecting pods at the network layer). A Service Mesh handles the 'Traffic Management' (Layer 7). It provides features like mTLS encryption, circuit breaking, and fine-grained observability between services that sit *on top* of the CNI network.",
+    "category": "infrastructure",
+    "topic": "kubernetes",
+    "difficulty": "hard",
+    "tags": [
+      "kubernetes",
+      "networking",
+      "cni",
+      "service_mesh"
+    ]
+  },
+  {
+    "id": 100,
+    "question": "What is the 'Reconciliation Loop' in Kubernetes? How do 'Operators' use it?",
+    "answer": "The Reconciliation Loop is the core logic of Kubernetes: it constantly compares the **Desired State** (what you want, defined in YAML) with the **Actual State** (what is currently running). If they don't match, K8s takes action to fix it. **Operators** extend this concept. They are custom controllers that use the Reconciliation Loop to manage complex, stateful applications (like a Database). An Operator understands the specific 'human' steps needed to scale or upgrade a database, automating those steps within the K8s loop.",
+    "analogy": "The Reconciliation Loop is like a **Thermostat**. You set the desired temperature to 72 degrees. The thermostat constantly checks the actual temperature. If it's 75, it turns on the AC. If it's 68, it turns on the heat. An **Operator** is like a 'Smart Home System' that knows it also needs to close the blinds and turn on the ceiling fan to reach that temperature efficiently.",
+    "code": "```bash\n# Viewing the status and 'reconciliation' of a resource\nkubectl describe deployment my-app\n# (Look for 'Events' at the bottom to see the loop in action)\n```",
+    "counterQuestion": "What is a 'CRD' (Custom Resource Definition)?",
+    "counterQuestionAnswer": "A CRD allows you to define your own 'Kind' of object in Kubernetes (like `Kind: MyPostgresDB`). Once defined, you can interact with it using `kubectl` just like a standard Pod or Deployment, and an Operator can then 'watch' these custom objects to perform management tasks.",
+    "category": "infrastructure",
+    "topic": "kubernetes",
+    "difficulty": "hard",
+    "tags": [
+      "kubernetes",
+      "operators",
+      "internals",
+      "reconciliation"
+    ]
+  },
+  {
+    "id": 101,
+    "question": "Explain 'Helm' and its role in Kubernetes deployments.",
+    "answer": "Helm is the 'Package Manager' for Kubernetes. It allows you to group multiple K8s manifests (Deployments, Services, ConfigMaps) into a single reusable unit called a **Chart**. Helm uses **Templates** and a `values.yaml` file to allow you to customize deployments for different environments (Dev, Staging, Prod) without duplicating your YAML files. It also manages versioning, allowing you to easily 'Rollback' to a previous version of an entire application stack if a deployment fails.",
+    "analogy": "Helm is like **A Meal Kit (like HelloFresh)**. Instead of buying every ingredient (YAML files) separately and following a complex recipe, you get a pre-packaged box (the Chart). You can still choose how much spice to add (the `values.yaml`), and if you don't like the meal, you can easily go back to the previous recipe (Rollback).",
+    "code": "```bash\n# Installing a chart with custom values\nhelm install my-app ./my-chart -f values-prod.yaml\n\n# Rolling back to the previous version\nhelm rollback my-app 1\n```",
+    "counterQuestion": "What is the 'Chart.yaml' file for?",
+    "counterQuestionAnswer": "The `Chart.yaml` file contains the metadata for your chart, such as the chart's name, description, version, and the version of the application it contains. It's essentially the 'package manifest' for your Helm chart.",
+    "category": "infrastructure",
+    "topic": "kubernetes",
+    "difficulty": "medium",
+    "tags": [
+      "kubernetes",
+      "helm",
+      "deployment",
+      "package_management"
+    ]
+  }
+]

@@ -1,0 +1,290 @@
+[
+  {
+    "id": 1,
+    "question": "What is the difference between 'ETL' and 'ELT'?",
+    "answer": "1. **ETL (Extract, Transform, Load)**: Data is transformed *before* it reaches the target data warehouse. This is traditional and ensures that only 'clean' data is stored. \n2. **ELT (Extract, Load, Transform)**: Data is loaded into the target (like Snowflake or BigQuery) in its raw form and transformed *afterward* using the massive processing power of the cloud data warehouse. ELT is faster to implement and allows data scientists to access raw data for unforeseen future analysis. In modern data engineering, ELT has become the dominant pattern due to the decreasing cost of cloud storage and the increasing power of distributed SQL engines.",
+    "analogy": "ETL is like **A Juice Bar** where fruit is washed and squeezed in the kitchen, and only the pure juice is served to the customer. ELT is like **A Buffet** where raw fruit is put on the table, and customers use their own powerful blenders to make whatever drink they want on the spot.",
+    "code": "```sql\n-- ELT pattern in Snowflake/BigQuery\n-- 1. Load Raw JSON\nCOPY INTO raw_table FROM @my_stage;\n-- 2. Transform into clean table using SQL\nINSERT INTO clean_table \nSELECT id, status, parse_json(data):customer_name \nFROM raw_table;\n```",
+    "counterQuestion": "What is 'Change Data Capture' (CDC)?",
+    "counterQuestionAnswer": "CDC is a technique used in ETL/ELT to identify and capture only the data that has changed since the last sync. Instead of doing a full dump of the database, CDC reads the database logs (like Postgres WAL or MySQL Binlog) and streams those changes to the target system in real-time, significantly reducing the load on the source database.",
+    "category": "data_eng",
+    "topic": "pipelines",
+    "difficulty": "medium",
+    "tags": [
+      "data_engineering",
+      "etl",
+      "elt"
+    ]
+  },
+  {
+    "id": 2,
+    "question": "Explain 'Apache Airflow'. What is a 'DAG' (Directed Acyclic Graph)?",
+    "answer": "Apache Airflow is a platform to programmatically author, schedule, and monitor workflows. A **DAG** is a collection of all the tasks you want to run, organized in a way that reflects their relationships and dependencies. Unlike a linear script, a DAG ensures that tasks are executed in the correct order (e.g., don't start the 'Analyze' task until the 'Ingest' task is finished). Airflow provides a rich UI to visualize these dependencies, handle failures, and manage complex scheduling logic, making it the industry standard for managing modern data pipelines and automated backend workflows.",
+    "analogy": "A DAG is like **A Recipe for a 5-course dinner**. You can't start the main course until the appetizers are finished, and you can't serve dessert until the table is cleared. Airflow is the **Executive Chef** who watches the clock and makes sure each chef starts their task at the right moment.",
+    "code": "```python\nfrom airflow import DAG\nfrom airflow.operators.python import PythonOperator\n\nwith DAG('my_data_pipeline', schedule='@daily') as dag:\n    extract = PythonOperator(task_id='extract', python_callable=get_data)\n    load = PythonOperator(task_id='load', python_callable=save_data)\n    \n    extract >> load # Set dependency: Extract MUST finish before Load\n```",
+    "counterQuestion": "What is an 'Operator' in Airflow?",
+    "counterQuestionAnswer": "An Operator is a template for a single task in a DAG. There are operators for running Python code ('PythonOperator'), executing SQL ('PostgresOperator'), transferring files ('S3ToRedshiftOperator'), and many others. You use operators to define the actual work that happens at each node of your DAG.",
+    "category": "data_eng",
+    "topic": "orchestration",
+    "difficulty": "medium",
+    "tags": [
+      "airflow",
+      "orchestration",
+      "pipelines"
+    ]
+  },
+  {
+    "id": 3,
+    "question": "How do you handle 'Backfilling' and 'Retries' in data pipelines?",
+    "answer": "1. **Backfilling**: The process of running a pipeline for a historical time period (e.g., re-running the last 30 days of data because a bug was found). Airflow handles this through 'execution_date' context, allowing you to trigger runs for any past date. \n2. **Retries**: Essential for handling transient failures (like a network timeout). You configure 'retries' and 'retry_delay' at the task level. A robust pipeline should be **Idempotent**, meaning that running the same task multiple times for the same date results in the same outcome without creating duplicate data, which is critical for safe backfilling and automatic retries.",
+    "analogy": "Backfilling is like **Re-printing last month's newspaper** because you found a typo in every issue. Retries are like **The delivery truck trying again** if the road was blocked by snow; it doesn't give up forever, it just waits for the snow to clear and tries the route again.",
+    "code": "```python\n# Airflow task retry configuration\ndefault_args = {\n    'owner': 'airflow',\n    'retries': 3,\n    'retry_delay': timedelta(minutes=5),\n}\n\n# Triggering a backfill from CLI\n# airflow dags backfill -s 2023-01-01 -e 2023-01-31 my_dag\n```",
+    "counterQuestion": "What does it mean for a data task to be 'Idempotent'?",
+    "counterQuestionAnswer": "An idempotent task can be executed multiple times with the same input and will always produce the same result. In data engineering, this usually means using 'UPSERT' (Insert or Update) logic or 'Overwrite' patterns to ensure that re-running a failed job doesn't result in duplicate records in the target database.",
+    "category": "data_eng",
+    "topic": "pipelines",
+    "difficulty": "hard",
+    "tags": [
+      "data_engineering",
+      "best_practices",
+      "reliability"
+    ]
+  },
+  {
+    "id": 4,
+    "question": "What is 'Data Warehousing' (Redshift, Snowflake) vs 'Data Lakes' (S3 + Athena)?",
+    "answer": "1. **Data Warehouse**: Stores highly structured, cleaned, and categorized data optimized for SQL-based business intelligence (BI). It is fast and expensive. \n2. **Data Lake**: Stores vast amounts of raw data in its native format (JSON, CSV, Parquet) on cheap object storage like S\n3. You use 'Query-on-Read' tools like Amazon Athena to analyze it. **Data Warehouses** are for 'known' questions and clean reporting. **Data Lakes** are for 'unknown' questions, data science experiments, and storing historical data at a massive scale for a fraction of the cost.",
+    "analogy": "A Data Warehouse is like **A curated library** where every book is cataloged and placed on a specific shelf. A Data Lake is like **A massive warehouse full of boxes**. You don't know what's in every box yet, but it's cheap to store them all there until you hire an expert to sort through them.",
+    "code": "```python\n# Querying a Data Lake (S3) using AWS Athena (SQL)\nimport boto3\nclient = boto3.client('athena')\n\nquery = \"SELECT * FROM my_s3_lake.logs WHERE level = 'ERROR'\"\n# Athena handles the heavy lifting of reading S3 files directly\n```",
+    "counterQuestion": "What is a 'Data Lakehouse'?",
+    "counterQuestionAnswer": "A Data Lakehouse (like Databricks or Snowflake's modern features) is a hybrid architecture that combines the cheap storage and flexibility of a Data Lake with the performance, ACID transactions, and governance of a Data Warehouse. It aims to be a single source of truth for both BI and AI/Machine Learning.",
+    "category": "data_eng",
+    "topic": "infrastructure",
+    "difficulty": "medium",
+    "tags": [
+      "data_warehousing",
+      "datalake",
+      "cloud"
+    ]
+  },
+  {
+    "id": 5,
+    "question": "Explain 'OLTP' vs 'OLAP' and the different database designs for each.",
+    "answer": "1. **OLTP (Online Transaction Processing)**: Optimized for a high volume of fast, simple transactions (INSERT, UPDATE, DELETE). Examples include PostgreSQL or MySQL. They use 'Row-oriented' storage to make reading/writing a single record extremely fast. \n2. **OLAP (Online Analytical Processing)**: Optimized for complex, long-running queries that aggregate millions of rows (e.g., 'Total sales by region per month'). Examples include Redshift or ClickHouse. They use 'Columnar-oriented' storage, which only reads the specific columns needed for the query, dramatically reducing disk I/O and speeding up aggregation tasks.",
+    "analogy": "OLTP is like **A Cashier** who handles many small, fast transactions ('I want to buy this apple'). OLAP is like **An Accountant** who looks at every single receipt from the whole year to figure out 'Which fruit was the most profitable in July?'.",
+    "code": "```sql\n-- OLAP (Columnar) optimized query\n-- Only reads the 'price' and 'category' columns from disk\nSELECT category, SUM(price) \nFROM sales_fact \nGROUP BY category;\n```",
+    "counterQuestion": "Why is Columnar storage faster for aggregations like 'SUM(price)'?",
+    "counterQuestionAnswer": "In a row-oriented DB, the engine must read every column of every row just to get to the 'price' field. In a columnar DB, all 'price' values are stored contiguously on disk. The engine can read only the 'price' blocks, which is significantly less data to pull from disk and perfect for CPU-vectorized operations.",
+    "category": "data_eng",
+    "topic": "theory",
+    "difficulty": "hard",
+    "tags": [
+      "database_design",
+      "performance",
+      "olap"
+    ]
+  },
+  {
+    "id": 6,
+    "question": "What is 'Star Schema' vs 'Snowflake Schema' in Data Modeling?",
+    "answer": "Both are used to organize data for analytical warehouses. \n1. **Star Schema**: Consists of one large 'Fact Table' (holding metrics/events) surrounded by 'Dimension Tables' (holding descriptive data like product names or dates). It is simple, fast, and involves fewer joins. \n2. **Snowflake Schema**: An extension of the Star schema where dimension tables are further normalized into multiple related tables. It saves storage space but makes queries more complex with more joins. In modern data warehousing, **Star Schema** is generally preferred because storage is cheap and query performance (fewer joins) is the top priority.",
+    "analogy": "Star Schema is like **A hub-and-spoke wheel**. Everything connects directly to the center (the Fact). Snowflake Schema is like **A family tree**; to find the great-grandfather (a normalized dimension), you have to go through the father and grandfather first.",
+    "code": "```sql\n-- Star Schema Join: Only 1 Join to get descriptive data\nSELECT f.sales_amount, p.product_name \nFROM fact_sales f \nJOIN dim_product p ON f.product_id = p.id;\n```",
+    "counterQuestion": "What is a 'SCD' (Slowly Changing Dimension)?",
+    "counterQuestionAnswer": "SCD is a technique to track how descriptive data changes over time. For example, if a user moves from 'New York' to 'London', an 'SCD Type 2' would create a new record for London while keeping the New York record (marked as historical), allowing you to accurately report on sales in New York *when the user lived there*.",
+    "category": "data_eng",
+    "topic": "modeling",
+    "difficulty": "hard",
+    "tags": [
+      "data_modeling",
+      "analytics",
+      "bi"
+    ]
+  },
+  {
+    "id": 7,
+    "question": "Explain 'Parquet' vs 'CSV' for large-scale data storage.",
+    "answer": "1. **CSV (Comma Separated Values)**: A row-oriented, plain-text format. It is human-readable and universal but very inefficient for large datasets as it doesn't support compression or schema metadata, and you must read the entire file to access a single column. \n2. **Parquet**: A columnar-oriented binary format designed for efficient data storage and retrieval. It supports advanced compression (Snappy, Gzip) and 'Predicate Pushdown' (allowing the query engine to skip entire blocks of data based on metadata). Parquet is the gold standard for Big Data (S3, Data Lakes) because it dramatically reduces disk I/O and storage costs while providing massive performance gains for analytical queries.",
+    "analogy": "CSV is like **A handwritten list of names and phone numbers**. To find one phone number, you have to read every single line. Parquet is like **An organized phone book** where names and numbers are in separate sections, and there's an index at the front telling you exactly which page to skip to.",
+    "code": "```python\nimport pandas as pd\n# Parquet is 10-100x faster than CSV for analytical reads\ndf = pd.read_parquet('massive_data.parquet', columns=['user_id', 'spend'])\n```",
+    "counterQuestion": "What is 'Predicate Pushdown'?",
+    "counterQuestionAnswer": "Predicate Pushdown is an optimization where the query filter (e.g., 'WHERE age > 21') is 'pushed down' to the storage layer. The engine reads the Parquet file's metadata and skips reading any data blocks where the maximum 'age' is less than 21, resulting in much faster queries on massive datasets.",
+    "category": "data_eng",
+    "topic": "storage",
+    "difficulty": "medium",
+    "tags": [
+      "parquet",
+      "csv",
+      "big_data"
+    ]
+  },
+  {
+    "id": 8,
+    "question": "Explain Apache Kafka's architecture: Topics, Partitions, Consumer Groups, and Offsets.",
+    "answer": "Kafka is a distributed event streaming platform built for high-throughput, fault-tolerant, real-time data pipelines.\n\n**Core concepts:**\n\n1. **Topic:** A named stream of records (like a table in a database, but append-only).\n2. **Partition:** Each topic is split into N ordered, immutable partitions. Enables parallelism.\n3. **Offset:** A unique sequential ID for each message within a partition. Consumers track their position.\n4. **Broker:** A Kafka server. A cluster of brokers stores partitions with replication.\n5. **Consumer Group:** Multiple consumers sharing work. Each partition is consumed by exactly ONE consumer in a group \u2014 enabling parallel processing without duplicates.\n\n```\nTopic: orders (3 partitions)\nPartition 0: msg0, msg1, msg2 (offset 0, 1, 2)\nPartition 1: msg3, msg4       (offset 0, 1)\nPartition 2: msg5             (offset 0)\n\nConsumer Group A:\n  Consumer 1 \u2192 Partition 0\n  Consumer 2 \u2192 Partition 1\n  Consumer 3 \u2192 Partition 2\n```\n\n**Retention:** Kafka stores messages for a configurable period (e.g., 7 days), not just until consumed.",
+    "analogy": "A Topic is like **A radio station**. Partitions are like **Multiple frequencies** for that station so more listeners can tune in at once. Consumer Groups are like **A team of transcribers**; each one listens to a different frequency so they can transcribe the whole broadcast faster as a team.",
+    "code": "```bash\n# Describe a topic to see its health and partition layout\nkafka-topics.sh --describe --topic orders_stream --bootstrap-server localhost:9092\n```",
+    "counterQuestion": "What happens when a Consumer Group has more consumers than partitions?",
+    "counterQuestionAnswer": "The extra consumers are idle \u2014 they don't process any messages because each partition can only be assigned to one consumer per group. This is why you should set partition count >= max expected consumers. If you need to scale more, add more partitions (though repartitioning has implications for ordering).",
+    "category": "data_eng",
+    "topic": "streaming",
+    "difficulty": "hard",
+    "tags": [
+      "kafka",
+      "streaming",
+      "data_engineering",
+      "distributed"
+    ]
+  },
+  {
+    "id": 9,
+    "question": "What is Change Data Capture (CDC)? How does Debezium work?",
+    "answer": "**CDC** is a technique for tracking and streaming every insert, update, and delete in a source database in real-time, without polling.\n\n**Why CDC:** Traditional ETL runs on a schedule (e.g., hourly full dump). CDC enables near real-time data synchronization by capturing only what changed.\n\n**How Debezium works:**\n1. Debezium connects to the database's transaction log (PostgreSQL WAL, MySQL binlog).\n2. It reads log entries and converts them into structured change events.\n3. Events are published to Kafka topics.\n\n**Key benefit:** Zero impact on the source database \u2014 reads from the log, not the tables.",
+    "analogy": "CDC is like **Recording a live CCTV feed** of a bank vault. Instead of checking the vault every hour to see if anything moved (Polling), you have a tape of every single second, so you know exactly when a coin was added or removed the instant it happens.",
+    "code": "```json\n// Debezium change event format (JSON)\n{\n  \"before\": {\"id\": 1, \"balance\": 100},\n  \"after\":  {\"id\": 1, \"balance\": 150},\n  \"op\": \"u\",           // u=update, c=create, d=delete\n  \"source\": {\"table\": \"accounts\", \"ts_ms\": 1625000000000}\n}\n```",
+    "counterQuestion": "What is the difference between CDC and database triggers?",
+    "counterQuestionAnswer": "Database triggers run inside the database transaction and can slow down write performance. CDC reads from the transaction log after the fact, with no impact on write latency. CDC is also more reliable \u2014 triggers can fail silently or be disabled, while the transaction log is always written as part of the database's durability guarantee.",
+    "category": "data_eng",
+    "topic": "streaming",
+    "difficulty": "hard",
+    "tags": [
+      "cdc",
+      "debezium",
+      "kafka",
+      "data_engineering"
+    ]
+  },
+  {
+    "id": 10,
+    "question": "How do you handle large dataset exports without running out of memory in Django/Python?",
+    "answer": "Loading millions of rows into memory at once with `.all()` will crash your server. The solution is **chunked/streaming processing**.\n\n**1. Django `iterator()` \u2014 don't load into Python memory:**\n```python\n# CORRECT: fetches in database-side chunks, Python holds only one at a time\nfor order in Order.objects.filter(status='paid').iterator(chunk_size=2000):\n    process(order)\n```\n\n**2. Chunked processing with `id` pagination:**\n```python\ndef chunked_queryset(qs, chunk_size=1000):\n    last_id = 0\n    while True:\n        chunk = list(qs.filter(id__gt=last_id).order_by('id')[:chunk_size])\n        if not chunk:\n            break\n        yield chunk\n        last_id = chunk[-1].id\n```",
+    "analogy": "Chunked processing is like **Eating a giant pizza one slice at a time**. If you try to shove the whole pizza in your mouth at once (loading a 5GB file into RAM), you'll choke. If you take small bites, you can finish the whole thing easily without needing a giant stomach.",
+    "code": "```python\n# Using .iterator() to stream million-row query\nfor user in User.objects.all().iterator(chunk_size=1000):\n    # Only 1000 users are in RAM at any time\n    process_user(user)\n```",
+    "counterQuestion": "What is the danger of using `ORDER BY` with `OFFSET` for pagination on large tables?",
+    "counterQuestionAnswer": "`OFFSET N` forces the database to scan and discard N rows before returning results. On a table with 10M rows, `OFFSET 9000000` is catastrophically slow even with indexes. The solution is **keyset/cursor pagination**: `WHERE id > last_seen_id ORDER BY id LIMIT 100`. This uses the index directly and performance is constant regardless of page number.",
+    "category": "heavy_data",
+    "topic": "python",
+    "difficulty": "medium",
+    "tags": [
+      "heavy_data",
+      "django",
+      "iterator",
+      "memory",
+      "performance"
+    ]
+  },
+  {
+    "id": 11,
+    "question": "How do you perform efficient bulk inserts and updates in Django?",
+    "answer": "Creating objects one-by-one in a loop is extremely slow \u2014 each `.save()` is a separate SQL round-trip.\n\n**1. `bulk_create` \u2014 insert thousands of rows in ONE query:**\n```python\n# CORRECT: Single batched INSERT\nobjects = [Order(**row) for row in data]\nOrder.objects.bulk_create(objects, batch_size=1000)\n```\n\n**2. `bulk_update` \u2014 update specific fields on many objects:**\n```python\n# Single UPDATE with CASE WHEN instead of N separate UPDATEs\nOrder.objects.bulk_update(orders, fields=['status'], batch_size=500)\n```",
+    "analogy": "Bulk operations are like **Sending 1000 letters in one big box** to the post office. Traditional `.save()` is like driving to the post office 1000 times to drop off one letter each time. The overhead saved by using the big box is massive.",
+    "code": "```python\n# 1 SQL query instead of 1000\nOrder.objects.bulk_create([\n    Order(user_id=u_id, total=10) for u_id in user_ids\n], batch_size=500)\n```",
+    "counterQuestion": "What are the limitations of `bulk_create`?",
+    "counterQuestionAnswer": "1. Does NOT call `.save()` on each object, so signals (`post_save`) are NOT fired. 2. Does NOT run model-level `clean()` validation. 3. Auto-generated `id` is not returned on all databases (SQLite doesn't support it; PostgreSQL does with `update_conflicts`). 4. Does not handle conflicts by default \u2014 use `ignore_conflicts=True` or `update_conflicts=True` (Django 4.1+) for upsert behavior.",
+    "category": "heavy_data",
+    "topic": "django",
+    "difficulty": "medium",
+    "tags": [
+      "bulk_create",
+      "bulk_update",
+      "django",
+      "performance",
+      "heavy_data"
+    ]
+  },
+  {
+    "id": 12,
+    "question": "How do you handle large file uploads (multi-GB) without loading the file into memory?",
+    "answer": "Loading a 5GB file into memory will crash any server. The solution is **streaming** \u2014 process data as it arrives in chunks.\n\n**1. Django \u2014 streaming file read:**\n```python\ndef upload_view(request):\n    file = request.FILES['file']\n    with open('/tmp/output.csv', 'wb') as dest:\n        for chunk in file.chunks(chunk_size=8192):  # 8KB chunks\n            dest.write(chunk)\n```",
+    "analogy": "Loading a 5GB file into memory is like **Trying to swallow a bowling ball**. Streaming it is like **Sipping through a straw** — it takes time, but it fits through your throat. Pre-signed URLs are like **Telling the delivery driver to drop the package directly at the warehouse** instead of your tiny office.",
+    "code": "```python\n# Streaming chunked write to disk in Django\nwith open('large_file.csv', 'wb') as f:\n    for chunk in request.FILES['file'].chunks():\n        f.write(chunk)\n```",
+    "counterQuestion": "What is multipart upload in S3 and when do you need it?",
+    "counterQuestionAnswer": "S3 multipart upload splits a file into N parts (minimum 5MB each) and uploads them in parallel, then assembles them on S3. Required for files > 5GB (S3's single-PUT limit). It also allows resuming failed uploads. `boto3.transfer` handles this automatically via `upload_file()` \u2014 it uses multipart for files > 8MB by default.",
+    "category": "heavy_data",
+    "topic": "file_handling",
+    "difficulty": "medium",
+    "tags": [
+      "heavy_data",
+      "s3",
+      "streaming",
+      "file_upload",
+      "memory"
+    ]
+  },
+  {
+    "id": 13,
+    "question": "How do you implement database-level pagination efficiently at scale?",
+    "answer": "**Three pagination strategies compared:**\n\n**1. Offset Pagination (simple but slow at scale):**\n```sql\nSELECT * FROM orders ORDER BY created_at DESC LIMIT 20 OFFSET 10000;\n-- DB must scan 10,020 rows, discard first 10,000\n```\n\n**2. Keyset / Cursor Pagination (fast, recommended):**\n```sql\nSELECT * FROM orders WHERE (created_at, id) < ('2024-01-15', 456) \nORDER BY created_at DESC, id DESC LIMIT 20;\n```",
+    "analogy": "Offset pagination is like **Turning to page 500 of a book by counting every page from 1 to 500**. Cursor pagination is like **A 'Continue Reading' bookmark** — you open the book exactly where you left off, no counting required.",
+    "code": "```sql\n-- Cursor Pagination (Fast and Consistent)\nSELECT * FROM logs \nWHERE id > last_seen_id \nORDER BY id ASC \nLIMIT 50;\n```",
+    "counterQuestion": "Why can't you jump to an arbitrary page with cursor pagination?",
+    "counterQuestionAnswer": "Cursor pagination is sequential \u2014 the cursor encodes the position of the last seen item, not an absolute page number. You can only go 'next' and 'prev'. You cannot jump to page 500. This is the trade-off: you gain speed and consistency (no items missed due to concurrent inserts), but lose random page access. For admin interfaces needing page jumps, use offset pagination with a row count limit.",
+    "category": "heavy_data",
+    "topic": "database",
+    "difficulty": "medium",
+    "tags": [
+      "pagination",
+      "cursor_pagination",
+      "keyset",
+      "performance",
+      "heavy_data"
+    ]
+  },
+  {
+    "id": 14,
+    "question": "How do you handle processing 10 million records nightly without blocking your application?",
+    "answer": "Processing 10M records in a single process will timeout and block other workers.\n\n**Strategy: Fan-out with Celery + chunking**\n\n```python\n# Worker task: processes one chunk\n@shared_task\ndef process_order_chunk(order_ids):\n    orders = Order.objects.filter(id__in=order_ids)\n    results = [process_single(order) for order in orders]\n    Order.objects.bulk_update(results, fields=['status'], batch_size=500)\n```",
+    "analogy": "Batch processing is like **Doing all your laundry on Sunday night**. Instead of washing one sock every time it gets dirty (Real-time), you wait until the pile is big and do it all at once when electricity is cheaper and you have the time (Off-peak).",
+    "code": "```python\n# Fan-out pattern in Celery\n# Split 10 million IDs into chunks of 1000\nfor chunk in get_chunks(dataset_ids, 1000):\n    process_task.delay(chunk) \n    # 10 workers can now work on 10 chunks in parallel\n```",
+    "counterQuestion": "How do you prevent a long-running batch job from consuming all Celery worker slots?",
+    "counterQuestionAnswer": "Use dedicated queues for batch tasks, separate from real-time queues: `@shared_task(queue='batch')`. Run a separate worker pool for the batch queue with limited concurrency: `celery -A app worker -Q batch --concurrency=4`. This ensures batch processing never starves the high-priority real-time queue workers.",
+    "category": "heavy_data",
+    "topic": "batch_processing",
+    "difficulty": "hard",
+    "tags": [
+      "heavy_data",
+      "celery",
+      "batch",
+      "fan_out",
+      "performance"
+    ]
+  },
+  {
+    "id": 15,
+    "question": "How do you design a data import pipeline that handles CSV/Excel files with 1M+ rows reliably?",
+    "answer": "A naive synchronous import will timeout, provide no progress feedback, and fail silently on errors. A production-grade import pipeline uses S3 for storage, Celery for background processing, and chunking to allow parallel work and partial success with detailed error reporting.",
+    "analogy": "A robust pipeline is like **An airport security line**. You check the ID (Validation), scan the bags (Deduplication), and if one person has a problem, they are pulled aside to a separate room (Error handling) so the rest of the line can keep moving.",
+    "code": "```python\n# Row-level error handling loop\nfor row in csv_reader:\n    try:\n        import_row(row)\n    except ValidationError as e:\n        # Log error to a 'failures' table and CONTINUE processing\n        JobError.objects.create(job_id=j_id, error=str(e))\n```",
+    "counterQuestion": "How do you handle duplicate rows in an import file?",
+    "counterQuestionAnswer": "Track a unique business key (not DB id) as a deduplication key. Use `bulk_create(objects, update_conflicts=True, update_fields=[...])` (Django 4.1+) for upsert behavior. Alternatively, check duplicates before inserting by loading existing keys into a set and filtering the incoming rows. For very large datasets, use a temporary staging table and let the database handle deduplication via `INSERT ... ON CONFLICT DO UPDATE`.",
+    "category": "heavy_data",
+    "topic": "import_pipeline",
+    "difficulty": "hard",
+    "tags": [
+      "heavy_data",
+      "csv_import",
+      "celery",
+      "bulk",
+      "pipeline"
+    ]
+  },
+  {
+    "id": 16,
+    "question": "What is database connection pool exhaustion and how do you diagnose and fix it?",
+    "answer": "Connection pool exhaustion occurs when all database connections are in use and new requests must wait. Common causes include long-running transactions and N+1 queries. Fixes include setting 'CONN_MAX_AGE' in Django, manually closing connections in Celery tasks, and using PgBouncer for multiplexing connections.",
+    "analogy": "Connection pooling is like **A fleet of rental bikes**. Instead of every person in the city buying a bike and parking it forever, they share 100 bikes. When someone needs to go somewhere, they grab a bike, ride it, and put it back in the rack for the next person to use instantly.",
+    "code": "```python\n# Django CONN_MAX_AGE setting\nDATABASES = {\n    'default': {\n        'ENGINE': 'django.db.backends.postgresql',\n        'CONN_MAX_AGE': 60, # Reuse connection for 1 minute\n    }\n}\n```",
+    "counterQuestion": "What is `CONN_MAX_AGE` in Django and what value should you set it to?",
+    "counterQuestionAnswer": "`CONN_MAX_AGE` controls how long Django keeps a database connection alive for reuse (persistent connections). Setting it to `0` (default) closes the connection after each request \u2014 safe but slow. Setting it to `60` reuses connections for 60 seconds, reducing connect/disconnect overhead. In production with Gunicorn (multi-worker), set it to a low value (60-300s) to prevent stale connections. Do NOT set to `None` (infinite) unless you are certain all connections are properly managed.",
+    "category": "heavy_data",
+    "topic": "database",
+    "difficulty": "hard",
+    "tags": [
+      "heavy_data",
+      "connection_pool",
+      "postgresql",
+      "django",
+      "performance"
+    ]
+  }
+]

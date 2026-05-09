@@ -1,0 +1,904 @@
+TECHNICAL INTERVIEW MASTERY: THE EXHAUSTIVE REGISTRY (1-10 YEARS EXP)
+================================================================================
+A Comprehensive Guide for Python, Django, Redis, and Celery Engineering
+================================================================================
+
+--- PART 1: CORE PYTHON INTERNALS & MASTERY ---
+
+[1-3 Years: Fundamentals]
+- Explain the Python Memory Model. What is a 'PyObject'?
+- How does the 'is' operator differ from '==' in terms of memory address vs value?
+- What are mutable vs immutable types? Why can't a list be used as a dictionary key?
+- Explain the difference between a 'List' and a 'Tuple'. When should you use one over the other?
+- What are '*args' and '**kwargs'? How do they enable flexible function signatures?
+- Explain 'List Comprehensions' vs 'Generator Expressions'. Which is more memory efficient?
+- How do 'Sets' differ from 'Lists' and 'Dictionaries' in terms of lookup time and uniqueness?
+- Explain the 'with' statement. How does it manage resources (Context Managers)?
+- What are Lambda functions? When should you use them vs. 'def'?
+- How do you handle multiple exceptions in one 'except' block?
+- What is the 'enumerate()' function and why is it preferred over 'range(len(x))'?
+- Explain the difference between 'append()' and 'extend()' in lists.
+- What is 'PEP 8' and why is it important for team collaboration?
+- How do you merge two dictionaries in Python 3.5+ vs 3.9+?
+- Explain string interning in CPython.
+- What is the difference between 'yield' and 'return'?
+- How do you reverse a string using slicing?
+- What are 'f-strings' and how do they compare to '.format()' and '%'?
+- Explain the difference between '__str__' and '__repr__'. When is each used?
+- Explain the 'pathlib' module. Why is it preferred over 'os.path'?
+- What is the difference between 'shallow copy' and 'deep copy'? (copy module).
+- Explain 'Iterators' vs 'Iterables'. How do you implement '__iter__' and '__next__'?
+- How do you create a 'Context Manager' from scratch using a class vs the '@contextmanager' decorator?
+- Explain the 'zip()' function with an example.
+
+[4-7 Years: Deep Dive & Performance]
+- Explain the Global Interpreter Lock (GIL) in detail. Why does it exist?
+- How does Python's Garbage Collector handle cyclic references? (Generation 0, 1, 2).
+- What is the 'Method Resolution Order' (MRO)? Explain the C3 Linearization algorithm.
+- What is the Descriptor Protocol? How do '@property', '@classmethod', and '@staticmethod' work internally?
+- Explain 'Metaclasses'. When would you use '__new__' vs '__init__'?
+- What are 'Abstract Base Classes' (ABCs)? How do they enforce contracts?
+- Explain the difference between 'Concurrency' and 'Parallelism' in Python.
+- How do 'Asyncio' event loops work? What is a 'Coroutine' vs a 'Task'?
+- What is 'monkey patching' in Python? When is it useful and when is it dangerous?
+- Explain the 'inspect' module. How do you use it for runtime introspection?
+- How do you use 'slots' (__slots__) to optimize memory for millions of instances?
+- What is 'Structural Pattern Matching' (match/case) in Python 3.10+?
+- Explain the 'LEGB' rule for scope resolution.
+- What is 'pickling' and 'unpickling'? What are the security risks?
+- How do you profile a Python script for CPU and memory usage (cProfile, line_profiler, memory_profiler)?
+- What is the 'buffer protocol' and 'memoryview'?
+- Explain 'Closure' in Python. How does the 'nonlocal' keyword work?
+- What are 'Function Annotations' and how does 'Mypy' use them for static type checking?
+- How does the '@functools.wraps' decorator preserve function metadata?
+- What is the difference between '__getattr__' and '__getattribute__'?
+- Explain the 'Decorator Factory' pattern. How do you write a decorator that accepts arguments?
+- What are 'Dunder Methods' (Magic Methods)? How do you use '__call__', '__getitem__', and '__len__'?
+- Explain 'typing.Protocol' (Static Duck Typing) and how it differs from 'ABCs'.
+- Explain 'TypeVars', 'Generics', and 'TypeGuards' in Python typing.
+- How does 'functools.lru_cache' work internally?
+- Discuss the 'match-case' statement performance vs 'if-elif-else'.
+- What are 'Weak References' (weakref module)? When should you use them over standard references?
+
+[8-10 Years: Expert & Architectural]
+- Discuss the 'Faster CPython' project (PEP 659). How does the specializing adaptive interpreter work?
+- How would you implement a custom 'Import Hook' or 'Finder'?
+- Discuss the trade-offs of using 'Cython' or 'PyBind11' to optimize hot paths.
+- How do you handle memory fragmentation in long-running Python processes?
+- Explain 'Tail Call Optimization'. Why doesn't CPython support it?
+- How do you design a 'Plugin System' using 'entry_points' or 'importlib.metadata'?
+- Discuss 'Python Type Hinting' in large-scale codebases. How do you handle 'Circular Dependencies' in types?
+- How do you secure a Python application against 'Injection' attacks (SQLi, Command Injection)?
+- Discuss the internal architecture of 'PyPy' (JIT) vs 'CPython'.
+- How do you implement a 'Thread-safe' Singleton pattern in Python?
+- Explain the 'AST' (Abstract Syntax Tree) module. How can you use it for code analysis or transformation?
+- Discuss the 'CPython C-API'. How do you write a Python extension in C/C++?
+- What are 'Subinterpreters' (PEP 684) and how do they impact the GIL?
+
+--- PART 2: ADVANCED PYTHON TOOLING & ECOSYSTEM ---
+
+[1-10 Years: Modern Tooling]
+- What is the difference between 'pip', 'pipenv', 'poetry', and 'uv'?
+- Explain 'pyproject.toml' and its role in modern Python packaging.
+- What are 'Virtual Environments' and why are they essential?
+- Explain 'Linting' vs 'Formatting' (Flake8, Black, Ruff).
+- How do you use 'Pre-commit Hooks' to enforce code quality?
+- What is 'Task Automation' in Python (Invoke, Fabric, Makefiles)?
+- Explain 'Docker Multi-stage Builds' for Python applications.
+- How do you handle 'Dependency Conflicts' and 'Lock Files'?
+
+--- PART 3: DJANGO, FASTAPI & ECOSYSTEM ---
+
+[1-3 Years: Web Fundamentals]
+- Explain the Django Request/Response cycle from Middleware to View.
+- What is the purpose of 'settings.py'? What are 'SECRET_KEY' and 'ALLOWED_HOSTS'?
+- How do you create a basic Model and run migrations?
+- What is the difference between 'makemigrations' and 'migrate'?
+- What is the difference between 'get()' and 'filter()' in Django QuerySets?
+- What are Django Templates? Explain 'Template Tags' vs 'Filters'.
+- How do you handle User Authentication in Django? What is 'LoginRequiredMixin'?
+- What is the 'Django Admin' and how do you customize a model's display?
+- Explain 'CSRF' protection in Django. Why is the token necessary?
+- What is the difference between 'CharField' and 'TextField'?
+- How do you handle 'Forms' vs 'ModelForms'?
+- Explain 'URL Routing' in Django (urls.py).
+
+[4-7 Years: Optimization & DRF]
+- How do you solve the N+1 query problem using 'select_related' and 'prefetch_related'?
+- Explain 'Django Signals'. When should you use them vs. overriding '.save()'?
+- What is 'Django Middleware'? Write a custom middleware to log request time.
+- Explain the Django REST Framework (DRF) 'Serializers'. What is the difference between 'Serializer' and 'ModelSerializer'?
+- How do you implement 'Throttling' and 'Rate Limiting' in DRF?
+- What is 'ViewSets' vs 'GenericAPIView' in DRF?
+- How do you handle 'File Uploads' in a REST API?
+- Explain DRF 'Permission Classes' vs 'Authentication Classes'. How do they work together?
+- What are 'Nested Serializers' in DRF? Discuss the pros and cons of using the 'depth' attribute.
+- How do you implement 'Custom Pagination' in DRF (LimitOffset vs PageNumber)?
+- Explain 'DRF Filtering' (SearchFilter, OrderingFilter, DjangoFilterBackend).
+- Explain 'Django Channels'. How do you handle WebSockets?
+- How do you use 'F() expressions' to perform database-level operations?
+- What are 'Django Managers' and 'QuerySets'? How do you write a custom Manager?
+- Explain 'Database Transactions' in Django. When do you use '@transaction.atomic'?
+- How do you implement 'Soft Deletes' in Django models?
+- What is 'Context Processors' in Django templates?
+- How do you optimize 'Django Migrations' when you have thousands of records?
+- Explain 'Django Formsets'. When are they useful?
+- What are 'Database Constraints' (UniqueConstraint, CheckConstraint) in Django Models?
+- How do you implement 'Custom User Models' mid-project?
+- Explain 'DRF Serializer' optimization (e.g., using 'to_representation' and 'to_internal_value').
+
+[8-10 Years: Scalability & Architecture]
+- How do you design a 'Multi-tenant' Django application (Schema-based vs. Shared Table)?
+- Discuss strategies for 'Zero-downtime Database Migrations' (Expand/Contract pattern).
+- How do you optimize Django for 'High Traffic' (Caching layers, Load balancing, DB read-replicas)?
+- Discuss 'Django Security Best Practices' (SQLi, XSS, Clickjacking, Host Header attacks).
+- How do you implement 'Full-Text Search' in Django (PostgreSQL vs. Elasticsearch)?
+- Discuss the 'Service Layer' pattern in Django. Should business logic stay in Models or Views?
+- How do you handle 'Large Datasets' in Django Admin without timing out?
+- Explain 'Django ContentTypes'. How do you create generic relations?
+- How do you implement 'OAuth2' or 'SAML' authentication in Django?
+- Discuss 'Django Deployment' strategies (Gunicorn, Uvicorn, Nginx, Docker).
+- Explain the difference between 'Abstract Base Classes', 'Multi-table Inheritance', and 'Proxy Models' in Django models.
+- How do you implement 'Generic Relations' in Django?
+- Explain 'annotate()' vs 'aggregate()' in Django QuerySets.
+- How does 'Lazy Evaluation' work in Django QuerySets? When is the query actually executed?
+- Discuss 'Django Caching' levels: Site-wide, Per-view, and Template Fragment caching.
+- What is the difference between 'TestCase' and 'TransactionTestCase'? When to use which?
+- Explain 'Django Middleware' ordering. What happens if 'AuthenticationMiddleware' is after a custom middleware that needs 'request.user'?
+
+[FastAPI & Modern Python APIs]
+- How does Pydantic perform data validation, and how does V2 (Rust core) differ from V1?
+- When would you choose FastAPI over Django/DRF? (Discussing dependency injection, OpenAPI auto-generation, and async-first design).
+- Explain FastAPI's Dependency Injection system. How do you use it for database sessions or authentication?
+
+--- PART 4: OOP FUNDAMENTALS & CORE CONCEPTS ---
+
+[1-10 Years: Object-Oriented Mastery]
+- Explain the '4 Pillars of OOP': Abstraction, Encapsulation, Inheritance, and Polymorphism.
+- What is the difference between an 'Abstract Class' and an 'Interface'?
+- Explain 'Overloading' vs 'Overriding'. Does Python support Method Overloading?
+- What is 'Multiple Inheritance' and the 'Diamond Problem'?
+- Explain 'Association', 'Aggregation', and 'Composition' with real-world examples.
+- What is 'Duck Typing' and how does it relate to Polymorphism in Python?
+- Explain 'Static Binding' vs 'Dynamic Binding'.
+- What are 'Access Modifiers' (Public, Private, Protected)? How does Python handle them?
+
+--- PART 5: DATABASES (POSTGRESQL, NOSQL & SCALING) ---
+
+[1-3 Years: DB Basics]
+- Explain the ACID properties of a database.
+- What is a 'Primary Key' vs. a 'Foreign Key'?
+- Explain the difference between 'Inner Join' and 'Left Join'.
+- What is the difference between 'JSON' and 'JSONB' in PostgreSQL? When should you use each?
+- When do you use the 'HAVING' clause instead of 'WHERE'?
+- Explain the difference between 'COUNT(*)' and 'COUNT(column_name)'.
+- What is 'Database Indexing' and why is it important for read performance?
+- Explain the difference between 'DELETE', 'TRUNCATE', and 'DROP' commands.
+- What is the difference between SQL (Relational) and NoSQL (Document/Key-Value) databases?
+
+[4-7 Years: Performance & Internals]
+- Explain the different 'Transaction Isolation Levels' (Read Uncommitted, Read Committed, Repeatable Read, Serializable).
+- How do 'B-Tree' indexes work? Compare them with 'Hash' indexes.
+- What is 'Database Normalization' (1NF, 2NF, 3NF)? When should you 'Denormalize'?
+- Explain 'Database Locks': Shared vs Exclusive. What is a 'Deadlock'?
+- How do you optimize a slow SQL query? Explain the use of 'EXPLAIN ANALYZE'.
+- What is 'Connection Pooling'? Why do we need tools like PGBouncer for PostgreSQL?
+- Explain 'Database Replication': Synchronous vs Asynchronous.
+- What is 'Horizontal Partitioning' (Sharding) vs 'Vertical Partitioning'?
+- How do you handle 'Schema Migrations' in a high-traffic production database?
+- Compare PostgreSQL and MongoDB. When would you choose one over the other?
+- When would you use a Time-Series DB (like TimescaleDB or InfluxDB) over standard Postgres?
+- How do Graph Databases (Neo4j) differ from Relational DBs for traversing highly connected data?
+
+[8-10 Years: Expert & Distributed DBs]
+- Explain the 'CAP Theorem'. How does it apply to distributed databases?
+- Discuss 'Multi-Master Replication' challenges (Conflict resolution, latency).
+- How do you implement 'Distributed Transactions' (Two-Phase Commit vs Saga Pattern)?
+- Discuss 'Database Scalability' for 100TB+ datasets.
+- How do you design a 'Highly Available' database cluster with automated failover?
+- Explain 'Window Functions' (RANK, DENSE_RANK, LEAD, LAG). How do they differ from GROUP BY?
+- What are 'Recursive CTEs' and when are they necessary (e.g., hierarchical data)?
+- Explain 'Partial Indexes' and 'Expression-based Indexes' in PostgreSQL.
+- What is 'Vacuuming' in PostgreSQL and why is 'Auto-vacuum' critical for performance?
+- Explain 'MVCC' (Multi-Version Concurrency Control) in PostgreSQL. How does it handle read/write consistency?
+- What is 'Write-Ahead Logging' (WAL) and how does it ensure data durability?
+- Explain 'Materialized Views' in PostgreSQL. How do you refresh them and what are the trade-offs?
+- Discuss 'PostgreSQL Full-Text Search' (tsvector, tsquery). What indexes (GIN, GiST) are used?
+- What are 'Exclusive Constraints' and how do they prevent overlapping data (e.g., booking intervals)?
+- What are some popular 'PostgreSQL Extensions' (PostGIS, pg_stat_statements, hstore)?
+- Discuss 'Tuning' parameters like 'shared_buffers', 'work_mem', and 'maintenance_work_mem'.
+
+--- PART 6: REDIS & CACHING STRATEGIES ---
+
+[1-3 Years: Redis Basics]
+- What is Redis and how does it differ from a standard SQL database?
+- Explain 'SET', 'GET', and 'EXPIRE' commands.
+- What are Redis 'Lists' and how do you use them as a simple Queue?
+- What is a Redis 'Hash' and when is it better than a String?
+- How do you clear a Redis database (FLUSHALL vs FLUSHDB)?
+- Explain Redis 'Transactions': How do 'MULTI', 'EXEC', and 'WATCH' work?
+- What are 'Bitmaps' and 'HyperLogLog' in Redis? When would you use them for analytics?
+- How does Redis handle 'Geospatial' data (GEOADD, GEORADIUS)?
+
+[4-7 Years: Performance & Advanced Types]
+- Explain 'Redis Persistence': RDB (Snapshots) vs AOF (Append-Only File).
+- What is 'Redis Pub/Sub'? How does it differ from a standard Message Queue?
+- Explain 'Sorted Sets' (ZSET). How do you use them for a Leaderboard?
+- How do you implement a 'Distributed Lock' with Redis? What is 'Redlock'?
+- Explain 'Redis Pipelines'. How do they reduce network latency?
+- What is 'Redis Sentinel' and how does it provide high availability?
+- How do you handle 'Cache Eviction' (LRU, LFU, Volatile-LRU)?
+- What is 'Redis Lua Scripting'. Why is it atomic?
+- Explain 'Redis 7 Functions'. How do they differ from legacy Lua scripts?
+- What is 'Keyspace Notifications'? How can you subscribe to key expiration events?
+- What is 'Redis Streams'? How do they compare to Kafka?
+- How do you monitor Redis performance (INFO, MONITOR, SLOWLOG)?
+
+[8-10 Years: Distribution & Tuning]
+- Explain 'Redis Cluster'. How does 'Sharding' (Hash Slots) work?
+- How do you handle 'Big Keys' and 'Hot Keys' in a Redis Cluster?
+- Discuss 'Client-side Caching' with Redis 6+.
+- How do you optimize Redis memory usage (Ziplists, Intsets, Embstr)?
+- Discuss the 'Cache-Aside' vs 'Write-Through' vs 'Write-Behind' patterns.
+- Is Redis single-threaded? Explain the role of 'IO Threads' introduced in Redis 6+.
+- How does Redis handle 'Partial Replication' (PSYNC) vs 'Full Resynchronization'?
+- Discuss the 'Split-brain' problem in a Redis Cluster.
+
+--- PART 7: NOSQL DEEP-DIVES (ELASTICSEARCH, MONGO & DYNAMODB) ---
+
+[1-10 Years: Search & Document DBs]
+- Explain 'Elasticsearch' (ES) internals: What is an 'Inverted Index'?
+- What are 'Shards' and 'Replicas' in Elasticsearch?
+- How do you implement 'Fuzzy Search' and 'Autocomplete' in ES?
+- Explain 'ELK Stack' (Elasticsearch, Logstash, Kibana).
+- What is 'Mapping' in ES? Explain 'Dynamic' vs 'Static' mapping.
+- Explain 'MongoDB Aggregation Pipeline'.
+- How does 'MongoDB Sharding' work? What is a 'Shard Key'?
+- Discuss 'Write Concern' and 'Read Preference' in MongoDB.
+- What is 'Capped Collection' in MongoDB?
+- How do you handle 'Schema Evolution' in a NoSQL database?
+- What is 'Single-Table Design' in DynamoDB, and why is it used to eliminate joins at scale?
+
+--- PART 8: DATA ENGINEERING FOR BACKEND DEVS ---
+
+[1-10 Years: Data Pipelines]
+- What is the difference between 'ETL' and 'ELT'?
+- Explain 'Apache Airflow'. What is a 'DAG' (Directed Acyclic Graph)?
+- How do you handle 'Backfilling' and 'Retries' in data pipelines?
+- What is 'Data Warehousing' (Redshift, Snowflake) vs 'Data Lakes' (S3 + Athena)?
+- Explain 'Parquet' vs 'CSV' for large-scale data storage.
+
+--- PART 9: MESSAGE BROKERS (RABBITMQ & KAFKA) ---
+
+[1-10 Years: Messaging Patterns]
+- What is the difference between a 'Message Queue' (RabbitMQ) and a 'Distributed Log' (Kafka)?
+- Explain RabbitMQ Exchange types: Direct, Topic, Fanout, and Headers.
+- What is a 'Dead Letter Exchange' (DLX) in RabbitMQ?
+- Explain 'Consumer Acknowledgements' in RabbitMQ. What is 'prefetch count'?
+- How does Kafka achieve high throughput? Explain 'Partitions' and 'Segments'.
+- What are 'Consumer Groups' in Kafka? How is rebalancing handled?
+- Explain 'Kafka Offsets'. What is the difference between 'at-least-once' and 'exactly-once' delivery?
+- What is 'Kafka Replication Factor' and 'In-Sync Replicas' (ISR)?
+- How do you handle 'Backpressure' in a messaging system?
+- Discuss 'Message Ordering' guarantees in Kafka vs. RabbitMQ.
+
+--- PART 10: CELERY & DISTRIBUTED TASK QUEUES ---
+
+[1-3 Years: Celery Basics]
+- What is Celery and what problem does it solve in web apps?
+- Explain the 'Producer-Broker-Consumer' architecture.
+- How do you define a Celery task using the '@shared_task' decorator?
+- What is the 'Database Transaction' pitfall in Celery? How do you ensure a task only runs after a DB commit?
+- Explain the difference between 'pickle', 'json', and 'msgpack' serializers. Why is 'json' now the default?
+- What is a 'Celery Result Backend'? Why do you need one?
+- How do you run a Celery worker and a Celery beat process?
+
+[4-7 Years: Task Management & Reliability]
+- Explain 'Celery Canvas': Chains, Groups, and Chords.
+- How do you handle 'Task Retries' with exponential backoff?
+- What is 'Task Routing'? How do you send specific tasks to specific queues?
+- Explain 'Acknowledge Late' (task_acks_late). When should you use it?
+- How do you prevent 'Task Idempotency' issues in distributed systems?
+- What is 'Celery Flower' and how do you use it for monitoring?
+- Explain 'Visibility Timeout'. What happens if a task takes longer than the timeout?
+- How do you limit the number of 'Concurrent Tasks' globally or per worker?
+- Explain 'Prefetch Multiplier'. How do you tune it for long-running vs fast tasks?
+- What is the difference between 'soft_time_limit' and 'time_limit'?
+- How do you 'Revoke' or cancel a task that is already in the queue or running?
+- What is the difference between 'apply()' and 'apply_async()'?
+- How do you ignore task results to save database/Redis overhead?
+
+[8-10 Years: Large-Scale Orchestration]
+- How do you handle 'Task Poisoning' and 'Dead Letter Queues'?
+- Discuss 'Celery Autoscaling'. How do you scale workers based on queue length?
+- Why is RabbitMQ often considered a 'safer' broker than Redis for Celery? (Discuss Visibility Timeout).
+- How do you handle 'Dynamic Periodic Tasks' (e.g., using django-celery-beat)?
+- How do you handle 'Prioritization' in Celery (Priority Queues vs. Redis priorities)?
+- Discuss 'Celery Security'. How do you sign tasks to prevent tampering?
+- Compare Celery with 'Kafka' or 'AWS SQS'. When is Celery the wrong choice?
+
+--- PART 11: WEB SERVERS & APPLICATION SERVERS (NGINX, GUNICORN, UVICORN) ---
+
+[1-10 Years: Serving Python Apps]
+- Explain the difference between 'WSGI' and 'ASGI'. Why is ASGI necessary for modern Python?
+- How do Gunicorn 'Worker Classes' differ? (Sync, Gevent, Eventlet). When would you use Gevent?
+- Why is it recommended to use Nginx in front of Gunicorn? Discuss buffering and slow-client protection.
+- Explain the 'Gunicorn Master-Worker' process model. What happens if a worker dies?
+- How do you configure Nginx to serve 'Static Files' directly? Why is this more efficient?
+- What is an Nginx 'Upstream' block? How do you implement 'Round Robin' vs 'Least Conn' load balancing?
+- Discuss 'Unix Domain Sockets' vs 'TCP Sockets' for communication between Nginx and Gunicorn.
+- How do you handle 'Large File Uploads' in Nginx? (client_max_body_size).
+- What is 'Keep-Alive' in Nginx and how does it affect performance?
+- Explain 'X-Forwarded-For' and 'X-Real-IP' headers. Why are they critical for backend logging?
+- What is the difference between 'Daphne' and 'Uvicorn'? When should you choose one over the other?
+- Explain 'Channel Layers' in Django Channels. Why is Redis typically used as the backing store?
+- What is a 'Consumer' in Channels? Discuss 'SyncConsumer' vs 'AsyncConsumer'.
+- Explain the 'ProtocolTypeRouter'. How do you handle HTTP and WebSockets in the same application?
+- How do 'Groups' work in Django Channels for broadcasting messages?
+- Discuss 'ASGI Scope'. How does it differ from a standard Django Request object?
+- How do you handle 'Authentication' in WebSockets with Django Channels?
+- What is 'Backpressure' in the context of Channels and how do you mitigate it?
+
+--- PART 12: API STANDARDS & DESIGN (REST, GRAPHQL, GRPC) ---
+
+[1-10 Years: Interface Design]
+- What is 'GraphQL'? How does it solve 'Over-fetching' and 'Under-fetching'?
+- Explain the different 'API Versioning' strategies (URL path, Custom Headers, Accept Headers).
+- What is the difference between 'Rate Limiting' and 'Throttling'?
+- How do you implement 'Distributed Rate Limiting' using Redis?
+- Explain 'Queries', 'Mutations', and 'Subscriptions' in GraphQL.
+- How do you solve the 'N+1 Problem' in GraphQL using 'DataLoaders'?
+- What is 'Schema-First' vs 'Code-First' development in GraphQL?
+- Explain 'gRPC' and 'Protocol Buffers'. Why is it faster than JSON?
+- What is 'Unary' vs 'Streaming' gRPC?
+- How do you handle 'Versioning' in a GraphQL or gRPC API?
+- Explain 'Offset-based' vs 'Cursor-based' Pagination. When would you choose one over the other?
+- Discuss 'Webhook Design': How do you ensure 'Idempotency' and 'Security' (signatures)?
+- What is 'JSON:API' or 'OData'?
+- How do you design an 'API Gateway' that supports both REST and GraphQL?
+- Explain 'HATEOAS'. Is it still relevant in modern REST APIs?
+- How do you use Apollo Federation to stitch multiple microservice GraphQL APIs into a single supergraph?
+- How do you design an API that handles network retries safely without double-charging (Idempotency Keys)?
+
+--- PART 13: HTML, CSS & ACCESSIBILITY (FRONTEND FOUNDATIONS) ---
+
+[1-10 Years: UI Fundamentals]
+- What is the 'CSS Box Model'? Explain margin, border, padding, and content.
+- Explain 'Semantic HTML'. Why is it important for SEO and Accessibility (a11y)?
+- What is the difference between 'display: none' and 'visibility: hidden'?
+- Explain 'Flexbox' vs 'CSS Grid'. When would you use one over the other?
+- How does 'CSS Specificity' work? How is the weight of a selector calculated?
+- What is the 'Stacking Context' and how does 'z-index' actually work?
+- Explain 'Responsive Web Design'. What are Media Queries, Container Queries, and the Mobile-First approach?
+- What are 'Pseudo-classes' (e.g., :hover) vs 'Pseudo-elements' (e.g., ::before)?
+- How do you optimize Web Accessibility? Discuss ARIA roles, contrast ratios, and keyboard navigation.
+- Discuss styling architectures: Vanilla CSS vs BEM vs Utility-first (Tailwind) vs CSS-in-JS.
+
+--- PART 14: JAVASCRIPT (CORE & MODERN ES6+) ---
+
+[1-3 Years: JS Basics]
+- Explain the difference between 'var', 'let', and 'const'.
+- What is 'Hoisting' in JavaScript?
+- Explain 'Closures' with a practical example.
+- What is the 'Event Loop' in JavaScript? How does it handle asynchronous code?
+- Explain the difference between '==' and '==='.
+- What is the difference between 'null' and 'undefined'?
+- Explain 'call()', 'apply()', and 'bind()'. When would you use each?
+- What are 'Promises'? How do you use '.then()' vs 'async/await'?
+- Explain 'Promise.all', 'allSettled', 'any', and 'race'. When to use which?
+- Explain 'Template Literals' and 'Destructuring' in ES6.
+- What is the 'this' keyword? How does its value change in different contexts?
+- Explain 'Arrow Functions'. How do they differ from regular functions regarding 'this'?
+- What is the 'Prototype' chain in JavaScript?
+- Explain 'Event Bubbling' vs 'Event Capturing'. What is 'Event Delegation'?
+- What is the difference between 'CommonJS' (require) and 'ES Modules' (import)?
+
+[4-7 Years: Internals & Performance]
+- Explain 'Prototypal Inheritance'. How does it differ from Class-based inheritance?
+- What is 'Scope' and 'Execution Context'?
+- Explain 'Memory Management' and 'Garbage Collection' in V8.
+- What are 'Microtasks' vs 'Macrotasks' in the Event Loop?
+- Explain 'Debouncing' and 'Throttling'. When would you use each?
+- What is 'Functional Programming' in JS (Map, Filter, Reduce, Currying)?
+- How do 'Web Workers' work? When should you use them?
+- Explain 'CORS' (Cross-Origin Resource Sharing). What are 'Pre-flight' requests (OPTIONS) and why do they happen?
+- Discuss modern JS runtimes: Node.js vs Deno vs Bun. What are the key differences in security and performance?
+- How do 'Generators' (function*) and 'Iterators' work in JS?
+- What is the 'Proxy' and 'Reflect' API in modern JS?
+- What is 'Strict Mode' in JS?
+- How do you optimize JS performance for smooth 60fps animations?
+
+[8-10 Years: Advanced & Design Patterns]
+- Discuss 'Design Patterns' in JS (Module, Observer, Singleton, Factory).
+- How do you implement a custom 'Promise' from scratch?
+- Discuss 'Memory Leaks' in JS and how to profile them using Chrome DevTools.
+- Explain 'Tail Call Optimization' in JS.
+- How do you architect a 'Modular JS' application using ESM or Webpack/Rollup?
+- What is WebAssembly (Wasm) and how does it integrate with JavaScript to run high-performance code in the browser?
+
+--- PART 15: TYPESCRIPT & TYPE SAFETY ---
+
+[1-10 Years: Typed Development]
+- What is the difference between an 'Interface' and a 'Type' alias in TypeScript?
+- Explain 'Generics' and how they provide type safety for reusable components.
+- What are 'Utility Types' (Partial, Pick, Omit, Record)?
+- Explain 'Discriminated Unions' and 'Exhaustive Type Checking'.
+- What is 'Type Narrowing' and 'Type Guards'?
+- Explain the 'unknown' type vs the 'any' type.
+- What is 'Decorator' support in TypeScript?
+- How do you handle 'External Libraries' that don't have types (@types)?
+- Explain 'Mapped Types' and 'Conditional Types'.
+- How do you configure 'tsconfig.json' for strict type checking?
+- What is 'Zod' and how do you use it for runtime schema validation in TypeScript applications?
+
+--- PART 16: REACT & FRONTEND ARCHITECTURE ---
+
+[1-3 Years: React Basics]
+- What is the 'Virtual DOM' and how does it work?
+- Explain the difference between 'Functional Components' and 'Class Components'.
+- What are 'Props' vs 'State' in React?
+- Explain the 'useState' and 'useEffect' hooks.
+- What is 'JSX'? Is it required for React?
+- Explain 'React Portals'. When would you use 'ReactDOM.createPortal'?
+- What are 'Synthetic Events' in React? How do they differ from native DOM events?
+- How do you handle 'Lists and Keys' in React? Why is 'index' a bad key?
+- Explain 'Conditional Rendering' in React.
+- What is the 'Context API'? When should you use it over Props?
+- How do you handle 'Forms' in React (Controlled vs Uncontrolled components)?
+- What is 'React Router' and how do you handle navigation?
+
+[4-7 Years: Hooks & State Management]
+- Explain 'React Hooks' rules. Why can't they be used inside loops or conditions?
+- What is 'useMemo' vs 'useCallback'? When should you optimize with them?
+- Explain 'useRef' and when to use it (DOM access vs mutable state).
+- How do you implement 'Custom Hooks'?
+- Discuss 'State Management' libraries: Redux vs Context API vs Zustand.
+- What is 'Redux Toolkit' and how does it simplify Redux?
+- Explain 'React Lifecycle Methods' (componentDidMount, etc.) vs Hooks equivalent.
+- How do you handle 'Side Effects' in React?
+- What is 'React.memo' and how does it prevent unnecessary re-renders?
+- Explain 'Error Boundaries' in React.
+- What is 'Automatic Batching' in React 18?
+- Explain 'useTransition' vs 'useDeferredValue'. How do they improve perceived performance?
+- What is the purpose of 'React.StrictMode'? Why are effects called twice in development?
+- How do you test React components using 'React Testing Library' (RTL)?
+- Explain 'HOC' (Higher Order Components) vs 'Render Props'. Are they still relevant after Hooks?
+
+[8-10 Years: Advanced Frontend & Optimization]
+- Discuss 'Server-Side Rendering' (SSR) vs 'Static Site Generation' (SSG) in Next.js.
+- Explain 'React Server Components' (RSC). How do they differ from client components?
+- What are 'Server Actions' in Next.js? How do they simplify form submissions and data mutations in a full-stack context?
+- How do you optimize 'React Performance' (Code splitting, Lazy loading, Suspense)?
+- Discuss 'Atomic Design' principles in React component architecture.
+- How do you implement 'Micro-frontends' using React?
+- Discuss 'Frontend Security' (XSS, CSRF, Secure storage in browsers).
+- How do you handle 'Large-scale State' in a complex dashboard application?
+- Explain 'Hydration' in the context of SSR.
+- How do you build a 'Design System' or 'Component Library' using React and CSS-in-JS?
+- Discuss the future of React (Concurrent Mode, Transitions).
+- Explain 'React Fiber' architecture. How does it enable incremental rendering?
+- What is the 'React Scheduler' and how does it prioritize different types of updates?
+- Discuss 'Render-as-You-Fetch' pattern with Suspense.
+
+[Cross-Platform & Mobile]
+- How does the new React Native architecture (Fabric and JSI) differ from the old JavaScript bridge?
+
+--- PART 17: FRONTEND TOOLING & MODERN ECOSYSTEM ---
+
+[1-10 Years: Tooling & State]
+- Explain the difference between 'Webpack', 'Vite', and 'Rollup'. Why is Vite faster?
+- What are 'Babel' and 'Polyfills'? Why do we need them?
+- Explain 'Tree Shaking' and how it reduces bundle size.
+- What is 'Tailwind CSS' vs 'CSS Modules'? Discuss the trade-offs.
+- Explain 'React Query' (TanStack Query). How does it handle server-state vs. local state?
+- What is 'SWR' (Stale-While-Revalidate)?
+- How do you implement 'Code Splitting' and 'Lazy Loading' in a modern JS app?
+- Discuss 'CSS-in-JS' (Styled Components, Emotion).
+- What is 'PWA' (Progressive Web App)? Explain 'Service Workers'.
+- How do you optimize 'Core Web Vitals' (LCP, FID, CLS)?
+- What is 'tRPC' and how does it provide end-to-end type safety without a schema-first approach (like GraphQL)?
+- What is 'Storybook' and why is it used in modern component-driven development?
+- How do you structure a monorepo (e.g., using Turborepo) to share business logic between a React web app and a React Native mobile app?
+
+--- PART 18: WEB PERFORMANCE & OPTIMIZATION ---
+
+[1-10 Years: Speed & Efficiency]
+- What is 'Gzip' and 'Brotli' compression? How do they work?
+- Explain 'Browser Caching' headers: 'Cache-Control', 'Expires', and 'ETag'.
+- What is the 'Critical Rendering Path'? How do you optimize it?
+- Explain 'Image Optimization' (WebP, Lazy Loading, Responsive images).
+- What is 'Minification' and 'Obfuscation' of JS/CSS files?
+- What is the difference between 'Local Storage', 'Session Storage', and 'Cookies'? When to use which?
+- Explain 'Resource Hints' (dns-prefetch, preconnect, prefetch, preload).
+- What is 'Brotli' compression and how does it compare to 'Gzip'?
+
+--- PART 19: INFRASTRUCTURE, DOCKER & KUBERNETES ---
+
+[1-3 Years: Infra Basics]
+- What is 'Virtualization' vs 'Containerization'?
+- Explain the basic Docker commands: 'build', 'run', 'ps', 'stop'.
+- What is a 'Dockerfile'? What are 'Layers' in a Docker image?
+- Explain the difference between 'ENTRYPOINT' and 'CMD' in a Dockerfile.
+- What is the 'Docker Build Cache' and how do you optimize a Dockerfile to use it?
+- Explain 'ENV' vs 'ARG'. Which one is available during the container runtime?
+- Explain the purpose of a 'Load Balancer'.
+- What is 'CI/CD'? Give an example of a simple pipeline.
+
+[4-7 Years: Orchestration & IaC]
+- Explain 'Docker Compose' and how it manages multi-container applications.
+- What is the difference between 'Bind Mounts' and 'Named Volumes'?
+- Explain Docker 'Networking Drivers': Bridge, Host, None, and Overlay.
+- How do 'Multi-stage Builds' help in creating production-ready images?
+- Explain the 'Docker Architecture': What are the roles of 'containerd' and 'runc'?
+- How does Docker handle 'Signals' (e.g., SIGTERM)? What is the importance of PID 1?
+- What is 'Kubernetes' (K8s)? Explain the role of a 'Pod', 'Service', and 'Deployment'.
+- How do you manage 'Secrets' and 'Configs' in Kubernetes?
+- Explain 'Infrastructure as Code' (IaC). How do you use Terraform or CloudFormation?
+- What is 'Blue-Green Deployment' vs 'Canary Deployment'?
+- How do you monitor infrastructure health (Prometheus, Grafana, Datadog)?
+- Explain 'Reverse Proxy' (Nginx) vs 'API Gateway' (Kong, Traefik).
+- How do you implement 'Centralized Logging' (ELK Stack, Loki)?
+- What is 'Autoscaling' (HPA in Kubernetes)? How does it trigger?
+- Explain 'VPC', 'Subnets', and 'Security Groups' in a cloud environment (AWS/GCP).
+
+[8-10 Years: SRE & Platform Engineering]
+- How do you design a 'Global Load Balancing' strategy across multiple regions?
+- Discuss 'Kubernetes Networking' (CNI, Service Mesh like Istio/Linkerd).
+- How do you handle 'Stateful Sets' and 'Persistent Volumes' in Kubernetes?
+- Discuss 'Disaster Recovery' (RTO/RPO) strategies for cloud-native apps.
+- How do you implement 'GitOps' using tools like ArgoCD or Flux?
+
+--- PART 20: CLOUD INFRASTRUCTURE (AWS: S3 & EC2) ---
+
+[1-10 Years: Cloud Engineering]
+- What is an 'EC2 Instance'? Discuss the different instance families (Compute, Memory, Storage optimized).
+- Explain 'EBS' (Elastic Block Store) vs. 'Instance Store'.
+- How do 'Auto Scaling Groups' (ASG) work with 'Elastic Load Balancers' (ELB)?
+- What are 'IAM Roles' and why should you use them instead of 'Access Keys' on EC2?
+- Explain 'S3 Storage Classes' (Standard, IA, Glacier, Deep Archive). When to use which?
+- What are 'S3 Bucket Policies' vs. 'ACLs'?
+- How do you implement 'S3 Versioning' and 'Lifecycle Rules' to save costs?
+- What is 'S3 Select' and how does it optimize data retrieval?
+- Explain 'VPC Peering' vs. 'Transit Gateway'.
+- How do you secure an EC2 instance using 'Security Groups' and 'Network ACLs'?
+
+--- PART 21: SERVERLESS & EVENT ORCHESTRATION ---
+
+[1-10 Years: Serverless Patterns]
+- What is 'Serverless Computing'? Discuss the 'Cold Start' problem in AWS Lambda.
+- How do you optimize 'Lambda Performance' (Memory allocation, VPC vs. non-VPC)?
+- Explain 'AWS Step Functions'. When to use them over simple Lambda chaining?
+- What is 'EventBridge' and how does it facilitate event-driven architecture?
+- Discuss 'Lambda Layers' and how they help with dependency management.
+
+[Edge Computing & Serverless 2.0]
+- What is the difference between a traditional Serverless function (AWS Lambda) and an Edge Function (Cloudflare Workers / Vercel Edge)?
+- How do V8 Isolates solve the cold-start problem, and what are their limitations regarding Node.js core modules?
+
+--- PART 22: ADVANCED CLOUD-NATIVE PATTERNS ---
+
+[1-10 Years: Resilience & Mesh]
+- What is a 'Service Mesh' (Istio, Linkerd)? Why is it different from an API Gateway?
+- Explain the 'Sidecar Pattern' and how it handles cross-cutting concerns (mTLS, Logging).
+- Discuss the 'Bulkhead Pattern' for isolating failures in microservices.
+- Explain 'Backpressure' and 'Load Shedding'. How do you prevent 'Cascading Failures'?
+- What is 'Distributed Tracing' (OpenTelemetry) and how do you use 'Context Propagation'?
+- Discuss 'Service Discovery' mechanisms: Server-side vs. Client-side.
+- How do you handle 'Configuration Management' in a dynamic, containerized environment?
+
+--- PART 23: ARCHITECTURES (MONOLITH VS MICROSERVICES) ---
+
+[1-10 Years: Architectural Patterns]
+- Discuss the 'Monolithic' vs 'Microservices' trade-offs regarding complexity, deployment, and scaling.
+- What is 'Service Discovery' and why is it needed in microservices?
+- Explain the 'API Gateway' pattern. How does it handle cross-cutting concerns?
+- What is the 'Circuit Breaker' pattern (e.g., Netflix Hystrix)?
+- Discuss 'Distributed Tracing' (Jaeger, Zipkin). Why is it critical for microservices?
+- Explain 'Event-Driven Architecture'. What are 'Eventual Consistency' challenges?
+- What is 'Database per Service' pattern? How do you handle joins across services?
+- Discuss 'Sidecar Pattern' (e.g., Envoy in a Service Mesh).
+- What is 'BFF' (Backend for Frontend) pattern?
+- How do you migrate a 'Monolith' to 'Microservices' (Strangler Fig pattern)?
+
+--- PART 24: SYSTEM DESIGN & ARCHITECTURE ---
+
+[1-10 Years: Progressive Complexity]
+- How do you scale a system from 100 users to 10 million users?
+- Explain 'Vertical Scaling' vs 'Horizontal Scaling'.
+- What is 'Consistent Hashing' and why is it used in load balancers and caches?
+- Discuss the 'Microservices' vs 'Monolith' trade-offs.
+- How do you design a 'URL Shortener' (like Bitly)?
+- How do you design a 'Real-time Chat System' (like WhatsApp)?
+- How do you scale WebSockets horizontally across 10 instances? (Discuss sticky sessions vs. Redis Pub/Sub backplane).
+- How do you design a 'Rate Limiter' (Token Bucket vs Leaky Bucket)?
+- Explain the 'Saga Pattern' for managing distributed transactions.
+- How do you design a 'Notification System' (Email, SMS, Push)?
+- Discuss 'Message Queues' (Kafka vs RabbitMQ). When is Kafka the better choice?
+- How do you implement 'Idempotency' in a REST API?
+- Explain the 'Event Sourcing' and 'CQRS' patterns.
+- How do you design a 'CDN' (Content Delivery Network)?
+- Discuss 'Database Sharding' strategies and pitfalls (Resharding, join complexity).
+- How do you design a 'Distributed File Storage' system (like S3)?
+
+--- PART 25: DESIGN PRINCIPLES (SOLID & PATTERNS) ---
+
+[1-10 Years: Clean Code & Architecture]
+- Explain the 'SOLID' principles of object-oriented design.
+- What is the 'DRY' (Don't Repeat Yourself) principle? When should you follow 'AHA' (Avoid Hasty Abstractions)?
+- Explain 'KISS' (Keep It Simple, Stupid) and 'YAGNI' (You Ain't Gonna Need It).
+- What is 'Dependency Injection' (DI) and 'Inversion of Control' (IoC)?
+- Explain the 'Strategy Pattern' with a real-world example.
+- What is the 'Factory Pattern' vs 'Abstract Factory'?
+- Explain the 'Observer Pattern'. How is it used in Event-Driven systems?
+- What is 'Composition over Inheritance'?
+- Explain the 'Singleton Pattern'. What are its pros and cons?
+- What is the 'Adapter Pattern'? When is it useful?
+- Explain the 'Law of Demeter' (Principle of Least Knowledge). How does it reduce coupling?
+- What is 'CQS' (Command Query Separation)? How does it differ from 'CQRS'?
+- Explain the 'Hollywood Principle' ("Don't call us, we'll call you") in the context of IoC.
+- What is the 'Principle of Least Surprise' (POLS)?
+- Explain 'Fail Fast' vs 'Fail Safe' strategies in software design.
+- What is 'Separation of Concerns' and how does it differ from 'Single Responsibility'?
+- Explain the 'Boy Scout Rule' in software engineering.
+- What is 'Defensive Programming' vs 'Offensive Programming'?
+- Discuss 'Convention over Configuration'. Give an example (e.g., Django or Ruby on Rails).
+
+--- PART 26: ARCHITECTURAL TRADE-OFFS & JUSTIFICATIONS ---
+
+[4-10 Years: Senior Decision Making]
+- Why should you use Nginx as a reverse proxy instead of exposing Gunicorn/Uvicorn directly?
+- Why not use Redis as your primary database instead of PostgreSQL? Discuss durability and query complexity.
+- When would you choose Celery over Kafka for background processing? When is Kafka the winner?
+- Discuss the trade-offs of using 'Serverless' (AWS Lambda) vs 'Containers' (Docker/Fargate).
+- When is Python the 'wrong' choice for a backend service? When would you choose Go or Rust instead?
+- Why not use 'WebSockets' for every real-time requirement? When is 'SSE' or 'Long Polling' better?
+- Discuss 'BFF' (Backend for Frontend) vs a 'Universal API'. When does BFF become necessary?
+- Why choose 'GraphQL' over 'REST' if REST is simpler to cache and implement?
+- Discuss the trade-offs of 'Database Sharding' vs 'Read Replicas'. When is sharding a last resort?
+- Why use 'JWT' for authentication if you can't easily revoke them without a blacklist?
+
+--- PART 27: TESTING, CI/CD & SRE ---
+
+[1-10 Years: Quality & Reliability]
+- Explain the difference between 'Unit', 'Integration', and 'End-to-End' tests.
+- How do you use 'Pytest Fixtures' to share setup code?
+- What is 'Mocking'? How do you use '@patch' to isolate external APIs?
+- Explain 'Test Coverage'. What is a good percentage for a production app?
+- How do you test 'Celery Tasks' synchronously during unit tests?
+- What is 'Database Mocking' in Django? How does 'TransactionTestCase' work?
+- Explain 'Load Testing'. How do you use 'Locust' for a Python app?
+- What is 'Blue-Green Deployment' and how does it relate to Django apps?
+- How do you handle 'Secrets Management' (Vault, AWS Secrets Manager, .env)?
+- Discuss 'Logging Best Practices' (Structured Logging, JSON logs, Log aggregation).
+- What is 'Property-based Testing' (e.g., using 'Hypothesis')?
+- Explain 'Mutation Testing' and how it improves test suite quality.
+- Explain the differences between Cypress and Playwright for E2E testing. How does Playwright handle cross-browser testing and network interception?
+
+--- PART 28: SRE & CHAOS ENGINEERING ---
+
+[1-10 Years: Reliability Engineering]
+- What is the difference between an 'SLA', 'SLO', and 'SLI'?
+- How do you calculate and manage an 'Error Budget'? What happens when it is exhausted?
+- Explain 'Chaos Engineering'. What are the 'Principles of Chaos'?
+- How do you use tools like 'Gremlin' or 'Chaos Mesh' to test system resilience?
+- Discuss 'Incident Response' workflows: Commander, Scribe, and Communications roles.
+- What is a 'Blameless Post-mortem' and why is it critical for engineering culture?
+- Explain 'MTTR' (Mean Time To Recovery) vs 'MTBF' (Mean Time Between Failures).
+- How do you implement 'Automated Remediation' for common infrastructure issues?
+
+--- PART 29: ADVANCED OBSERVABILITY ---
+
+[1-10 Years: Monitoring & Tracing]
+- What is 'OpenTelemetry' (OTel)? Why is it becoming the industry standard?
+- Explain 'Tracing' vs 'Metrics' vs 'Logs' (The three pillars of observability).
+- How do you use 'Span Tags' and 'Baggage' for distributed tracing?
+- Discuss 'Anomaly Detection' and 'Alert Fatigue'. How do you set meaningful SLIs/SLOs?
+
+--- PART 30: CORE NETWORKING (HTTP, DNS & BEYOND) ---
+
+[1-10 Years: How the Web Works]
+- Explain the 'OSI Model' and its 7 layers.
+- Describe the 'TCP 3-Way Handshake' (SYN, SYN-ACK, ACK).
+- What is 'DNS' and how does a 'Recursive Lookup' work?
+- Explain the difference between an 'A Record', 'CNAME', 'TXT', and 'MX' record.
+- What is 'TTL' (Time To Live) in the context of DNS?
+- Explain the difference between 'HTTP/1.1', 'HTTP/2', and 'HTTP/3' (QUIC).
+- What is 'TLS/SSL' and how does the 'Handshake' establish a secure connection?
+- Explain 'WebSockets' vs 'Server-Sent Events' (SSE) vs 'Long Polling'.
+- What is 'DHCP' and how does a device get an IP address?
+- Explain 'NAT' (Network Address Translation) and 'Port Forwarding'.
+
+--- PART 31: ADVANCED SECURITY & COMPLIANCE ---
+
+[1-10 Years: Security Engineering]
+- Explain 'OAuth2' and 'OpenID Connect' (OIDC) flows.
+- What is a 'JWT' (JSON Web Token)? Discuss its structure and security risks (e.g., XSS/CSRF).
+- How do you prevent 'SQL Injection' (SQLi) beyond using an ORM?
+- What is 'Cross-Site Scripting' (XSS)? Explain 'Stored', 'Reflected', and 'DOM-based' XSS.
+- How does 'CSRF' (Cross-Site Request Forgery) work? How do 'SameSite' cookies help?
+- Explain 'Encryption at Rest' vs. 'Encryption in Transit' (TLS/SSL).
+- What is 'Rate Limiting' and 'IP Whitelisting'?
+- Discuss the 'OWASP Top 10' vulnerabilities.
+- How do you perform 'Secure Secret Management' in CI/CD?
+- What is 'Penetration Testing' vs 'Vulnerability Scanning'?
+- Explain 'Honeypots' and how they are used for fraud detection.
+- How do you handle 'PII' (Personally Identifiable Information) compliance (GDPR/CCPA)?
+- What is 'Content Security Policy' (CSP) and how does it prevent XSS?
+- Discuss 'Zero Trust Architecture'.
+- How do you implement 'Multi-Factor Authentication' (MFA) securely?
+- Explain 'OAuth2 PKCE' (Proof Key for Code Exchange). Why is it needed for public clients?
+- What is 'mTLS' (Mutual TLS) and how does it enhance service-to-service security?
+- Discuss 'OIDC' (OpenID Connect) vs 'OAuth2'.
+- What are Passkeys? How does WebAuthn differ from traditional password + TOTP MFA?
+- How do you handle session revocation globally when using edge-cached APIs?
+
+--- PART 32: CRYPTOGRAPHY & IDENTITY ---
+
+[1-10 Years: Security Fundamentals]
+- Explain 'Hashing' vs 'Encryption'. Why should you never use MD5 for passwords?
+- What is 'Symmetric' vs 'Asymmetric' encryption?
+- Explain 'Salt' and 'Pepper' in the context of password hashing.
+- What is a 'Digital Signature' and how does it ensure non-repudiation?
+- Explain 'Public Key Infrastructure' (PKI) and 'Certificate Authorities' (CAs).
+- What is 'Diffie-Hellman Key Exchange'?
+- Explain 'Multi-Factor Authentication' (MFA) methods (TOTP, SMS, Hardware keys).
+- What is 'End-to-End Encryption' (E2EE)?
+- Discuss 'Zero-Knowledge Proofs' (ZKP) at a high level.
+- How do you securely store 'API Keys' and 'Database Credentials'?
+
+--- PART 33: DEVSECOPS & COMPLIANCE ---
+
+[1-10 Years: Security at Speed]
+- What is 'Shift Left Security'? How do you integrate it into the CI/CD pipeline?
+- Explain the difference between 'SAST', 'DAST', and 'SCA' tools.
+- How do you perform 'Container Image Scanning' to detect vulnerabilities?
+- Discuss 'Secret Scanning' and how to prevent credential leaks in Git.
+- What is 'Infrastructure as Code (IaC) Security' (Checkov, Terrascan)?
+- How do you manage 'Compliance as Code' (SOC2, HIPAA, GDPR)?
+- Explain 'Zero Trust Architecture' in a cloud-native environment.
+
+--- PART 34: COMPUTER SCIENCE FUNDAMENTALS (BIG O & DS) ---
+
+[1-10 Years: Algorithmic Thinking]
+- Explain 'Big O Notation'. What is the difference between O(1), O(n), O(log n), and O(n^2)?
+- Compare 'Array' (List) vs. 'Linked List' in terms of insertion and lookup performance.
+- How does a 'Hash Map' (Dictionary) work internally? What is a 'Collision'?
+- Explain the 'Stack' vs 'Queue' data structures (LIFO vs FIFO).
+- What is a 'Binary Search Tree' (BST)? What is the time complexity for search?
+- Explain 'Recursion'. What is a 'Base Case' and 'Stack Overflow'?
+- What is 'Sorting'? Compare 'Quick Sort' and 'Merge Sort'.
+- Explain 'Graph' data structures (Adjacency List vs Matrix).
+- What is 'Dynamic Programming'? Give a simple example (e.g., Fibonacci).
+- Explain 'Race Conditions' and 'Deadlocks' in concurrent programming.
+- What is a 'Heap' (Priority Queue)? Explain the time complexity for push/pop.
+- Explain the 'Trie' (Prefix Tree) data structure. When is it more efficient than a Hash Map?
+- What are 'Segment Trees' or 'Fenwick Trees'? When would you use them for range queries?
+- Explain 'Union-Find' (Disjoint Set Union) and its applications in graph algorithms.
+- Discuss 'Backtracking' algorithms (e.g., N-Queens, Sudoku Solver).
+
+--- PART 35: LINUX & OS FUNDAMENTALS ---
+
+[1-10 Years: The Kernel & Shell]
+- Explain the difference between a 'Process' and a 'Thread' at the OS level.
+- How do you check CPU and Memory usage in Linux (`top`, `htop`, `free`)?
+- Explain Linux 'File Permissions' (`chmod`, `chown`, `umask`).
+- What is a 'Symbolic Link' (symlink) vs. a 'Hard Link'?
+- How do you find a specific string in a directory of files using `grep` or `ripgrep`?
+- What is 'SSH' and how do 'Public/Private Keys' work for authentication?
+- Explain the role of 'systemd' and how to manage services (`systemctl`).
+- What are 'Signals' in Linux (SIGTERM, SIGKILL, SIGINT)? How do they differ?
+- Explain the 'Linux File Hierarchy Standard' (e.g., /etc, /var, /usr, /bin).
+- How do you pipe outputs between commands (`|`) and redirect to files (`>`, `>>`)?
+
+[Deep Systems & Observability]
+- What is eBPF (Extended Berkeley Packet Filter), and how is it replacing traditional sidecar proxies for service meshes (e.g., Cilium)?
+- How do tools based on eBPF allow tracing and network monitoring without altering the application code or kernel?
+
+--- PART 36: VERSION CONTROL (GIT & WORKFLOWS) ---
+
+[1-10 Years: From Commits to Workflows]
+- What is the difference between 'git pull' and 'git fetch'?
+- Explain the difference between 'git merge' and 'git rebase'. When should you avoid rebasing?
+- What is 'git cherry-pick' and when is it useful?
+- How do you resolve a 'Merge Conflict' safely?
+- Explain the 'GitFlow' vs 'Trunk-based Development' branching strategies.
+- What is a 'Git Submodule' and what are its pitfalls?
+- How do you 'undo' the last commit that was already pushed to a remote branch?
+- What is 'git stash' and how do you use it?
+- Explain the purpose of '.gitignore' and '.gitattributes'.
+- How do you use 'git bisect' to find the commit that introduced a bug?
+- How do you write a reusable GitHub Action workflow? Discuss the security implications of 'pull_request' vs 'pull_request_target'.
+
+--- PART 37: AI ENGINEERING & LLMOPS ---
+
+[1-10 Years: The Modern AI Stack]
+- What is 'Retrieval-Augmented Generation' (RAG) and why is it used?
+- Explain 'Vector Embeddings'. How do they represent semantic meaning?
+- How do 'Vector Databases' (Pinecone, Milvus, Weaviate) differ from traditional DBs?
+- What is 'Prompt Injection' and how do you protect your application from it?
+- Explain 'Context Windows' and 'Tokenization' in Large Language Models.
+- What is 'Fine-tuning' vs 'Few-shot Prompting'?
+- Explain 'PEFT' (Parameter-Efficient Fine-Tuning) and 'LoRA' (Low-Rank Adaptation). Why are they preferred over full fine-tuning?
+- Discuss 'Advanced RAG': What are 'HyDE', 'Query Expansion', and 'Re-ranking'?
+- Explain 'LLM Orchestration' frameworks (LangChain, LlamaIndex).
+- How do you handle 'LLM Hallucinations' in a production system?
+- What are 'Agents' in the context of LLMs?
+- How do you monitor and evaluate AI model performance in production?
+- Explain 'LLM-as-a-judge' and frameworks like 'RAGAS' for automated evaluation.
+- What is 'PagedAttention' (vLLM) and 'Speculative Decoding'? How do they optimize serving?
+- Explain 'Self-Attention' in the Transformer architecture.
+- What are 'Guardrails' (e.g., Nemo Guardrails) and how do they enforce safety in real-time?
+- Discuss 'Flash Attention' and its role in scaling to long context windows.
+- How do LLMs execute 'Tool Calling'? Explain the mechanics of parsing the model's output to run code.
+- What is the difference between a simple RAG pipeline and a multi-agent framework (like LangGraph or AutoGen)?
+
+--- PART 38: MLOPS (MACHINE LEARNING OPERATIONS) ---
+
+[1-10 Years: Scaling Intelligence]
+- What is the 'Hidden Technical Debt' in Machine Learning systems?
+- Explain 'Model Versioning' vs 'Data Versioning' (DVC).
+- What is a 'Feature Store' (Feast, Tecton) and why is it needed for real-time ML?
+- Discuss 'Model Drift' and 'Concept Drift'. How do you monitor for them?
+- How do you deploy ML models at scale (Seldon Core, BentoML, Ray Serve)?
+- Explain the 'CI/CD for ML' (CT - Continuous Training) pipeline.
+- Discuss the challenges of 'Online' vs 'Offline' model evaluation.
+
+--- PART 39: PRODUCT ENGINEERING & GROWTH ---
+
+[1-10 Years: Engineering for the Business]
+- How do you design and implement an 'A/B Testing' framework from scratch?
+- Explain 'Feature Flags' (LaunchDarkly, Unleash). How do they enable 'Trunk-based Development'?
+- What is 'Event Tracking' (Segment, Mixpanel, Amplitude)? How do you ensure data quality?
+- Discuss 'North Star Metrics' and how engineering decisions should align with them.
+- How do you handle 'Schema Evolution' in analytics databases (BigQuery, Redshift)?
+- What is 'Funnel Analysis' and how can engineers optimize the 'Conversion Path'?
+- Discuss 'Growth Hacking' from a technical perspective (Viral loops, Referral systems).
+
+--- PART 40: ENGINEERING LEADERSHIP & SDLC ---
+
+[8-10 Years: Strategy & Leadership]
+- How do you manage and prioritize 'Technical Debt' in a fast-growing startup?
+- Discuss 'Incident Response' (on-call rotation, post-mortems, root cause analysis).
+- How do you conduct an 'Effective Code Review'? What are you looking for?
+- Discuss 'Mentorship' and 'Sponsorship' in engineering teams.
+- What is 'Agile' vs 'Kanban'? How do you handle 'Sprint Planning'?
+- How do you design a 'Hiring Process' for senior engineers?
+
+--- PART 41: SOFT SKILLS, LEADERSHIP & BEHAVIORAL ---
+
+[8-10 Years: The Human Element]
+- Explain the 'STAR Method' (Situation, Task, Action, Result) for behavioral questions.
+- How do you handle 'Technical Debt' when there is pressure to ship new features?
+- Discuss a time you had a 'Conflict' with a peer or manager. How was it resolved?
+- How do you approach 'Mentoring' junior vs senior engineers?
+- Discuss the 'Architectural Decision Record' (ADR). Why is documenting the 'Why' important?
+- How do you evaluate 'Buy vs Build' for a critical piece of infrastructure?
+- What is your strategy for 'Hiring' and 'Retaining' top engineering talent?
+- How do you manage 'Stakeholder Expectations' during a major system outage?
+- What are the 'DORA Metrics' (Deployment Frequency, Lead Time, Change Failure Rate, MTTR) and how do you use them?
+- How do you foster 'Psychological Safety' and a 'Blameless Culture' within an engineering team?
+- How do you measure and optimize the 'Onboarding Experience' for new engineering hires?
+
+================================================================================
+--- PART 42: REAL-WORLD INCIDENTS & MODERN TRADE-OFFS (THE "WHY NOT" SECTION) ---
+
+[Senior & Staff Level: Industry Trends & Disasters]
+- The 'Just Use Postgres' Trend: Why are teams dropping Redis (queues), Pinecone (vectors), and Mongo (documents) for Postgres? What is the breaking point of this strategy?
+- Microservices to Monoliths: Why did Amazon Prime Video move from a serverless microservices architecture back to a monolith to save 90% on costs? When is a monolith better?
+- Cloud Repatriation: Why are companies (like 37signals) leaving AWS/GCP to return to bare-metal data centers? Discuss the cost tipping point.
+- The CrowdStrike Lesson: How do you prevent a global catastrophic outage when deploying updates? Discuss blast radius, progressive rollouts, and canary deployments.
+- LLM Cost Optimization: Why are companies migrating from massive proprietary models (GPT-4) to smaller, fine-tuned open-source models (Llama 3 8B)?
+- The Redis & Terraform License Changes: How do you handle open-source tools abruptly changing to restrictive licenses? Discuss the rise of Valkey and OpenTofu.
+- Supply Chain Attacks (The XZ Utils & Polyfill lessons): How do you secure your NPM/Python dependency pipeline against malicious takeovers?
+- The Vercel/Serverless Pricing Shock: Why do startups face massive bills for serverless bandwidth/compute, and when should you move Next.js/Node to a standard ECS container or VPS?
+- The JWT Paradox: If JWTs are meant to be stateless, but you must check a Redis blacklist on every request to revoke them, why not just use fast Redis session cookies?
+- Third-Party Outage Survival: What happens to your system when AWS us-east-1 goes down? Explain the 'Circuit Breaker' pattern and Fallback mechanisms.
+- The Event-Driven Nightmare: What happens when an event schema changes in a Kafka architecture, causing downstream consumers to crash? How do you manage schema evolution?
+- The ORM Trap: Why do senior engineers often advocate for dropping the ORM (Django ORM/SQLAlchemy) in favor of raw SQL for complex reporting and analytics?
+- Frontend Fatigue: Why is there a pushback against heavy React SPAs in favor of Server-Driven UI (like HTMX or Next.js Server Components)?
+- Open Table Formats vs Data Warehouses: Why are companies adopting Apache Iceberg instead of locking their data into Snowflake or BigQuery?
+
+================================================================================
+Note: This is an active registry. For deeper dives, refer to the individual 
+mastery manuals for each technology.
+================================================================================

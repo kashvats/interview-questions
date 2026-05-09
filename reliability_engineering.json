@@ -1,0 +1,810 @@
+[
+    {
+        "id":  1,
+        "question":  "Explain the difference between \u0027Unit\u0027, \u0027Integration\u0027, and \u0027End-to-End\u0027 tests.",
+        "answer":  "1. **Unit Tests**: Test individual functions or classes in isolation. They are fast, reliable, and use mocks for external dependencies. \n2. **Integration Tests**: Test how different components work together (e.g., a function calling a database). They are slower but catch \u0027plumbing\u0027 issues. \n3. **End-to-End (E2E) Tests**: Test the entire system from the user\u0027s perspective (usually using a browser). They are the most realistic but also the slowest and most \u0027flaky\u0027. Follow the **Testing Pyramid**: lots of unit tests, fewer integration tests, and very few E2E tests.",
+        "counterQuestion":  "What is \u0027Contract Testing\u0027?",
+        "counterQuestionAnswer":  "Contract testing is a type of integration testing where you verify that a service (the provider) still meets the expectations of its clients (the consumers). It ensures that changes in one microservice don\u0027t break the APIs relied upon by other services.",
+        "category":  "testing",
+        "topic":  "fundamentals",
+        "difficulty":  "easy",
+        "tags":  [
+                     "testing_pyramid",
+                     "unit_testing",
+                     "e2e",
+                     "#highly_asked"
+                 ],
+        "analogy":  "Unit tests are like \u0027Checking individual bricks for cracks\u0027. Integration tests are like \u0027Checking if two bricks fit together\u0027. E2E tests are like \u0027Checking if the entire house is standing and the doors open\u0027.",
+        "code":  "// Testing Pyramid\n- Unit: fn add(a, b) { return a + b; }\n- Integration: test_db_connection()\n- E2E: cypress.visit(\u0027/\u0027)"
+    },
+    {
+        "id":  2,
+        "question":  "How do you use \u0027Pytest Fixtures\u0027 to share setup code?",
+        "answer":  "Pytest Fixtures are functions that run before (and optionally after) your tests to provide a baseline state (e.g., a database connection or a mock API client). You use the `@pytest.fixture` decorator and then pass the fixture name as an argument to your test function. Fixtures can have different \u0027scopes\u0027 (function, class, module, or session), allowing you to reuse the same setup across multiple tests, which speeds up the test suite and keeps it DRY.",
+        "counterQuestion":  "What is \u0027Yield\u0027 in a Pytest fixture?",
+        "counterQuestionAnswer":  "Using \u0027yield\u0027 instead of \u0027return\u0027 allows you to run **Teardown** code after the test has finished. Everything before the yield runs before the test; everything after the yield runs after the test. This is perfect for closing database connections or deleting temporary files created during the test.",
+        "category":  "testing",
+        "topic":  "pytest",
+        "difficulty":  "medium",
+        "tags":  [
+                     "pytest",
+                     "fixtures",
+                     "python"
+                 ],
+        "analogy":  "A Pytest Fixture is like \u0027A caterer at a party\u0027. You tell them what you need (e.g., \u0027I need a clean table\u0027), and they set it up before you arrive and clean it up after you leave, so you can just focus on the party (the test).",
+        "code":  "@pytest.fixture\ndef db_session():\n    db = Session()\n    yield db\n    db.close() # Teardown"
+    },
+    {
+        "id":  3,
+        "question":  "What is \u0027Mocking\u0027? How do you use \u0027@patch\u0027 to isolate external APIs?",
+        "answer":  "Mocking is the practice of replacing a real component with a \u0027fake\u0027 one that has a predictable behavior. In Python, you use `unittest.mock.patch` (or the `@patch` decorator) to temporarily replace an object or module during a test. For example, you can patch \u0027requests.get\u0027 to return a hardcoded JSON response instead of making a real network call. This makes your tests **fast**, **deterministic** (they don\u0027t fail if the API is down), and allows you to test edge cases like 500 errors or timeouts easily.",
+        "counterQuestion":  "What is the difference between a \u0027Mock\u0027 and a \u0027Stub\u0027?",
+        "counterQuestionAnswer":  "A **Stub** only provides canned answers to calls made during the test. A **Mock** goes further; it also records which methods were called and with what arguments, allowing you to **verify** that your code interacted with the dependency correctly (e.g., \u0027verify that the email service was called exactly once\u0027).",
+        "category":  "testing",
+        "topic":  "mocking",
+        "difficulty":  "medium",
+        "tags":  [
+                     "mocking",
+                     "pytest",
+                     "unit_testing",
+                     "#highly_asked"
+                 ],
+        "analogy":  "Mocking is like \u0027Using a stunt double in a movie\u0027. Instead of throwing the real actor (a real API) off a building, you use a dummy (the mock) that looks like the actor but is safe to drop and always lands exactly how you want.",
+        "code":  "with patch(\u0027requests.get\u0027) as mock_get:\n    mock_get.return_value.json.return_value = {\u0027id\u0027: 1}\n    response = call_api()\n    assert response[\u0027id\u0027] == 1"
+    },
+    {
+        "id":  4,
+        "question":  "Explain \u0027Test Coverage\u0027. What is a good percentage for a production app?",
+        "answer":  "Test Coverage is a measure (percentage) of how much of your code is executed by your tests. While 100% sounds ideal, it is often not practical and leads to \u0027brittle\u0027 tests that break with every change. **A good target** is usually 80-90%, focusing on critical business logic and edge cases. High coverage doesn\u0027t guarantee quality code, but low coverage almost certainly guarantees bugs will escape into production.",
+        "counterQuestion":  "What is \u0027Branch Coverage\u0027?",
+        "counterQuestionAnswer":  "Branch coverage (or Decision coverage) measures whether every possible branch of a conditional statement (e.g., if/else) has been executed. It is more thorough than simple \u0027Line Coverage\u0027 because it ensures that you\u0027ve tested both the true and false conditions of every logic gate in your code.",
+        "category":  "testing",
+        "topic":  "metrics",
+        "difficulty":  "easy",
+        "tags":  [
+                     "test_coverage",
+                     "metrics",
+                     "quality"
+                 ],
+        "analogy":  "Test Coverage is like \u0027How much of your body an umbrella covers\u0027. 100% coverage means you\u0027re theoretically dry, but if there\u0027s a hole in the umbrella (a logic bug in the test), you\u0027re still going to get wet.",
+        "code":  "# Run coverage with pytest\npytest --cov=myapp tests/"
+    },
+    {
+        "id":  5,
+        "question":  "Explain \u0027Load Testing\u0027. How do you use \u0027Locust\u0027 for a Python app?",
+        "answer":  "Load testing simulates many users accessing your app simultaneously to find performance bottlenecks and the system\u0027s breaking point. **Locust** is a popular Python-based load testing tool. You write a \u0027Locustfile\u0027 (pure Python) that defines user behaviors (e.g., \u0027login\u0027, \u0027post comment\u0027). You then run Locust, which spawns thousands of concurrent users (using gevent) and provides a web interface to monitor requests per second (RPS), latency, and error rates in real-time.",
+        "counterQuestion":  "What is \u0027Stress Testing\u0027 vs. \u0027Load Testing\u0027?",
+        "counterQuestionAnswer":  "Load testing checks if the system can handle its **expected** peak traffic. Stress testing pushes the system **beyond its limits** to see how it fails (e.g., does it crash gracefully or corrupt data?) and how it recovers after the load is removed. Stress testing is about finding the \u0027Breaking Point\u0027.",
+        "category":  "testing",
+        "topic":  "performance",
+        "difficulty":  "medium",
+        "tags":  [
+                     "locust",
+                     "load_testing",
+                     "performance"
+                 ],
+        "analogy":  "Load Testing with Locust is like \u0027Simulating a Black Friday sale\u0027. You send thousands of digital customers into your store at once to see if the doors break, the checkout crashes, or the staff (the server) can handle the pressure.",
+        "code":  "class WebsiteUser(HttpUser):\n    @task\n    def index(self):\n        self.client.get(\"/\")"
+    },
+    {
+        "id":  6,
+        "question":  "What is \u0027Blue-Green Deployment\u0027 and how does it relate to Stateful applications?",
+        "answer":  "Blue-Green Deployment is a zero-downtime release strategy. You have two identical production environments: \u0027Blue\u0027 (current) and \u0027Green\u0027 (new). \n1. You deploy the new code to Green and test it. \n2. You switch the Load Balancer to point to Green. \n3. Blue becomes the standby. **Challenge for Stateful Apps**: If your deployment includes database migrations, you must ensure they are **backward compatible** (e.g., don\u0027t delete a column used by Blue until Green is fully live), otherwise the old version will crash during the switch.",
+        "counterQuestion":  "What is a \u0027Canary Deployment\u0027?",
+        "counterQuestionAnswer":  "In a Canary Deployment, you roll out the new version to only a **small percentage of users** (e.g., 5%) first. You monitor for errors and performance issues. If everything looks good, you gradually increase the percentage until 100% of users are on the new version. This minimizes the \u0027Blast Radius\u0027 of a bad release.",
+        "category":  "testing",
+        "topic":  "deployment",
+        "difficulty":  "hard",
+        "tags":  [
+                     "deployment",
+                     "blue_green",
+                     "cicd",
+                     "#highly_asked"
+                 ],
+        "analogy":  "Blue-Green Deployment is like \u0027A relay race\u0027. One runner (Blue) is currently running. The next runner (Green) starts running alongside them. Once Green is at full speed, Blue hands off the baton (the traffic) and stops.",
+        "code":  "# Deployment Logic\n1. Deploy v2 to Green\n2. Run Health Checks on Green\n3. Switch LB to Green\n4. Terminate Blue (after delay)"
+    },
+    {
+        "id":  7,
+        "question":  "How do you handle \u0027Secrets Management\u0027 (Vault, AWS Secrets Manager, .env)?",
+        "answer":  "Secrets (API keys, DB passwords) must never be committed to Git. \n1. **Local Development**: Use `.env` files (excluded via `.gitignore`). \n2. **Production**: Use a centralized secret manager like **HashiCorp Vault**, **AWS Secrets Manager**, or **GCP Secret Manager**. These tools provide encrypted storage, access logging, and **Dynamic Secrets** (generating temporary credentials that expire automatically). This minimizes the impact of a breach and simplifies credential rotation across multiple services.",
+        "counterQuestion":  "What is the danger of using Environment Variables for secrets in production?",
+        "counterQuestionAnswer":  "Environment variables can sometimes be leaked through diagnostic logs, crash reports, or by running `phpinfo()` or similar commands in a compromised application. Using a dedicated secret manager that injects secrets directly into the application\u0027s memory is a more secure approach.",
+        "category":  "testing",
+        "topic":  "security",
+        "difficulty":  "medium",
+        "tags":  [
+                     "secrets",
+                     "security",
+                     "vault"
+                 ],
+        "analogy":  "Secrets Management is like \u0027A safe-deposit box in a bank\u0027. You don\u0027t carry your gold bars (passwords) in your pocket (code). You keep them in the bank, and only when you need them do you show your ID (auth) to get them out.",
+        "code":  "# .env pattern\nDATABASE_URL=postgres://user:pass@localhost:5432/db\n\n# Python usage\nos.getenv(\u0027DATABASE_URL\u0027)"
+    },
+    {
+        "id":  8,
+        "question":  "Discuss \u0027Logging Best Practices\u0027 (Structured Logging, JSON logs, Log aggregation).",
+        "answer":  "1. **Structured Logging**: Log data as key-value pairs (usually **JSON**) instead of plain text. This allows logging systems (like ELK or Loki) to easily parse and index fields. \n2. **Log Levels**: Use appropriate levels (DEBUG, INFO, WARN, ERROR) to filter noise. \n3. **Context**: Include a \u0027Trace ID\u0027 or \u0027Correlation ID\u0027 in every log to track a request across multiple services. \n4. **Aggregation**: Ship all logs to a central store so you can search and alert on them without SSHing into individual servers.",
+        "counterQuestion":  "What is \u0027PII\u0027 in logging and why is it dangerous?",
+        "counterQuestionAnswer":  "PII (Personally Identifiable Information) like email addresses, phone numbers, or credit card info should never be logged. If your logs are compromised, this data could lead to massive legal and security liabilities. Always use \u0027log scrubbing\u0027 filters to remove sensitive data before it reaches your log store.",
+        "category":  "testing",
+        "topic":  "observability",
+        "difficulty":  "medium",
+        "tags":  [
+                     "logging",
+                     "observability",
+                     "best_practices",
+                     "#highly_asked"
+                 ],
+        "analogy":  "Structured Logging is like \u0027Filling out a form\u0027 instead of writing a diary entry. Diaries are hard for robots to read, but forms (JSON) have specific boxes (keys) for everything, making it easy to search and sort millions of them in seconds.",
+        "code":  "import structlog\nlogger = structlog.get_logger()\nlogger.info(\"user_login\", user_id=123, status=\"success\")"
+    },
+    {
+        "id":  9,
+        "question":  "What is \u0027Property-based Testing\u0027 (e.g., using \u0027Hypothesis\u0027)?",
+        "answer":  "Property-based testing (PBT) involves defining the \u0027properties\u0027 (rules) that your code must always follow, and letting a framework generate hundreds of random inputs to try and break those rules. **Example**: If you write a sorting function, the property is \u0027the output list must have the same elements as the input and be in non-descending order\u0027. Tools like **Hypothesis** will find the smallest possible failing input (e.g., an empty list or a list with one element), which is much more powerful than manual unit tests.",
+        "counterQuestion":  "What is \u0027Shrinking\u0027 in Property-based testing?",
+        "counterQuestionAnswer":  "Shrinking is the process where the PBT framework, after finding a complex failing input, tries to simplify it to the smallest possible \u0027minimal\u0027 case that still causes the failure. This makes it much easier for the developer to understand and fix the underlying bug.",
+        "category":  "testing",
+        "topic":  "methodology",
+        "difficulty":  "hard",
+        "tags":  [
+                     "testing",
+                     "hypothesis",
+                     "python"
+                 ],
+        "analogy":  "Property-based testing is like \u0027A mischievous toddler playing with a toy\u0027. You give them the rules (e.g., \u0027the toy shouldn\u0027t break if you drop it\u0027), and they will find the most bizarre, unexpected ways to try and break it that you never would have thought of yourself.",
+        "code":  "@given(st.integers())\ndef test_add_zero(n):\n    assert n + 0 == n"
+    },
+    {
+        "id":  10,
+        "question":  "Explain \u0027Mutation Testing\u0027 and how it improves test suite quality.",
+        "answer":  "Mutation testing evaluates the quality of your tests by injecting small bugs (\u0027mutations\u0027) into your source code (e.g., changing `\u003e` to `\u003c`). If your tests still pass after a mutation, it means your tests are weak and failed to \u0027kill the mutant\u0027. The **Mutation Score** is the percentage of mutants caught by your tests. Unlike line coverage, which only tells you if code was *executed*, mutation testing tells you if your tests are actually *verifying* the correctness of that code.",
+        "counterQuestion":  "What is the main drawback of Mutation Testing?",
+        "counterQuestionAnswer":  "Mutation testing is extremely **resource-intensive** and slow, as it requires re-running your test suite for every single mutation created. Because of this, it\u0027s often only run on critical business logic or during nightly CI builds rather than on every commit.",
+        "category":  "testing",
+        "topic":  "metrics",
+        "difficulty":  "hard",
+        "tags":  [
+                     "mutation_testing",
+                     "quality",
+                     "methodology"
+                 ],
+        "analogy":  "Mutation testing is like \u0027Intentionally putting a fake bug in a program to see if the quality control team finds it\u0027. If the team says \u0027Everything is fine\u0027, you know their inspection process (your test suite) isn\u0027t thorough enough.",
+        "code":  "# Running mutmut in Python\nmutmut run"
+    },
+    {
+        "id":  11,
+        "question":  "Explain the differences between Cypress and Playwright for E2E testing.",
+        "answer":  "1. **Cypress**: Runs inside the browser, making it very easy to debug and fast for developers. It has a great UI but lacks multi-tab support and is limited to JavaScript. \n2. **Playwright**: Uses the **Chrome DevTools Protocol** to control browsers externally. It supports multiple tabs, iframes, and cross-browser testing (Chromium, Firefox, Webkit) out of the box. It also supports multiple languages (Python, Java, JS). Playwright is generally considered more powerful for complex, modern web apps and faster in CI environments.",
+        "counterQuestion":  "How does Playwright handle \u0027Network Interception\u0027?",
+        "counterQuestionAnswer":  "Playwright allows you to intercept and \u0027mock\u0027 network requests directly. You can tell the browser to return a specific JSON response or a 404 error when it tries to call a certain API endpoint. This allows you to test how your frontend handles various backend scenarios without needing a real backend running.",
+        "category":  "testing",
+        "topic":  "e2e",
+        "difficulty":  "medium",
+        "tags":  [
+                     "playwright",
+                     "cypress",
+                     "e2e"
+                 ],
+        "analogy":  "Cypress is like \u0027A GoPro camera mounted on the browser\u0027. It sees exactly what the browser sees from the inside. Playwright is like \u0027A remote-controlled drone\u0027 that can fly around, open multiple tabs, and control multiple browsers from the outside.",
+        "code":  "// Playwright\nawait page.goto(\u0027https://example.com\u0027);\nawait expect(page).toHaveTitle(/Example/);"
+    },
+    {
+        "id":  12,
+        "question":  "What is TDD (Test-Driven Development)? Explain the Red-Green-Refactor cycle.",
+        "answer":  "TDD is a development methodology where you write the **test before the implementation code**.\n\n**The 3-step cycle:**\n\n```\n?? RED   ? Write a failing test for the feature you want to build\n?? GREEN  ? Write the minimum code to make that test pass\n?? REFACTOR ? Clean up the code without breaking the test\n```\n\n**Practical example:**\n```python\n# 1. RED: Write the test first (it fails because add() doesn\u0027t exist yet)\ndef test_add_two_numbers():\n    assert add(2, 3) == 5\n\n# 2. GREEN: Write the simplest implementation\ndef add(a, b):\n    return a + b\n\n# 3. REFACTOR: Nothing to clean up here, move to next feature\n```\n\n**Benefits:**\n- Forces you to design the API before implementation (testability-first).\n- Provides a regression safety net for every future change.\n- Encourages small, focused functions.\n- Gives you 100% coverage by definition.\n\n**When NOT to use TDD:** Exploratory/prototyping code, UI pixel-perfect work, rapidly changing requirements where tests become maintenance overhead.",
+        "counterQuestion":  "What is the difference between TDD and BDD (Behavior-Driven Development)?",
+        "counterQuestionAnswer":  "**TDD** focuses on implementation units (functions, classes) — the \u0027How\u0027. Tests are written by developers in code (pytest, unittest). **BDD** focuses on business behavior — the \u0027What\u0027. Tests are written in natural language (Gherkin: Given/When/Then) and are readable by non-technical stakeholders. Tools: `behave`, `pytest-bdd`. BDD is TDD with a layer of business-readable specification on top.",
+        "category":  "testing",
+        "topic":  "methodology",
+        "difficulty":  "medium",
+        "tags":  [
+                     "tdd",
+                     "red_green_refactor",
+                     "methodology",
+                     "best_practices",
+                     "#highly_asked"
+                 ],
+        "analogy":  "TDD is like \u0027Drawing the target before you throw the dart\u0027. Most people throw the dart and then draw the circle around where it landed. TDD forces you to decide exactly what \u0027success\u0027 looks like before you even pick up the dart.",
+        "code":  "# 1. RED: test fails\n# 2. GREEN: write code\n# 3. REFACTOR: clean up"
+    },
+    {
+        "id":  13,
+        "question":  "How do you write BDD tests in Python using `behave` (Gherkin syntax)?",
+        "answer":  "BDD uses **Gherkin** feature files to describe behavior in plain English, then maps them to Python step functions.\n\n**Feature file (`features/payment.feature`):**\n```gherkin\nFeature: Payment Processing\n\n  Scenario: Successful payment\n    Given a user has a valid credit card\n    When they pay 100 USD for an order\n    Then the order status should be \u0027paid\u0027\n    And the user receives a confirmation email\n\n  Scenario: Insufficient funds\n    Given a user has insufficient funds\n    When they pay 100 USD for an order\n    Then the payment is declined\n    And the order status remains \u0027pending\u0027\n```\n\n**Step definitions (`features/steps/payment_steps.py`):**\n```python\nfrom behave import given, when, then\n\n@given(\u0027a user has a valid credit card\u0027)\ndef step_valid_card(context):\n    context.user = User(card=ValidCard())\n\n@when(\u0027they pay {amount:d} USD for an order\u0027)\ndef step_pay(context, amount):\n    context.result = process_payment(context.user, amount)\n\n@then(\u0027the order status should be paid\u0027)\ndef step_check_paid(context):\n    assert context.result.status == \u0027paid\u0027\n```\n\nRun with `behave` command. Output is human-readable.",
+        "counterQuestion":  "When should you choose BDD over plain pytest?",
+        "counterQuestionAnswer":  "Choose BDD when: (1) Product Managers or QA need to read and validate the test scenarios. (2) You are building acceptance tests that map directly to user stories. (3) You want living documentation — feature files serve as both specification and test. Avoid BDD for internal unit tests or complex technical scenarios where Gherkin becomes awkward and verbose.",
+        "category":  "testing",
+        "topic":  "bdd",
+        "difficulty":  "medium",
+        "tags":  [
+                     "bdd",
+                     "behave",
+                     "gherkin",
+                     "testing"
+                 ],
+        "analogy":  "BDD is like \u0027A script for a play\u0027. Instead of just telling the actors (the code) what to do, you describe the scene in plain language so the director (the PM) and the audience (the stakeholders) can all understand exactly what\u0027s supposed to happen.",
+        "code":  "Feature: Login\n  Scenario: Success\n    Given I am on login page\n    When I enter valid credentials\n    Then I should see dashboard"
+    },
+    {
+        "id":  14,
+        "question":  "What is the \u0027Test Double\u0027 taxonomy? Distinguish Mock, Stub, Fake, Spy, and Dummy precisely.",
+        "answer":  "These terms are often used interchangeably but have distinct meanings (Gerard Meszaros, *xUnit Test Patterns*):\n\n| Type | Definition | Example |\n|---|---|---|\n| **Dummy** | Passed but never used | `None` or empty object in a param list |\n| **Stub** | Returns pre-programmed responses | `get_user.return_value = User(name=\u0027Alice\u0027)` |\n| **Fake** | Simplified working implementation | In-memory database instead of real Postgres |\n| **Mock** | Stub + verifies it was called correctly | `mock.assert_called_once_with(user_id=1)` |\n| **Spy** | Wraps real object, records calls | `spy = MagicMock(wraps=real_service)` |\n\n**Python example:**\n```python\nfrom unittest.mock import MagicMock, patch\n\n# Mock: verify behavior\nwith patch(\u0027myapp.send_email\u0027) as mock_email:\n    register_user(\u0027alice@test.com\u0027)\n    mock_email.assert_called_once_with(\u0027alice@test.com\u0027, subject=\u0027Welcome\u0027)\n\n# Stub: control return value\nwith patch(\u0027myapp.get_user\u0027, return_value=User(id=1)):\n    result = get_user_profile(1)\n```",
+        "counterQuestion":  "What is the key rule for deciding whether to use a Mock vs a Stub?",
+        "counterQuestionAnswer":  "Use a **Stub** when you want to control what the dependency *returns* (input to your code). Use a **Mock** when you want to verify that your code *called* the dependency correctly (the interaction itself is what you\u0027re testing). A common mistake is over-specifying interactions with Mocks, making tests brittle — prefer Stubs when you only care about the output.",
+        "category":  "testing",
+        "topic":  "fundamentals",
+        "difficulty":  "hard",
+        "tags":  [
+                     "mock",
+                     "stub",
+                     "fake",
+                     "spy",
+                     "testing"
+                 ],
+        "analogy":  "A Dummy is a \u0027placeholder passenger\u0027 in a car test. A Stub is a \u0027pre-recorded message\u0027. A Fake is a \u0027toy car\u0027 that works like a real one but is simpler. A Mock is a \u0027secret shopper\u0027 who reports back on exactly what the clerk said and did.",
+        "code":  "mock = Mock()\nmock.method(1)\nmock.method.assert_called_with(1)"
+    },
+    {
+        "id":  15,
+        "question":  "How do you profile a Python script for CPU and memory usage? Which tools are essential?",
+        "answer":  "1. **cProfile**: Built-in CPU profiler; good for finding \u0027hot\u0027 functions but has overhead. \n2. **line_profiler**: Gives line-by-line timing breakdown (via the `@profile` decorator); best for surgical optimization. \n3. **memory_profiler**: Monitors memory usage over time, helping identify leaks. \n4. **py-spy**: A sampling profiler that works without restarting your app or modifying code, ideal for production debugging.",
+        "counterQuestion":  "What is the difference between \u0027Sampling\u0027 and \u0027Deterministic\u0027 profiling?",
+        "counterQuestionAnswer":  "**Deterministic** profiling (cProfile) records every function call, providing exact counts but adding significant overhead. **Sampling** profiling (py-spy) periodically \u0027looks\u0027 at the call stack, providing a statistical view with near-zero performance impact, making it safer for production.",
+        "category":  "debugging",
+        "topic":  "python",
+        "difficulty":  "medium",
+        "tags":  [
+                     "profiling",
+                     "cprofile",
+                     "py-spy",
+                     "python"
+                 ],
+        "analogy":  "Profiling is like \u0027Wearing a fitness tracker while you exercise\u0027. It tells you exactly which muscles (functions) are working the hardest and which ones are wasting energy, so you know exactly where to focus your training.",
+        "code":  "python -m cProfile -s cumtime my_script.py"
+    },
+    {
+        "id":  16,
+        "question":  "How do you use \u0027git bisect\u0027 to find the commit that introduced a bug?",
+        "answer":  "Git bisect uses a binary search algorithm to find the specific commit that introduced a bug. \n1. `git bisect start`. \n2. `git bisect bad` (current state is broken). \n3. `git bisect good \u003ccommit_id\u003e` (a known working state). \n4. Git will check out a middle commit; you test it and mark it as `good` or `bad`. \n5. Repeat until the \u0027first bad commit\u0027 is identified.",
+        "counterQuestion":  "Can you automate git bisect?",
+        "counterQuestionAnswer":  "Yes, using `git bisect run \u003ctest_script\u003e`. If the script exits with 0, the commit is marked good; if it exits with 1-127 (except 125), it\u0027s marked bad. This is extremely powerful for large histories when you have a reproducible unit test.",
+        "category":  "debugging",
+        "topic":  "git",
+        "difficulty":  "medium",
+        "tags":  [
+                     "git",
+                     "bisect",
+                     "debugging"
+                 ],
+        "analogy":  "Git Bisect is like \u0027Finding a specific page in a book by splitting it in half repeatedly\u0027. Instead of checking every page (commit) one by one, you check the middle; if it\u0027s bad, you know the error is in the first half. You can find one page in a 1,000-page book in just 10 steps.",
+        "code":  "git bisect start\ngit bisect bad\ngit bisect good \u003cv1.0\u003e\n# git then helps you search"
+    },
+    {
+        "id":  17,
+        "question":  "Discuss \u0027Memory Leaks\u0027 in JavaScript and how to profile them using Chrome DevTools.",
+        "answer":  "Memory leaks in JS usually occur due to: \n1. **Accidental Global Variables**. \n2. **Forgotten Timers/Callbacks** (setInterval). \n3. **Out-of-DOM references** (holding onto deleted nodes). \n4. **Closures** capturing large variables. **Profiling**: Use the \u0027Memory\u0027 tab in DevTools to take \u0027Heap Snapshots\u0027. Look for the **Retained Size** (memory held by an object and its dependents) to identify the root cause.",
+        "counterQuestion":  "What is the \u0027Allocation Timeline\u0027 tool?",
+        "counterQuestionAnswer":  "The Allocation Timeline (or Allocation Instrumentation) records memory allocations over time. It shows blue bars for memory being allocated and grey bars for memory being garbage collected. If blue bars persist and never turn grey, you have a live memory leak.",
+        "category":  "debugging",
+        "topic":  "javascript",
+        "difficulty":  "hard",
+        "tags":  [
+                     "javascript",
+                     "memory_leaks",
+                     "chrome_devtools"
+                 ],
+        "analogy":  "A Memory Leak is like \u0027A leaky faucet in your house\u0027. At first, it\u0027s just a few drops (a few unused objects), but if you don\u0027t fix it, the water eventually floods the whole basement (the browser crashes).",
+        "code":  "// Potential leak: Global variable\nfunction leak() {\n    window.oops = new Array(1000000);\n}"
+    },
+    {
+        "id":  18,
+        "question":  "What is \u0027Distributed Tracing\u0027 and why is it critical for debugging microservices?",
+        "answer":  "Distributed Tracing tracks a single user request as it travels through multiple backend services. Without it, you might see a timeout in Service A but have no idea that it was caused by Service D\u0027s database lock. Tools like **OpenTelemetry** pass a unique \u0027Trace ID\u0027 in headers, allowing you to visualize the entire \u0027waterfall\u0027 of a request and pinpoint the exact service or span where latency or errors are occurring.",
+        "counterQuestion":  "How do you handle \u0027Clock Skew\u0027 in distributed tracing?",
+        "counterQuestionAnswer":  "Clock skew occurs when different servers have slightly different times. Tracing systems (like Jaeger or Zipkin) handle this by looking at the parent-child relationship of spans. If a child span appears to start before its parent, the system adjusts the visualization based on the \u0027network latency\u0027 inferred from the parent\u0027s start/end times.",
+        "category":  "debugging",
+        "topic":  "distributed_systems",
+        "difficulty":  "hard",
+        "tags":  [
+                     "distributed_tracing",
+                     "opentelemetry",
+                     "microservices"
+                 ],
+        "analogy":  "Distributed Tracing is like \u0027A GPS tracker on a package\u0027. You can see exactly when it left the warehouse (Service A), which trucks it was on (Services B and C), and if it got stuck at a specific sorting center (Service D), all from one map.",
+        "code":  "// Trace ID propagated in headers\nx-b3-traceid: 463ac35c9f6413ad\nx-b3-spanid: a2fb4a1d1a96d312"
+    },
+    {
+        "id":  19,
+        "question":  "Explain \u0027Offensive Programming\u0027 as a debugging and reliability strategy.",
+        "answer":  "Offensive Programming (as opposed to Defensive) involves intentionally crashing the program as soon as an unexpected state is detected (e.g., using `assert` or raising specific errors for invalid inputs). This ensures that bugs are caught immediately during development and testing rather than silently corrupting data or causing \u0027impossible\u0027 states in production that are much harder to debug.",
+        "counterQuestion":  "Is this safe for production?",
+        "counterQuestionAnswer":  "In production, you should combine it with \u0027Graceful Degradation\u0027. While individual requests or processes should fail fast to avoid data corruption, the system as a whole should remain available (e.g., via a 500 error for a single user rather than a total system crash).",
+        "category":  "debugging",
+        "topic":  "principles",
+        "difficulty":  "medium",
+        "tags":  [
+                     "offensive_programming",
+                     "fail_fast",
+                     "reliability"
+                 ],
+        "analogy":  "Offensive Programming is like \u0027A fuse in an electrical circuit\u0027. As soon as something goes wrong (a surge), the fuse blows and shuts everything down immediately. This prevents a small problem from causing a house fire (silent data corruption).",
+        "code":  "def divide(a, b):\n    assert b != 0, \"Divisor cannot be zero\"\n    return a / b"
+    },
+    {
+        "id":  20,
+        "question":  "How do you debug \u0027Deadlocks\u0027 in a concurrent system?",
+        "answer":  "A deadlock occurs when two or more threads are blocked forever, each waiting for the other. To debug: \n1. **Thread Dump**: Take a snapshot of all active threads (e.g., `jstack` for Java, or `sys._current_frames()` for Python). \n2. **Lock Order Analysis**: Look for threads waiting on locks held by each other. \n3. **Prevention**: Always acquire locks in a consistent, global order and use \u0027try-lock\u0027 with timeouts to prevent indefinite waiting.",
+        "counterQuestion":  "What is a \u0027Livelock\u0027?",
+        "counterQuestionAnswer":  "A livelock is similar to a deadlock, but the threads are not blocked; they are actively responding to each other but making no progress (e.g., two people in a hallway trying to step out of each other\u0027s way but moving in the same direction repeatedly). It is often harder to detect because CPU usage remains high.",
+        "category":  "debugging",
+        "topic":  "concurrency",
+        "difficulty":  "hard",
+        "tags":  [
+                     "deadlocks",
+                     "concurrency",
+                     "multithreading"
+                 ],
+        "analogy":  "A Deadlock is like \u0027Two people trying to walk through a narrow doorway at the same time\u0027. Both refuse to step back, so they both just stand there forever, blocking everyone else from using the door.",
+        "code":  "// Deadlock scenario\nThread 1: lock(A), lock(B)\nThread 2: lock(B), lock(A)"
+    },
+    {
+        "id":  21,
+        "question":  "What is a \u0027Blameless Post-mortem\u0027 and why is it critical for SRE?",
+        "answer":  "A blameless post-mortem focuses on the **System Failures** rather than the **Human Mistakes** during an incident. Instead of saying \u0027Developer X pushed bad code\u0027, you ask \u0027Why was the automated test suite unable to catch this?\u0027 or \u0027Why did the deployment pipeline allow this to reach production?\u0027. This encourages transparency, psychological safety, and ensures that the focus is on building a more resilient system.",
+        "counterQuestion":  "What are the \u0027Five Whys\u0027?",
+        "counterQuestionAnswer":  "The \u0027Five Whys\u0027 is a technique used in post-mortems to drill down to the root cause. You ask \u0027Why\u0027 five times in succession to get past the surface-level symptom (e.g., \u0027Server crashed\u0027 -\u003e \u0027Why?\u0027 -\u003e \u0027Out of memory\u0027 -\u003e \u0027Why?\u0027 -\u003e \u0027Leak in Service B\u0027 -\u003e \u0027Why?\u0027 -\u003e \u0027Unhandled edge case in library\u0027...).",
+        "category":  "debugging",
+        "topic":  "sre",
+        "difficulty":  "medium",
+        "tags":  [
+                     "post-mortem",
+                     "sre",
+                     "reliability",
+                     "#highly_asked"
+                 ],
+        "analogy":  "A Blameless Post-mortem is like \u0027Analyzing a plane crash\u0027. The goal isn\u0027t to fire the pilot; it\u0027s to find out if the engine failed, if the instructions were confusing, or if the cockpit design led to a mistake, so they can make flying safer for everyone.",
+        "code":  "# Post-mortem Section\nWhat went wrong: DB connection pool exhausted.\nWhy: Spike in traffic + low pool limit."
+    },
+    {
+        "id":  22,
+        "question":  "How do you use Python\u0027s `pdb`/`ipdb` for interactive debugging?",
+        "answer":  "`pdb` is Python\u0027s built-in interactive debugger. `ipdb` is an enhanced version with syntax highlighting and tab completion.\n\n**Setting a breakpoint:**\n```python\n# Python 3.7+ — preferred\nbreakpoint()  # Drops into pdb at this line\n\n# Or explicitly\nimport pdb; pdb.set_trace()\nimport ipdb; ipdb.set_trace()  # ipdb version\n```\n\n**Essential commands:**\n```\nn (next)    - Execute next line, don\u0027t step into functions\ns (step)    - Step into function call\nc (continue)- Continue until next breakpoint\np expr      - Print expression value: p user.email\npp expr     - Pretty-print: pp vars(request)\nl (list)    - Show surrounding code\nu/d         - Move up/down the call stack\nq (quit)    - Exit debugger\n```\n\n**Remote debugging (Docker/Production):**\n```python\nimport pdb\nimport signal\nsignal.signal(signal.SIGUSR1, lambda sig, frame: pdb.set_trace())\n# Then: kill -USR1 \u003cpid\u003e\n```",
+        "counterQuestion":  "How do you debug an async function in Python?",
+        "counterQuestionAnswer":  "Use `breakpoint()` — it works inside `async` functions in Python 3.8+. For deeper async debugging, enable asyncio\u0027s debug mode: `asyncio.run(main(), debug=True)` — this enables slow callback warnings and traces. The `aiomonitor` library also provides a live REPL to inspect running async tasks.",
+        "category":  "debugging",
+        "topic":  "python",
+        "difficulty":  "easy",
+        "tags":  [
+                     "pdb",
+                     "ipdb",
+                     "debugging",
+                     "python"
+                 ],
+        "analogy":  "PDB is like \u0027A freeze-ray for your code\u0027. You can stop time at any exact line, look around at all the variables, and even move forward one frame (line) at a time to see exactly how the scene changes.",
+        "code":  "import pdb; pdb.set_trace()\n# n (next), s (step), c (continue)"
+    },
+    {
+        "id":  23,
+        "question":  "What is \u0027OpenTelemetry\u0027 (OTel)? Why is it becoming the industry standard?",
+        "answer":  "OpenTelemetry is an open-source framework and set of tools for collecting and exporting **Telemetry Data** (Logs, Metrics, Traces) from your applications. **Why Standard**: Before OTel, every vendor (Datadog, New Relic) had their own proprietary SDKs. OTel provides a **Vendor-Neutral** API and SDK, allowing you to instrument your code once and send the data to any backend. This prevents vendor lock-in and allows the community to build standardized instrumentation for popular libraries like Express, Django, and Redis.",
+        "counterQuestion":  "What is the \u0027OTel Collector\u0027?",
+        "counterQuestionAnswer":  "The OTel Collector is a standalone proxy that can receive, process, and export telemetry data. It allows you to offload the work of sending data from your application to a separate process, which can then batch, filter, and route the data to multiple backends simultaneously.",
+        "category":  "observability",
+        "topic":  "opentelemetry",
+        "difficulty":  "medium",
+        "tags":  [
+                     "opentelemetry",
+                     "observability",
+                     "standards"
+                 ],
+        "analogy":  "OpenTelemetry is like \u0027A universal power adapter\u0027. Instead of having 10 different plugs for 10 different countries (vendors), you have one standard plug (OTel) that works everywhere, allowing you to move your appliances (apps) freely.",
+        "code":  "from opentelemetry import trace\ntracer = trace.get_tracer(__name__)\nwith tracer.start_as_current_span(\"do_work\"):\n    print(\"working...\")"
+    },
+    {
+        "id":  24,
+        "question":  "Explain \u0027Tracing\u0027 vs \u0027Metrics\u0027 vs \u0027Logs\u0027 (The three pillars of observability).",
+        "answer":  "1. **Logs**: Discrete events (e.g., \u0027User logged in\u0027); good for detailed debugging. \n2. **Metrics**: Aggregated numeric data over time (e.g., \u0027CPU Usage is 80%\u0027); good for alerting and long-term trends. \n3. **Tracing**: Tracks the path of a single request across many services; good for finding latency bottlenecks in microservices. Together, they provide the full picture: Metrics tell you *that* something is wrong; Tracing tells you *where* it\u0027s happening; and Logs tell you *why* it\u0027s happening.",
+        "counterQuestion":  "What is \u0027Cardinality\u0027 in the context of metrics?",
+        "counterQuestionAnswer":  "Cardinality refers to the number of unique combinations of labels (dimensions) on a metric. High-cardinality metrics (like including \u0027user_id\u0027 in every metric) can overwhelm time-series databases like Prometheus, leading to performance issues and high costs. Metrics should be kept low-cardinality for efficient storage and querying.",
+        "category":  "observability",
+        "topic":  "fundamentals",
+        "difficulty":  "medium",
+        "tags":  [
+                     "observability",
+                     "metrics",
+                     "tracing",
+                     "logging",
+                     "#highly_asked"
+                 ],
+        "analogy":  "Metrics are like \u0027The warning lights on your dashboard\u0027. Tracing is like \u0027The dashcam footage of a car crash\u0027. Logs are like \u0027The mechanic\u0027s notes on exactly what part was broken and why\u0027.",
+        "code":  "- Metric: cpu_usage \u003e 90%\n- Trace: Service A -\u003e Service B (500ms)\n- Log: \"Failed to connect to DB at 10:01:05\""
+    },
+    {
+        "id":  25,
+        "question":  "How do you use \u0027Span Tags\u0027 and \u0027Baggage\u0027 for distributed tracing?",
+        "answer":  "1. **Span Tags**: Key-value pairs added to a specific span to provide metadata (e.g., \u0027http.status_code: 200\u0027, \u0027db.statement: SELECT...\u0027). They are local to the span. \n2. **Baggage**: Key-value pairs that are **propagated across all spans** in a trace. If you set a baggage item in Service A, it is automatically available in Service B, C, and D. This is useful for passing cross-cutting information like \u0027user_id\u0027 or \u0027is_premium_customer\u0027 throughout the entire request path for complex debugging and analysis.",
+        "counterQuestion":  "What is the danger of using too much Baggage?",
+        "counterQuestionAnswer":  "Baggage is sent in the headers of every single internal request. If you store too much data in baggage, it can increase network overhead and potentially exceed the header size limits of your proxies or load balancers, causing requests to fail.",
+        "category":  "observability",
+        "topic":  "opentelemetry",
+        "difficulty":  "hard",
+        "tags":  [
+                     "tracing",
+                     "baggage",
+                     "opentelemetry"
+                 ],
+        "analogy":  "Baggage is like \u0027A passenger\u0027s suitcase that follows them on every flight\u0027. No matter how many planes (services) they take, their suitcase (metadata like user_id) is always with them when they land, without them having to re-check it.",
+        "code":  "from opentelemetry import baggage\nctx = baggage.set_baggage(\"user_id\", \"123\")"
+    },
+    {
+        "id":  26,
+        "question":  "Discuss \u0027Anomaly Detection\u0027 and \u0027Alert Fatigue\u0027. How do you set meaningful SLIs/SLOs?",
+        "answer":  "1. **Anomaly Detection**: Using ML to detect \u0027unusual\u0027 patterns in metrics (e.g., a sudden drop in successful logins). \n2. **Alert Fatigue**: When engineers receive too many low-priority alerts, they start ignoring them, leading to real outages being missed. **Setting SLIs/SLOs**: Alerts should only trigger if a **User-Facing SLO** is at risk. Don\u0027t alert on \u0027CPU is 90%\u0027 (which might be normal); alert on \u002799th percentile latency is \u003e 2s\u0027. This ensures that every alert is actionable and directly related to the user experience.",
+        "counterQuestion":  "What is a \u0027Burn Rate\u0027 alert?",
+        "counterQuestionAnswer":  "A burn rate alert triggers based on how fast you are consuming your **Error Budget**. For example, \u0027if we continue at this error rate, we will violate our 30-day SLO in 2 hours\u0027. This allows you to catch issues long before the SLO is actually violated.",
+        "category":  "observability",
+        "topic":  "alerting",
+        "difficulty":  "hard",
+        "tags":  [
+                     "alert_fatigue",
+                     "slo",
+                     "anomaly_detection"
+                 ],
+        "analogy":  "Alert Fatigue is like \u0027A car alarm that goes off every time a leaf falls on the roof\u0027. Eventually, you stop looking out the window, so when someone actually tries to steal the car, you don\u0027t even notice.",
+        "code":  "# Good Alert Rule\nalert: HighErrorRate\nexpr: job:errors \u003e 5%\nfor: 5m"
+    },
+    {
+        "id":  27,
+        "question":  "What is \u0027Prometheus\u0027 and how does its \u0027Pull-based\u0027 model differ from \u0027Push-based\u0027 monitoring?",
+        "answer":  "Prometheus is a time-series database and monitoring tool. **Pull-based Model**: Prometheus actively scrapes (pulls) metrics from your application endpoints (e.g., `/metrics`) at regular intervals. **Difference**: \n1. **Discovery**: Prometheus knows which services are up/down because it\u0027s responsible for finding them. \n2. **Scalability**: It\u0027s easier to prevent a bottleneck because the server controls the load, rather than thousands of clients flooding the server with data. For ephemeral tasks (like Lambda), Prometheus uses a **Pushgateway** as a middleman.",
+        "counterQuestion":  "What is \u0027PromQL\u0027?",
+        "counterQuestionAnswer":  "PromQL (Prometheus Query Language) is a functional query language used to select and aggregate time-series data in real-time. It allows you to perform complex calculations like \u0027average request latency over 5 minutes\u0027 or \u002799th percentile of error rates\u0027 using simple, concise expressions.",
+        "category":  "observability",
+        "topic":  "prometheus",
+        "difficulty":  "medium",
+        "tags":  [
+                     "prometheus",
+                     "monitoring",
+                     "promql"
+                 ],
+        "analogy":  "A Pull-based model is like \u0027A teacher walking around the room to check every student\u0027s work\u0027. A Push-based model is like \u0027All the students running to the teacher\u0027s desk at once to hand in their papers\u0027. The teacher (Prometheus) prefers walking because it\u0027s more organized.",
+        "code":  "# Prometheus scrape config\nscrape_configs:\n  - job_name: \u0027my-app\u0027\n    static_configs:\n      - targets: [\u0027localhost:8000\u0027]"
+    },
+    {
+        "id":  28,
+        "question":  "What is \u0027Grafana\u0027 and what are the best practices for designing a \u0027Production Dashboard\u0027?",
+        "answer":  "Grafana is an open-source visualization and analytics platform that connects to various data sources (Prometheus, Elasticsearch, SQL). **Best Practices**: \n1. **Hierarchy**: Put high-level \u0027Health\u0027 metrics (SLIs) at the top and detailed \u0027Debugging\u0027 metrics at the bottom. \n2. **Consistency**: Use the same color schemes and scales across dashboards to reduce cognitive load. \n3. **Avoid Overcrowding**: Too many graphs lead to \u0027Dashboard Fatigue\u0027. \n4. **Templating**: Use variables (e.g., `$cluster`, `$service`) so one dashboard can serve many environments.",
+        "counterQuestion":  "What is \u0027Alerting\u0027 in Grafana vs. Alertmanager?",
+        "counterQuestionAnswer":  "Grafana can trigger alerts based on its visualizations, but in high-scale systems, it\u0027s better to use **Prometheus Alertmanager**. Prometheus handles the logic of when to alert, and Alertmanager handles deduplication, grouping, and routing those alerts to PagerDuty or Slack. Grafana is for **Visualizing**; Alertmanager is for **Operational Workflow**.",
+        "category":  "observability",
+        "topic":  "grafana",
+        "difficulty":  "medium",
+        "tags":  [
+                     "grafana",
+                     "dashboards",
+                     "monitoring"
+                 ],
+        "analogy":  "Grafana is like \u0027The cockpit of an airplane\u0027. It takes thousands of complex data points from the engines, wings, and fuel tanks and turns them into simple, beautiful gauges and screens so the pilot can see at a glance if everything is flying correctly.",
+        "code":  "# Grafana dashboard JSON (part)\n\"panels\": [\n  {\n    \"title\": \"CPU Usage\",\n    \"type\": \"timeseries\"\n  }\n]"
+    },
+    {
+        "id":  29,
+        "question":  "Write practical PromQL queries. Explain `rate()`, `increase()`, and `histogram_quantile()`.",
+        "answer":  "**`rate()`**: Per-second average rate of a counter over a time window.\n\n```promql\n# Request rate per second\nrate(http_requests_total[5m])\n\n# Error rate as a percentage\n100 * rate(http_requests_total{status=~\"5..\"}[5m]) / rate(http_requests_total[5m])\n```\n\n**`increase()`**: Total counter increase over the window.\n```promql\nincrease(http_errors_total[1h])\n```\n\n**`histogram_quantile()`**: Calculate percentiles from histogram buckets.\n```promql\n# 99th percentile latency\nhistogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))\n```\n\n**Rule:** Use `rate()` for alerting rules — it normalizes for scrape interval changes.",
+        "counterQuestion":  "What is the difference between a Histogram and a Summary metric type?",
+        "counterQuestionAnswer":  "**Histogram:** Buckets defined at instrumentation time. Quantiles computed server-side via `histogram_quantile()`. Can be aggregated across multiple instances. **Summary:** Quantiles computed client-side. More accurate but cannot be aggregated across pods. Use Histograms for distributed systems.",
+        "category":  "observability",
+        "topic":  "prometheus",
+        "difficulty":  "hard",
+        "tags":  [
+                     "prometheus",
+                     "promql",
+                     "monitoring",
+                     "alerting"
+                 ],
+        "analogy":  "PromQL is like \u0027A magic magnifying glass for your data\u0027. You can point it at a huge pile of messy metrics and instantly see the specific patterns you care about, like \u0027how many people tried to log in in the last 5 minutes\u0027.",
+        "code":  "rate(http_requests_total[5m])"
+    },
+    {
+        "id":  30,
+        "question":  "What are SLIs, SLOs, and Error Budgets? Give a practical example.",
+        "answer":  "**SLI (Service Level Indicator):** A quantitative measure of service behavior. E.g., `(successful_requests / total_requests) * 100` = Availability %.\n\n**SLO (Service Level Objective):** A target for the SLI. E.g., \u0027Availability must be \u003e= 99.9% over a rolling 30 days.\u0027\n\n**Error Budget:** The allowed amount of unreliability. `1 - 0.999 = 0.1%` over 30 days = **43.8 minutes** of allowed downtime.\n\n**How to use it:**\n- Error Budget healthy (\u003e50% remaining) ? high feature velocity.\n- Error Budget depleting fast ? freeze deployments, focus on reliability.\n- SLO violated ? incident review, SLA penalties.\n\n**SLA:** The contractual consequence of violating an SLO. Always set looser than your SLO.",
+        "counterQuestion":  "Should you set your SLO target at 100% availability?",
+        "counterQuestionAnswer":  "No. 100% is impossible and counterproductive — it means zero risk tolerance, no deployments, infinite engineering cost. A realistic target (e.g., 99.9%) creates an Error Budget that quantifies acceptable risk and enables productive trade-offs between reliability and feature development.",
+        "category":  "observability",
+        "topic":  "sre",
+        "difficulty":  "medium",
+        "tags":  [
+                     "slo",
+                     "sli",
+                     "error_budget",
+                     "sre",
+                     "#highly_asked"
+                 ],
+        "analogy":  "An Error Budget is like \u0027A monthly allowance of candy\u0027. Your parents (the users) allow you to have a little bit (0.1% downtime) so you can have fun (ship new features). But if you eat it all in the first week, you get no more candy until next month.",
+        "code":  "Error Budget = (1 - SLO) * TimePeriod\nEx: (1 - 0.999) * 30 days = 43 minutes"
+    },
+    {
+        "id":  31,
+        "question":  "What is Structured Logging? Why is it better than plain text logs?",
+        "answer":  "**Plain text logs:**\n```\nERROR Processing failed for user 12345 order 9876\n```\nHard to query or aggregate programmatically.\n\n**Structured logs (JSON):**\n```json\n{\"level\": \"error\", \"user_id\": 12345, \"order_id\": 9876, \"trace_id\": \"abc123\"}\n```\n\n**Benefits:**\n1. **Machine-readable:** Log aggregators can query on any field: `user_id=12345 AND level=error`.\n2. **Correlation:** Include `trace_id` to link logs to distributed traces.\n3. **Dashboards:** Count errors by `endpoint` or `user_id`.\n\n**Python:**\n```python\nimport structlog\nlog = structlog.get_logger()\nlog.error(\u0027Processing failed\u0027, user_id=12345, order_id=9876)\n```",
+        "counterQuestion":  "What should you NEVER log?",
+        "counterQuestionAnswer":  "Never log passwords, API keys, tokens, credit card numbers, SSNs, or any PII. Log aggregation systems are often less secured than primary databases, and this data can end up in multiple downstream systems (S3, analytics tools) without proper access controls, violating GDPR and similar regulations.",
+        "category":  "observability",
+        "topic":  "logging",
+        "difficulty":  "easy",
+        "tags":  [
+                     "logging",
+                     "structured_logging",
+                     "observability"
+                 ],
+        "analogy":  "Structured Logging is like \u0027Labeling all your moving boxes\u0027 (Kitchen, Bedroom, Fragile). If you just throw everything in random boxes (plain text), you\u0027ll never find your favorite mug when you move. If you label them, you can find exactly what you need instantly.",
+        "code":  "{\"level\": \"error\", \"msg\": \"DB Connection Failed\", \"trace_id\": \"xyz-123\"}"
+    },
+    {
+        "id":  32,
+        "question":  "What is the difference between an \u0027SLA\u0027, \u0027SLO\u0027, and \u0027SLI\u0027?",
+        "answer":  "1. **SLI (Service Level Indicator)**: A quantitative measure of some aspect of the level of service provided (e.g., latency, throughput, error rate). \n2. **SLO (Service Level Objective)**: A target value or range of values for a service level that is measured by an SLI (e.g., \u002799.9% of requests must have latency \u003c 200ms\u0027). \n3. **SLA (Service Level Agreement)**: A legal contract with users that defines the consequences (usually financial) if SLOs are not met. SLI is what you measure; SLO is what you aim for; SLA is what you promise legally.",
+        "counterQuestion":  "What are the \u0027Four Golden Signals\u0027 of monitoring?",
+        "counterQuestionAnswer":  "The Four Golden Signals are **Latency**, **Traffic**, **Errors**, and **Saturation**. Monitoring these four signals provides a comprehensive view of a service\u0027s health and performance, helping you identify almost any type of system failure.",
+        "category":  "sre",
+        "topic":  "metrics",
+        "difficulty":  "medium",
+        "tags":  [
+                     "sre",
+                     "slo",
+                     "sla",
+                     "sli",
+                     "#highly_asked"
+                 ],
+        "analogy":  "An SLI is a thermometer (tells you the temp). An SLO is the target (keep it under 100 degrees). An SLA is the insurance policy (what happens if the house burns down because it got too hot).",
+        "code":  "SLI: Latency \u003c 200ms\nSLO: 99.9% of requests meet SLI\nSLA: 10% refund if SLO is missed"
+    },
+    {
+        "id":  33,
+        "question":  "How do you calculate and manage an \u0027Error Budget\u0027? What happens when it is exhausted?",
+        "answer":  "An Error Budget is the amount of \u0027unreliability\u0027 you are allowed to have before you violate your SLO (e.g., if your SLO is 99.9%, your budget is 0.1% of requests). **Management**: If you have a large budget remaining, you can ship features faster and take more risks. **Exhaustion**: If the budget is exhausted, you must **stop all feature work** and focus purely on reliability and bug fixes until the budget is restored. This creates a natural balance between velocity and stability.",
+        "counterQuestion":  "Who defines the Error Budget?",
+        "counterQuestionAnswer":  "The Error Budget should be defined collaboratively by Product Owners and SREs. Product owners decide on the acceptable level of reliability for the user experience, and SREs define the technical metrics (SLIs) needed to track that reliability.",
+        "category":  "sre",
+        "topic":  "error_budgets",
+        "difficulty":  "hard",
+        "tags":  [
+                     "sre",
+                     "error_budget",
+                     "reliability",
+                     "#highly_asked"
+                 ],
+        "analogy":  "Managing an Error Budget is like \u0027Driving a car with a limited gas tank\u0027. If you drive fast and reckless (fast deployments), you\u0027ll run out of gas sooner. Once the tank is empty, you have to pull over and fix the engine before you can go again.",
+        "code":  "if (budget_remaining \u003c 0) {\n    freeze_deployments();\n    focus_on_reliability();\n}"
+    },
+    {
+        "id":  34,
+        "question":  "Explain \u0027Chaos Engineering\u0027. What are the \u0027Principles of Chaos\u0027?",
+        "answer":  "Chaos Engineering is the discipline of experimenting on a system in order to build confidence in the system\u0027s capability to withstand turbulent conditions in production. **Principles**: \n1. Build a hypothesis around steady-state behavior. \n2. Vary real-world events (server crashes, network latency). \n3. Run experiments in production (safely). \n4. Automate experiments to run continuously. \n5. Minimize the \u0027Blast Radius\u0027 (impact on real users). It\u0027s about finding weaknesses before they cause a real outage.",
+        "counterQuestion":  "What is a \u0027Steady State\u0027 in Chaos Engineering?",
+        "counterQuestionAnswer":  "Steady state is the normal, healthy behavior of your system under ordinary conditions (e.g., stable latency and error rates). You must define this first so that you can measure the impact of your \u0027chaos\u0027 experiments when they cause the system to deviate from this state.",
+        "category":  "sre",
+        "topic":  "chaos_engineering",
+        "difficulty":  "hard",
+        "tags":  [
+                     "chaos_engineering",
+                     "resilience",
+                     "fault_tolerance",
+                     "#highly_asked"
+                 ],
+        "analogy":  "Chaos Engineering is like \u0027A fire drill for your software\u0027. You don\u0027t want to find out the fire exit is blocked during a real fire. You set off a fake alarm (inject a fault) to make sure everyone knows exactly what to do and the exits work.",
+        "code":  "# Chaos Experiment\nHypothesis: Killing 1 pod won\u0027t affect latency.\nAction: kubectl delete pod -l app=my-app\nResult: 99th percentile stayed \u003c 200ms."
+    },
+    {
+        "id":  35,
+        "question":  "How do you use tools like \u0027Gremlin\u0027 or \u0027Chaos Mesh\u0027 to test system resilience?",
+        "answer":  "Tools like Gremlin and Chaos Mesh allow you to inject \u0027attacks\u0027 into your infrastructure in a controlled way. \n1. **Resource Attacks**: Starving a container of CPU or memory. \n2. **Network Attacks**: Injecting latency or packet loss between services. \n3. **State Attacks**: Killing pods or shutting down database instances. By running these attacks in your staging or production environment, you verify that your system correctly \u0027fails over\u0027, \u0027retries\u0027, or \u0027load sheds\u0027 as expected, rather than crashing completely.",
+        "counterQuestion":  "What is a \u0027Game Day\u0027 in the context of SRE?",
+        "counterQuestionAnswer":  "A Game Day is a scheduled event where the engineering team intentionally triggers a failure in a staging or production environment. The goal is to practice incident response, verify that monitoring and alerting work, and ensure that the team knows how to recover the system quickly under pressure.",
+        "category":  "sre",
+        "topic":  "chaos_engineering",
+        "difficulty":  "medium",
+        "tags":  [
+                     "gremlin",
+                     "chaos_mesh",
+                     "sre"
+                 ],
+        "analogy":  "Gremlin is like \u0027Hiring a professional burglar to test your home security\u0027. They will try to pick your locks, climb through your windows, and cut your power to see where your defenses are weak, so you can fix them before a real burglar arrives.",
+        "code":  "# Gremlin Attack\ngremlin attack latency --length 60 --delay 100ms"
+    },
+    {
+        "id":  36,
+        "question":  "Discuss \u0027Incident Response\u0027 workflows: Commander, Scribe, and Communications roles.",
+        "answer":  "A structured incident response prevents chaos during an outage. \n1. **Incident Commander (IC)**: The person in charge; they make all final decisions and delegate tasks. They do *not* fix the issue themselves. \n2. **Scribe**: Keeps a chronological log of all actions, events, and decisions (critical for the post-mortem). \n3. **Communications (Comms)**: Handles internal and external updates (e.g., status page, Slack channels) so the IC and engineers can focus on the technical fix. This clear division of labor ensures efficiency and clear communication under stress.",
+        "counterQuestion":  "What is \u0027Incident Fatigue\u0027?",
+        "counterQuestionAnswer":  "Incident fatigue occurs when engineers are repeatedly woken up or stressed by frequent, low-priority incidents. This leads to burnout and reduced effectiveness. SREs fight this by automating remediations and tuning alerts so that only critical, actionable issues wake someone up.",
+        "category":  "sre",
+        "topic":  "incident_response",
+        "difficulty":  "medium",
+        "tags":  [
+                     "incident_response",
+                     "sre",
+                     "on_call",
+                     "#highly_asked"
+                 ],
+        "analogy":  "Incident Response is like \u0027A hospital emergency room\u0027. The Incident Commander is the head doctor (triage), the Scribe is the nurse taking notes (the chart), and the Comms person is the receptionist talking to the family (the status page). Everyone has a job so they don\u0027t get in each other\u0027s way.",
+        "code":  "IC: \"Developer A, rollback the latest release.\"\nScribe: \"10:15 AM - IC ordered rollback of v2.1.\"\nComms: \"Updating status page: Investigating latency.\""
+    },
+    {
+        "id":  37,
+        "question":  "What is a \u0027Blameless Post-mortem\u0027 and why is it critical for engineering culture?",
+        "answer":  "A blameless post-mortem focuses on the **system** and **process** failures that allowed an incident to happen, rather than on who made the mistake. **Why critical**: If engineers fear punishment, they will hide mistakes and avoid taking risks. In a blameless culture, everyone is encouraged to be honest, which allows the team to find the root cause and implement fixes that prevent the same error from ever happening again, leading to a much more resilient system and a healthier team.",
+        "counterQuestion":  "What is a \u0027Root Cause Analysis\u0027 (RCA)?",
+        "counterQuestionAnswer":  "RCA is the process of digging deep into an incident to find the underlying reason it happened. A common technique is the \u00275 Whys\u0027, where you keep asking why something happened until you reach the fundamental process or technical failure that needs to be addressed.",
+        "category":  "sre",
+        "topic":  "culture",
+        "difficulty":  "medium",
+        "tags":  [
+                     "sre",
+                     "post_mortem",
+                     "culture"
+                 ],
+        "analogy":  "A Blameless Culture is like \u0027A sports team watching game film\u0027. They don\u0027t watch the film to point fingers at who dropped the ball; they watch it to see if the play was bad, if the communication broke down, or if they need more practice on specific moves.",
+        "code":  "# Blameless Summary\nHuman Error: \"Typo in config.\"\nSystemic Fix: \"Add schema validation to config loader.\""
+    },
+    {
+        "id":  38,
+        "question":  "Explain \u0027MTTR\u0027 (Mean Time To Recovery) vs \u0027MTBF\u0027 (Mean Time Between Failures).",
+        "answer":  "1. **MTTR**: The average time it takes to restore a service after a failure. It is the key metric for **Agility** and incident response efficiency. \n2. **MTBF**: The average time between one failure and the next. It is the key metric for **Reliability** and system stability. Modern SRE practices often prioritize **reducing MTTR** over increasing MTBF, recognizing that failures are inevitable in complex systems, but their impact can be minimized through fast detection and recovery.",
+        "counterQuestion":  "What is \u0027MTTD\u0027?",
+        "counterQuestionAnswer":  "MTTD stands for **Mean Time To Detect**. It measures the time between an incident starting and the team becoming aware of it. Reducing MTTD through better monitoring and alerting is the first step in reducing the overall MTTR.",
+        "category":  "sre",
+        "topic":  "metrics",
+        "difficulty":  "medium",
+        "tags":  [
+                     "sre",
+                     "metrics",
+                     "reliability",
+                     "#highly_asked"
+                 ],
+        "analogy":  "MTBF is like \u0027How long your car goes between breakdowns\u0027. MTTR is like \u0027How fast the mechanic fixes it when it does break\u0027. You want the mechanic to be fast (low MTTR) so even if the car breaks down, you\u0027re not stuck for long.",
+        "code":  "MTTR = total_downtime / number_of_incidents\nMTBF = total_uptime / number_of_incidents"
+    },
+    {
+        "id":  39,
+        "question":  "How do you implement \u0027Automated Remediation\u0027 for common infrastructure issues?",
+        "answer":  "Automated remediation involves creating scripts or tools that automatically resolve known issues detected by monitoring. \n1. **Restarting Services**: Automatically restarting a pod if it fails a health check (standard in Kubernetes). \n2. **Clearing Caches**: Deleting temporary files if disk usage is high. \n3. **Scaling Out**: Adding more instances if CPU is pegged. This reduces the burden on on-call engineers (\u0027Toil\u0027) and ensures that simple, repetitive problems are fixed in seconds without human intervention.",
+        "counterQuestion":  "What is \u0027Toil\u0027 in SRE?",
+        "counterQuestionAnswer":  "Toil is manual, repetitive, tactical work that scales linearly with the size of the system (e.g., manually resetting passwords or clearing disk space). A primary goal of SRE is to eliminate toil through automation, allowing engineers to focus on high-value, strategic engineering work.",
+        "category":  "sre",
+        "topic":  "automation",
+        "difficulty":  "hard",
+        "tags":  [
+                     "automation",
+                     "remediation",
+                     "sre"
+                 ],
+        "analogy":  "Automated Remediation is like \u0027A self-healing robot\u0027. If the robot\u0027s arm falls off, it has a spare in its chest and just snaps it on automatically, without needing a human to come and fix it.",
+        "code":  "# Kubernetes Self-healing\nlivenessProbe:\n  httpGet: { path: /healthz, port: 8080 }\n  initialDelaySeconds: 3"
+    },
+    {
+        "id":  40,
+        "question":  "What is \u0027Gzip\u0027 and \u0027Brotli\u0027 compression? How do they work?",
+        "answer":  "Both are algorithms used to compress text-based assets (HTML, JS, CSS) before they are sent from the server to the browser. \n1. **Gzip**: The industry standard; fast and effective. \n2. **Brotli**: A newer algorithm (by Google) that offers even better compression ratios (often 15-20% smaller than Gzip) while requiring slightly more CPU to compress. Most modern browsers support both, and servers are typically configured to prefer Brotli if the client supports it, significantly reducing the \u0027Time to First Byte\u0027 (TTFB) and overall bandwidth usage.",
+        "counterQuestion":  "Should you use Gzip/Brotli for images like JPEGs or PNGs?",
+        "counterQuestionAnswer":  "No. Images are already compressed using algorithms specifically designed for visual data. Re-compressing them with Gzip or Brotli adds CPU overhead without significantly reducing the file size, and can sometimes even make the files larger.",
+        "category":  "performance",
+        "topic":  "compression",
+        "difficulty":  "medium",
+        "tags":  [
+                     "gzip",
+                     "brotli",
+                     "performance"
+                 ],
+        "analogy":  "Gzip and Brotli are like \u0027Vacuum-sealing your clothes for a trip\u0027. It\u0027s the same amount of clothes (the same code), but it takes up way less space in your suitcase (the network), so you can carry more and move faster.",
+        "code":  "content-encoding: br\ncontent-encoding: gzip"
+    },
+    {
+        "id":  41,
+        "question":  "Explain \u0027Browser Caching\u0027 headers: \u0027Cache-Control\u0027, \u0027Expires\u0027, and \u0027ETag\u0027.",
+        "answer":  "1. **Cache-Control**: The modern standard; allows you to specify \u0027max-age\u0027 (how long to cache) and \u0027public/private\u0027 visibility. \n2. **Expires**: An older header that sets an absolute date/time for expiration. \n3. **ETag**: A \u0027fingerprint\u0027 of the file. The browser sends the ETag back to the server in an \u0027If-None-Match\u0027 header; if the file hasn\u0027t changed, the server returns a **304 Not Modified** response with no body, saving bandwidth. These headers are the most powerful tool for ensuring that repeat visitors have a nearly instantaneous loading experience.",
+        "counterQuestion":  "What does \u0027Cache-Control: no-cache\u0027 mean?",
+        "counterQuestionAnswer":  "\u0027no-cache\u0027 does NOT mean \u0027don\u0027t cache\u0027. It means the browser CAN cache the file, but it **MUST revalidate** it with the server (using ETag) before using it. If you want to truly prevent caching, you must use \u0027no-store\u0027.",
+        "category":  "performance",
+        "topic":  "caching",
+        "difficulty":  "hard",
+        "tags":  [
+                     "caching",
+                     "http",
+                     "performance",
+                     "#highly_asked"
+                 ],
+        "analogy":  "Caching Headers are like \u0027A use-by date on a carton of milk\u0027. The browser looks at the date; if it\u0027s not expired yet (max-age), it just drinks the milk it already has. If it is expired, it calls the farmer (the server) to see if the milk is still good (ETag).",
+        "code":  "cache-control: max-age=31536000, public\netag: \"33a64df551425fcc55e4d42a148795d9f25f89d4\""
+    },
+    {
+        "id":  42,
+        "question":  "What is the \u0027Critical Rendering Path\u0027? How do you optimize it?",
+        "answer":  "The Critical Rendering Path is the sequence of steps the browser takes to convert HTML, CSS, and JS into pixels on the screen. \n1. **DOM**: HTML to Document Object Model. \n2. **CSSOM**: CSS to CSS Object Model. \n3. **Render Tree**: Combining DOM and CSSOM. \n4. **Layout**: Calculating geometry. \n5. **Paint**: Filling pixels. **Optimize it** by: Minifying assets, using \u0027async\u0027 or \u0027defer\u0027 for scripts, inlining critical CSS, and reducing the number of external resources that block rendering.",
+        "counterQuestion":  "What is \u0027Render Blocking\u0027?",
+        "counterQuestionAnswer":  "Render blocking refers to resources (like external CSS files or scripts in the \u003chead\u003e) that stop the browser from painting the page until they are fully downloaded and processed. Eliminating or deferring these is the key to achieving a fast \u0027First Contentful Paint\u0027.",
+        "category":  "performance",
+        "topic":  "rendering",
+        "difficulty":  "hard",
+        "tags":  [
+                     "rendering",
+                     "browser_internals",
+                     "performance",
+                     "#highly_asked"
+                 ],
+        "analogy":  "The Critical Rendering Path is like \u0027The recipe for a 5-course meal\u0027. You have to follow the steps in order: buy the ingredients (HTML), prep the vegetables (DOM/CSSOM), cook the meat (Layout), and plate the food (Paint). If you skip a step, the meal won\u0027t be ready.",
+        "code":  "\u003c!-- Optimization --\u003e\n\u003clink rel=\"stylesheet\" href=\"style.css\" media=\"print\" onload=\"this.media=\u0027all\u0027\"\u003e"
+    },
+    {
+        "id":  43,
+        "question":  "Explain \u0027Image Optimization\u0027 (WebP, Lazy Loading, Responsive images).",
+        "answer":  "1. **WebP**: A modern image format that provides superior lossless and lossy compression. \n2. **Lazy Loading**: Using the \u0027loading=\"lazy\"\u0027 attribute to delay loading images until they are near the viewport. \n3. **Responsive Images**: Using the \u0027\u003cpicture\u003e\u0027 element or \u0027srcset\u0027 attribute to serve different image sizes based on the user\u0027s device (DPR and screen width). These techniques ensure that users don\u0027t waste bandwidth downloading high-resolution images they can\u0027t even see or aren\u0027t currently looking at.",
+        "counterQuestion":  "What is \u0027LCP\u0027 and how do images affect it?",
+        "counterQuestionAnswer":  "LCP (Largest Contentful Paint) is often a large image. To optimize it, you should **avoid** lazy-loading the LCP image and instead use \u0027fetchpriority=\"high\"\u0027 and \u0027preload\u0027 to ensure it\u0027s the first thing the browser downloads.",
+        "category":  "performance",
+        "topic":  "images",
+        "difficulty":  "medium",
+        "tags":  [
+                     "images",
+                     "webp",
+                     "lazy_loading",
+                     "#highly_asked"
+                 ],
+        "analogy":  "Lazy Loading is like \u0027Only bringing out the dessert when the guests are finished with dinner\u0027. You don\u0027t put everything on the table at once (loading all images), because it takes up too much room and most of it might not even be eaten (seen).",
+        "code":  "\u003cimg src=\"hero.webp\" loading=\"lazy\" width=\"800\" height=\"600\" alt=\"...\" /\u003e"
+    },
+    {
+        "id":  44,
+        "question":  "What is \u0027Minification\u0027 and \u0027Obfuscation\u0027 of JS/CSS files?",
+        "answer":  "1. **Minification**: The process of removing all unnecessary characters (whitespace, comments, newlines) from code without changing its functionality. This reduces file size. \n2. **Obfuscation**: Deliberately making the code difficult for humans to read (e.g., renaming variables to single letters like \u0027a\u0027, \u0027b\u0027, \u0027c\u0027). While it provides a tiny bit of security-by-obscurity, its primary benefit in web dev is the further reduction of file size. Tools like **Terser** handle both automatically during the build process.",
+        "counterQuestion":  "What are \u0027Source Maps\u0027?",
+        "counterQuestionAnswer":  "Source Maps are files that map your minified/obfuscated production code back to your original source code. This allows you to debug production errors in the browser\u0027s developer tools as if you were looking at the original, readable code, without having to serve the large source files to the users.",
+        "category":  "performance",
+        "topic":  "optimization",
+        "difficulty":  "medium",
+        "tags":  [
+                     "minification",
+                     "obfuscation",
+                     "build_tools"
+                 ],
+        "analogy":  "Minification is like \u0027Writing a text message with only abbreviations\u0027 (omw, brb, ttyl). The person receiving it still understands exactly what you mean, but it took way less data to send.",
+        "code":  "// Before: function add(a, b) { return a + b; }\n// After: fn=(a,b)=\u003ea+b"
+    },
+    {
+        "id":  45,
+        "question":  "What is the difference between \u0027Local Storage\u0027, \u0027Session Storage\u0027, and \u0027Cookies\u0027?",
+        "answer":  "1. **Local Storage**: Persistent data (stays after the browser is closed); 5-10MB limit; accessible only via JS. \n2. **Session Storage**: Temporary data (cleared when the tab is closed); 5MB limit. \n3. **Cookies**: Small data (4KB) sent with every HTTP request; can be set to \u0027HttpOnly\u0027 (inaccessible to JS) for security. **Use Local/Session Storage** for application state and preferences, and **Cookies** for authentication tokens and tracking.",
+        "counterQuestion":  "What is the \u0027SameSite\u0027 attribute on cookies?",
+        "counterQuestionAnswer":  "The \u0027SameSite\u0027 attribute (Strict, Lax, or None) tells the browser whether to send cookies with cross-site requests. It is a critical security feature for preventing **CSRF** (Cross-Site Request Forgery) attacks.",
+        "category":  "performance",
+        "topic":  "storage",
+        "difficulty":  "medium",
+        "tags":  [
+                     "storage",
+                     "cookies",
+                     "security"
+                 ],
+        "analogy":  "Local Storage is like \u0027Your personal bookshelf\u0027 (you keep what you want there). Cookies are like \u0027A loyalty card you show to the cashier every time you buy something\u0027. The cashier (the server) needs to see the card to know who you are.",
+        "code":  "localStorage.setItem(\u0027theme\u0027, \u0027dark\u0027);\ndocument.cookie = \"user=123; SameSite=Lax; Secure\";"
+    },
+    {
+        "id":  46,
+        "question":  "Explain \u0027Resource Hints\u0027 (dns-prefetch, preconnect, prefetch, preload).",
+        "answer":  "1. **dns-prefetch**: Resolves the DNS for a domain ahead of time. \n2. **preconnect**: Resolves DNS, TCP handshake, and TLS negotiation. \n3. **preload**: High-priority fetch for a resource needed for the current page (e.g., a font or LCP image). \n4. **prefetch**: Low-priority fetch for a resource likely needed for a *future* page navigation. These hints give the browser \u0027inside information\u0027 about what resources it will need soon, allowing it to start the expensive network work as early as possible.",
+        "counterQuestion":  "What happens if you \u0027preload\u0027 a resource but don\u0027t use it within 3 seconds?",
+        "counterQuestionAnswer":  "The browser will log a warning in the console. Preloading resources that aren\u0027t used is a performance anti-pattern as it wastes bandwidth and can block the download of more critical resources.",
+        "category":  "performance",
+        "topic":  "optimization",
+        "difficulty":  "hard",
+        "tags":  [
+                     "resource_hints",
+                     "preload",
+                     "performance"
+                 ],
+        "analogy":  "Resource Hints are like \u0027Calling a restaurant to tell them you\u0027re on your way\u0027. They can start prepping your table (dns-prefetch) and warming up the oven (preconnect) so when you arrive, you get your food (the content) much faster.",
+        "code":  "\u003clink rel=\"preload\" href=\"font.woff2\" as=\"font\" type=\"font/woff2\" crossorigin\u003e"
+    }
+]

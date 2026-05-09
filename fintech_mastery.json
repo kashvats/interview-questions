@@ -1,0 +1,244 @@
+[
+  {
+    "id": 1,
+    "question": "Why should you NEVER use floating-point numbers for financial calculations? What should you use instead?",
+    "answer": "Floating-point numbers (IEEE 754) use binary fractions, which cannot exactly represent many decimal values (e.g., `0.1 + 0.2` might result in `0.30000000000000004`). In fintech, these tiny rounding errors can accumulate into massive discrepancies. **Solution**: Use **Fixed-point arithmetic** or a specialized **Decimal** library (like Python's `decimal` module). Alternatively, store values as **integers** in the smallest currency unit (e.g., store $10.50 as 1050 cents).",
+    "analogy": "Using floats for money is like **Measuring a diamond with a rubber ruler**. Every time you stretch or pull the ruler (perform a calculation), the measurement changes slightly. Using Decimals is like using a **Precision Steel Ruler** \u2014 it doesn't bend, ensuring that 1 cent is always exactly 1 cent.",
+    "code": "```python\nfrom decimal import Decimal, getcontext\n\n# WRONG: floating point error\nprint(0.1 + 0.2) # 0.30000000000000004\n\n# RIGHT: Precision decimal\nprice = Decimal('0.1') + Decimal('0.2')\nprint(price) # 0.3\n```",
+    "counterQuestion": "What is 'Banker's Rounding' (Round Half to Even)?",
+    "counterQuestionAnswer": "Banker's rounding is a method where half-way values (like .5) are rounded to the nearest **even** number rather than always rounding up. For example, 2.5 becomes 2, and 3.5 becomes 4. This reduces cumulative rounding bias in large datasets, as it ensures that roughly half the time you round up and half the time you round down.",
+    "category": "fintech",
+    "topic": "precision",
+    "difficulty": "medium",
+    "tags": [
+      "fintech",
+      "floating_point",
+      "best_practices",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 2,
+    "question": "Explain 'Double-Entry Bookkeeping'. Why is it the standard for financial systems?",
+    "answer": "Double-entry bookkeeping is a system where every financial transaction is recorded in at least two accounts: a **Debit** in one and a **Credit** in another. The fundamental equation is: `Assets = Liabilities + Equity`. **Why it's the standard**: It provides a built-in error-detection mechanism (the sum of all debits must always equal the sum of all credits) and ensures a complete audit trail of where money came from and where it went.",
+    "analogy": "Double-entry is like **Energy Conservation in Physics**. You can't just 'create' energy; you have to take it from one place (Account A) and move it to another (Account B). If you look at your total energy and it doesn't add up, you know you've made a mistake in your calculations.",
+    "code": "```sql\n-- A simple transfer from User A to User B\nBEGIN;\n-- Credit the source (Decrease balance)\nINSERT INTO ledger (account_id, amount, type) VALUES ('User_A', -100, 'CREDIT');\n-- Debit the destination (Increase balance)\nINSERT INTO ledger (account_id, amount, type) VALUES ('User_B', 100, 'DEBIT');\nCOMMIT;\n```",
+    "counterQuestion": "What is an 'Immutability' in a ledger?",
+    "counterQuestionAnswer": "In a professional financial ledger, you **never delete or update** a record. If a mistake was made, you issue a 'Reversing Entry' or 'Correction' that adds a new row to cancel out the error. This ensures the audit trail is preserved perfectly for regulators and auditors.",
+    "category": "fintech",
+    "topic": "accounting",
+    "difficulty": "hard",
+    "tags": [
+      "ledger",
+      "accounting",
+      "immutability"
+    ]
+  },
+  {
+    "id": 3,
+    "question": "What is 'PCI-DSS' and how does it affect how you store Credit Card data?",
+    "answer": "PCI-DSS (Payment Card Industry Data Security Standard) is a set of security requirements designed to protect cardholder data. **Core Rule**: You should **never store sensitive data** (like the full 16-digit PAN or CVV) unless absolutely necessary. If you must store it, it must be encrypted. **Tokenization** is the standard solution: you send the card data to a secure provider (like Stripe) and they give you a 'Token' that you can store safely. You use the token to trigger payments without ever touching the actual card numbers yourself.",
+    "analogy": "PCI-DSS is like **A High-Security Vault Policy**. Instead of keeping everyone's gold bars (Card Numbers) in your own desk drawer, you give the gold to a massive bank (Stripe) and they give you a **Receipt** (the Token). You can trade the receipt, but if a thief steals it, they can't turn it back into gold without the bank's permission.",
+    "code": "```python\n# DON'T do this:\n# db.save(card_number=\"4111...\") \n\n# DO this (Stripe Example):\ntoken = stripe.Token.create(card=card_details)\n# Save the token 'tok_123...' instead of the card number\nuser.payment_token = token.id\n```",
+    "counterQuestion": "What is 'Scope Creep' in the context of PCI compliance?",
+    "counterQuestionAnswer": "Scope creep happens when you allow cardholder data to touch more parts of your system than intended (e.g., logging it in an error report). This forces those parts of your system to also comply with strict PCI rules, significantly increasing your audit costs and security risks. The goal is always 'Scope Reduction'.",
+    "category": "fintech",
+    "topic": "compliance",
+    "difficulty": "hard",
+    "tags": [
+      "pci-dss",
+      "security",
+      "tokenization",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 4,
+    "question": "Explain the difference between 'Authorization' and 'Capture' in a payment flow.",
+    "answer": "1. **Authorization**: The process of checking with the bank to see if the user has enough funds. The bank 'holds' the money, so the user can't spend it elsewhere, but it hasn't left their account yet. \n2. **Capture**: The actual movement of funds. You 'capture' the authorized amount once you've provided the service (e.g., shipped the item). **Why separate them?**: It allows you to ensure you have the item in stock before taking the user's money, and it's much easier to 'Void' an authorization than to issue a 'Refund' for a captured payment.",
+    "analogy": "Authorization is like **A Restaurant checking your ID and holding your credit card** at the start of the night. They know you have money. **Capture** is the moment they actually swipe the card and print the final receipt when you leave.",
+    "code": "```python\n# 1. Authorize the payment (Don't capture yet)\nintent = stripe.PaymentIntent.create(\n    amount=2000, currency='usd', capture_method='manual'\n)\n\n# 2. Capture the payment later\nintent.capture()\n```",
+    "counterQuestion": "What is a 'Partial Capture'?",
+    "counterQuestionAnswer": "A partial capture is when you authorize a certain amount (e.g., $100 for a grocery order) but only capture a portion of it (e.g., $85 because some items were out of stock). The remaining $15 is released back to the user's account.",
+    "category": "fintech",
+    "topic": "payments",
+    "difficulty": "medium",
+    "tags": [
+      "payments",
+      "stripe",
+      "lifecycle"
+    ]
+  },
+  {
+    "id": 5,
+    "question": "What is '3D Secure' (3DS) and how does it reduce Fraud?",
+    "answer": "3D Secure (e.g., Verified by Visa) is an additional security layer for online credit/debit card transactions. It requires the user to perform an extra authentication step with their bank (like entering an OTP or using a fingerprint) during the checkout process. **Benefit**: It shifts the 'Liability' for fraudulent transactions from the merchant to the bank, and significantly reduces 'Card-Not-Present' fraud by ensuring the person using the card is the actual owner.",
+    "analogy": "3D Secure is like **The 'Are you sure?' confirmation** when you're about to delete a file, but instead of just clicking 'Yes', you have to **prove it's really you** with a secret code before the computer allows the action.",
+    "code": "```text\nFlow: \n1. User enters card.\n2. Server triggers 3DS.\n3. User redirected to Bank Page.\n4. User enters OTP.\n5. Bank redirects back to Server with 'Success'.\n6. Server captures payment.\n```",
+    "counterQuestion": "What is 'SCA' (Strong Customer Authentication)?",
+    "counterQuestionAnswer": "SCA is a European regulatory requirement (under PSD2) that mandates 3D Secure or similar multi-factor authentication for most online payments. It is the legal framework that made 3DS a standard requirement for businesses operating in Europe.",
+    "category": "fintech",
+    "topic": "fraud",
+    "difficulty": "medium",
+    "tags": [
+      "3ds",
+      "security",
+      "fraud_prevention"
+    ]
+  },
+  {
+    "id": 6,
+    "question": "How do you handle 'Idempotency' in Payment APIs to prevent double-charging?",
+    "answer": "In fintech, network failures are common. If a client sends a payment request and the network drops before they get a response, they might 'Retry' the request. To prevent double-charging, the server must support **Idempotency Keys**. The client sends a unique UUID with every request. The server saves the result of every successful key. If it sees the same key again, it simply returns the cached result without processing the payment a second time.",
+    "analogy": "An Idempotency Key is like **A ticket at a Deli**. Even if you walk up to the counter three times and ask 'Is my sandwich ready?', the staff only makes the sandwich once because they have your specific ticket number on file.",
+    "code": "```python\n# Using a unique Idempotency Key in Stripe\nstripe.Charge.create(\n  amount=2000,\n  currency=\"usd\",\n  source=\"tok_visa\",\n  idempotency_key=\"unique_order_id_12345\"\n)\n```",
+    "counterQuestion": "How long should you keep Idempotency Keys?",
+    "counterQuestionAnswer": "Typically, keys should be kept for 24-48 hours. This is long enough to handle any immediate retries or system recovery efforts without cluttering your database with millions of old keys that will never be reused.",
+    "category": "fintech",
+    "topic": "reliability",
+    "difficulty": "hard",
+    "tags": [
+      "idempotency",
+      "api_design",
+      "reliability",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 7,
+    "question": "What is 'KYC' (Know Your Customer) and 'AML' (Anti-Money Laundering)?",
+    "answer": "These are regulatory requirements for financial institutions. \n1. **KYC**: The process of verifying a customer's identity (ID checks, address verification) to prevent identity theft and fraud. \n2. **AML**: A set of procedures designed to prevent criminals from disguising illegally obtained funds as legitimate income. This involves monitoring transactions for suspicious patterns, such as large cash deposits or rapid transfers between unrelated accounts.",
+    "analogy": "KYC is like **Checking a guest's ID at a hotel** to make sure they are who they say they are. AML is like **The security guard watching the guest** to make sure they aren't carrying suspicious bags or meeting with known criminals in the lobby.",
+    "code": "```text\nKYC Steps:\n1. Collect ID (Passport/Driver's License).\n2. Perform 'Liveness' check (Selfie).\n3. Check against 'Sanctions Lists' (OFAC).\n4. Verify Address (Utility Bill).\n```",
+    "counterQuestion": "What is a 'PEP' check in KYC?",
+    "counterQuestionAnswer": "PEP stands for 'Politically Exposed Person'. It refers to someone who holds a prominent public position (like a politician or a high-ranking official). Because PEPs have a higher risk of being involved in bribery or corruption, they require 'Enhanced Due Diligence' during the KYC process.",
+    "category": "fintech",
+    "topic": "compliance",
+    "difficulty": "medium",
+    "tags": [
+      "kyc",
+      "aml",
+      "regtech"
+    ]
+  },
+  {
+    "id": 8,
+    "question": "Explain 'Real-time Fraud Detection' using 'Velocity Checks'.",
+    "answer": "Velocity checks monitor the frequency of specific actions within a short time window. For example: 'Has this card been used more than 5 times in the last 10 minutes?' or 'Are there 10 different cards being used from the same IP address?' This is the first line of defense against automated 'Card Testing' attacks where criminals try thousands of stolen card numbers to see which ones are still active.",
+    "analogy": "A Velocity Check is like **A Speed Camera on a highway**. It doesn't care who you are or what car you're driving; it only cares that you are moving too fast for the safety of the system.",
+    "code": "```python\n# Simple Velocity Check in Redis\ndef check_velocity(user_id, limit=5):\n    key = f\"velocity:{user_id}\"\n    current = redis.incr(key)\n    if current == 1:\n        redis.expire(key, 600) # Reset after 10 mins\n    return current <= limit\n```",
+    "counterQuestion": "What is 'Anomaly Detection' in fraud prevention?",
+    "counterQuestionAnswer": "While velocity checks look for specific 'speeding' patterns, anomaly detection uses Machine Learning to look for 'weird' behavior compared to a user's normal history. For example, if a user who usually buys $20 of groceries in London suddenly tries to buy a $5,000 watch in Dubai, the system flags it as an anomaly.",
+    "category": "fintech",
+    "topic": "fraud",
+    "difficulty": "hard",
+    "tags": [
+      "fraud",
+      "redis",
+      "security"
+    ]
+  },
+  {
+    "id": 9,
+    "question": "What is 'ISO 20022' and why is it important for global banking?",
+    "answer": "ISO 20022 is an international standard for electronic data interchange between financial institutions. It provides a common 'language' and data structure for financial messages (like wire transfers). **Importance**: Unlike older, fragmented standards (like SWIFT MT), ISO 20022 allows for much richer data (like full invoices or detailed sender/receiver info) to be attached to a payment, reducing errors and making cross-border payments faster and more transparent.",
+    "analogy": "ISO 20022 is like **The move from Texting to WhatsApp**. In the old days (MT), you could only send a short text message. Now (ISO 20022), you can send the message, your location, a photo of the receipt, and a link to the original order, all in one package.",
+    "code": "```xml\n<!-- ISO 20022 XML snippet (pain.001) -->\n<CstmrCdtTrfInitn>\n  <GrpHdr>...</GrpHdr>\n  <PmtInf>\n    <Amt Ccy=\"EUR\">1500.00</Amt>\n  </PmtInf>\n</CstmrCdtTrfInitn>\n```",
+    "counterQuestion": "What is 'SWIFT gpi'?",
+    "counterQuestionAnswer": "SWIFT gpi (Global Payments Innovation) is a service that uses the ISO 20022 standard to provide real-time tracking and certainty for cross-border payments. It allows banks to see exactly where a payment is in the global chain, similar to how you track a package from Amazon.",
+    "category": "fintech",
+    "topic": "banking",
+    "difficulty": "hard",
+    "tags": [
+      "iso20022",
+      "swift",
+      "banking"
+    ]
+  },
+  {
+    "id": 10,
+    "question": "What is 'Open Banking' and 'PSD2'?",
+    "answer": "PSD2 (Payment Services Directive 2) is a European regulation that forced banks to open up their data to third-party providers via APIs. **Open Banking** is the practical result: it allows you to use a third-party app (like a budget tracker or a loan comparison tool) to securely access your bank data or even trigger payments directly from your bank account, without needing to share your actual bank login credentials.",
+    "analogy": "Open Banking is like **Giving a valet key to your data**. Before, if you wanted a budgeting app to see your data, you had to give them your 'House Keys' (Password). Now, you give them a 'Special Key' (API Token) that only lets them see your transaction history and nothing else.",
+    "code": "```http\n# Calling an Open Banking API\nGET /accounts\nAuthorization: Bearer <Customer_Consented_Token>\n```",
+    "counterQuestion": "What is an 'AISP' vs a 'PISP'?",
+    "counterQuestionAnswer": "1. **AISP (Account Information Service Provider)**: Can only *read* your data (e.g., a finance dashboard). 2. **PISP (Payment Initiation Service Provider)**: Can actually *trigger* a payment from your account (e.g., a 'Pay by Bank' button on a checkout page).",
+    "category": "fintech",
+    "topic": "regulation",
+    "difficulty": "medium",
+    "tags": [
+      "open_banking",
+      "psd2",
+      "apis"
+    ]
+  },
+  {
+    "id": 11,
+    "question": "What is 'Financial Reconciliation' and how do you build an automated system for it?",
+    "answer": "Reconciliation is the process of ensuring that your **Internal Ledger** matches the **External Reality** (bank statements, payment processor logs). **Automated System**: 1. **Ingest**: Pull bank statements (via Plaid/ISO 20022). 2. **Normalize**: Map different formats to a standard schema. 3. **Match**: Use 'Idempotency Keys' or transaction IDs to pair internal rows with bank rows. 4. **Exception Handling**: Flag 'breaks' (unmatched rows) for human review. This is the heart of financial integrity.",
+    "analogy": "Reconciliation is like **Checking your receipt against your bank app** at the end of a trip. If the receipt says you spent $50 but the bank says $60, you have a 'break' that you need to investigate. An automated system does this for millions of transactions every second.",
+    "code": "```python\n# Basic Reconciliation logic\ndef reconcile(internal_entries, bank_statements):\n    unmatched = []\n    for entry in internal_entries:\n        # Try to find a matching bank statement via Transaction ID\n        match = bank_statements.find(tx_id=entry.tx_id)\n        if not match or match.amount != entry.amount:\n            unmatched.append(entry)\n    return unmatched\n```",
+    "counterQuestion": "What is a 'Settlement' vs a 'Reconciliation'?",
+    "counterQuestionAnswer": "Settlement is the **actual movement of money** between banks to finalize a transaction. Reconciliation is the **accounting process** of verifying that the movement happened correctly and matches your internal records.",
+    "category": "fintech",
+    "topic": "accounting",
+    "difficulty": "hard",
+    "tags": [
+      "reconciliation",
+      "ledger",
+      "audit"
+    ]
+  },
+  {
+    "id": 12,
+    "question": "How do you handle 'Multi-Currency' and 'FX Spreads' in a global payment system?",
+    "answer": "1. **Base Currency**: Define a single currency for your internal accounting (e.g., USD). 2. **FX Rates**: Fetch real-time rates but apply a **Spread** (a small fee added to the rate) to cover volatility and profit. 3. **Rounding**: Always round 'down' for credits and 'up' for debits to ensure the house doesn't lose money on tiny fractions. 4. **Settlement Time**: Account for the time difference between the transaction and the actual currency conversion (FX risk).",
+    "analogy": "Multi-currency is like **A Language Translator at a UN meeting**. Every speaker (currency) speaks their own language, but the translator converts everything to English (Base Currency) for the records. The 'Spread' is the translator's fee for doing the work.",
+    "code": "```python\n# Calculating FX with a spread\ndef convert_with_spread(amount, rate, spread_bps=50):\n    # 50 bps = 0.5% fee\n    effective_rate = rate * (1 - (spread_bps / 10000))\n    return (amount * effective_rate).quantize(Decimal('0.01'))\n```",
+    "counterQuestion": "What is 'T+1' vs 'T+2' settlement?",
+    "counterQuestionAnswer": "These refer to the number of business days it takes for a transaction to 'settle' and the money to be available. T+1 means 1 day after the transaction date. Global markets are currently moving towards T+1 to reduce risk and improve liquidity.",
+    "category": "fintech",
+    "topic": "fx",
+    "difficulty": "hard",
+    "tags": [
+      "fx",
+      "multi_currency",
+      "settlement"
+    ]
+  },
+  {
+    "id": 13,
+    "question": "Explain the 'Limit Order Book' (LOB) and 'Market' vs. 'Limit' orders.",
+    "answer": "The LOB is a real-time list of all 'Buy' (Bid) and 'Sell' (Ask) orders for an asset, sorted by price. \n1. **Limit Order**: You specify a price (e.g., 'Buy Apple at $190'). It sits in the book until someone matches it. \n2. **Market Order**: You say 'Buy 10 shares of Apple NOW at whatever the best price is'. It executes instantly against the existing limit orders in the book. Market orders 'take' liquidity, while limit orders 'make' liquidity.",
+    "analogy": "A Limit Order is like **Putting a 'For Sale' sign on your car** for $5,000. You're willing to wait for the right buyer. A Market Order is like **Taking your car to a Dealership** and selling it for whatever they offer you right now because you need the cash immediately.",
+    "code": "```text\nOrder Book Example (AAPL):\nAsks (Sellers): $190.05 (100 shares), $190.10 (50 shares)\n-- SPREAD --\nBids (Buyers): $190.00 (200 shares), $189.95 (10 shares)\n```",
+    "counterQuestion": "What is the 'Bid-Ask Spread'?",
+    "counterQuestionAnswer": "The spread is the difference between the highest 'Buy' price (Bid) and the lowest 'Sell' price (Ask). A 'tight' spread (e.g., $0.01) indicates a very liquid market, while a 'wide' spread indicates lower liquidity and higher costs for traders to enter or exit positions.",
+    "category": "fintech",
+    "topic": "trading",
+    "difficulty": "medium",
+    "tags": [
+      "trading",
+      "order_book",
+      "fintech",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 14,
+    "question": "What is the 'FIX Protocol' (Financial Information eXchange)?",
+    "answer": "FIX is the industry-standard messaging protocol for real-time electronic trading. It uses a **Tag-Value** format (e.g., `35=D` means 'New Order'). It handles session management, sequence numbers (for exactly-once delivery), and heartbeats. Even with the rise of JSON and gRPC, FIX remains the 'language' of global stock and FX markets due to its extreme efficiency and legacy support across every major bank and exchange.",
+    "analogy": "FIX is like **The 'Morse Code' of Wall Street**. It's a series of standardized tags and numbers that allow two computers in different countries to perfectly understand an order to buy 1 million shares of Google, without any risk of a 'language barrier' or lost messages.",
+    "code": "```text\n# Sample FIX Message (Partial)\n8=FIX.4.4 | 35=D | 49=SENDER | 56=TARGET | 11=1001 | 55=AAPL | 54=1 | 38=100\n(Tag 35=D is New Order Single, 55 is Symbol, 38 is Quantity)\n```",
+    "counterQuestion": "Why is 'Sequence Number' critical in FIX?",
+    "counterQuestionAnswer": "In trading, you cannot have a 'lost' or 'duplicate' order. FIX uses sequence numbers to track every message. If a connection drops and the receiver sees a gap in the numbers (e.g., received 10 and then 12), they immediately request a 'Resend' for the missing message (11) to ensure the ledger remains perfectly in sync.",
+    "category": "fintech",
+    "topic": "trading",
+    "difficulty": "hard",
+    "tags": [
+      "fix_protocol",
+      "fintech",
+      "messaging"
+    ]
+  }
+]

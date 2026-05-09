@@ -1,0 +1,272 @@
+[
+  {
+    "id": 1,
+    "question": "Explain the WebRTC connection process: What are ICE, STUN, and TURN?",
+    "answer": "WebRTC is a Peer-to-Peer (P2P) protocol, but establishing a direct connection between two browsers is difficult due to NATs and Firewalls. \n1. **STUN (Session Traversal Utilities for NAT)**: A server that tells the client its public IP address and port. Most connections (80%) are established using just STUN. \n2. **TURN (Traversal Using Relays around NAT)**: A relay server used when a direct P2P connection fails (usually due to symmetric NATs). Data is routed through the TURN server, which increases latency and cost. \n3. **ICE (Interactive Connectivity Establishment)**: The framework that coordinates STUN and TURN to find the best possible 'Candidate' path for the connection. It tries P2P first and falls back to relaying only if necessary.",
+    "analogy": "Establishing a WebRTC connection is like **Two people trying to meet in a giant, locked office building**. **STUN** is a receptionist who tells you which window you're standing in so the other person can see you from outside. **TURN** is a courier who carries letters between you because the security guards (Firewalls) won't let you talk directly. **ICE** is the strategy you use to try every door and window until you find a way to communicate.",
+    "code": "```javascript\n// Typical ICE Server Configuration\nconst config = {\n  iceServers: [\n    { urls: \"stun:stun.l.google.com:19302\" }, // Public STUN\n    { \n      urls: \"turn:my-turn-server.com\", \n      username: \"user\", \n      credential: \"pass\" \n    } // Private TURN for fallbacks\n  ]\n};\nconst pc = new RTCPeerConnection(config);\n```",
+    "counterQuestion": "What is a 'Trickle ICE'?",
+    "counterQuestionAnswer": "Trickle ICE is an optimization where ICE candidates are sent to the remote peer as soon as they are discovered, rather than waiting for all candidates to be gathered. This significantly reduces the 'Time to Connect' (TTC) because the peers can start testing paths immediately while still looking for better ones.",
+    "category": "realtime",
+    "topic": "webrtc",
+    "difficulty": "hard",
+    "tags": [
+      "webrtc",
+      "networking",
+      "p2p",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 2,
+    "question": "What is the difference between an SFU (Selective Forwarding Unit) and an MCU (Multipoint Control Unit)?",
+    "answer": "These are the two main architectures for multi-party video conferencing (like Zoom or Google Meet). \n1. **MCU**: The server receives video from all participants, 'mixes' them into a single video grid, and sends that one stream back to everyone. **Pros**: Low bandwidth for clients. **Cons**: Extremely CPU-intensive for the server and lacks flexibility for layout. \n2. **SFU**: The server receives video from everyone and simply 'forwards' the relevant streams to the other participants without changing them. **Pros**: Low server CPU, supports dynamic layouts, and enables end-to-end encryption. **Cons**: Requires more bandwidth from the clients. Modern apps (Zoom/Meet) almost exclusively use **SFUs** (like Mediasoup or LiveKit) because they scale much better.",
+    "analogy": "An **MCU** is like a **TV News Station** that takes 5 remote reporters and broadcasts a single 'split-screen' view to your TV. An **SFU** is like a **Post Office** that takes 5 individual letters and simply makes copies to deliver to everyone else; the Post Office doesn't read or rewrite the letters, it just routes them.",
+    "code": "```javascript\n// SFU Concept (Pseudo-code)\n// Client A sends 1 stream. SFU receives it.\n// SFU broadcasts Client A's stream to Client B, C, and D individually.\n// No transcoding or 'mixing' happens on the SFU server.\n```",
+    "counterQuestion": "What is 'Simulcast' in the context of an SFU?",
+    "counterQuestionAnswer": "Simulcast allows a client to send multiple versions of the same video at different resolutions (e.g., 720p, 360p, 180p) to the SFU. The SFU then intelligently forwards the high-res version to users with fast internet and the low-res version to users on mobile or weak networks, ensuring a smooth experience for everyone.",
+    "category": "realtime",
+    "topic": "architecture",
+    "difficulty": "hard",
+    "tags": [
+      "sfu",
+      "mcu",
+      "video_conferencing",
+      "scaling"
+    ]
+  },
+  {
+    "id": 3,
+    "question": "How do you handle real-time audio/video processing on the backend? (The role of FFmpeg).",
+    "answer": "For tasks like recording a session, adding watermarks, or extracting audio for transcription (AI), you move the media processing to the backend. **FFmpeg** is the industry-standard tool for this. You can pipe a WebRTC stream (via a tool like GStreamer or an SFU hook) into FFmpeg to: \n1. **Transcode**: Convert a high-bitrate stream into a smaller format. \n2. **Composite**: Merge multiple video/audio tracks into one file. \n3. **Extract**: Turn a video stream into raw PCM audio for AI speech-to-text. It is usually run in a containerized environment (Docker) and scaled based on the number of active processing jobs.",
+    "analogy": "FFmpeg is the **Swiss Army Knife of Media**. If you have a video file in 'raw' format (like a huge block of wood), FFmpeg can carve it, paint it, resize it, or turn it into something completely different (like a tiny wooden whistle), all through command-line instructions.",
+    "code": "```bash\n# FFmpeg command to extract audio from a stream for AI processing\n# -i: input stream, -vn: disable video, -acodec pcm_s16le: raw audio\nffmpeg -i rtmp://myserver/live/stream -vn -acodec pcm_s16le -ar 16000 -ac 1 output.wav\n```",
+    "counterQuestion": "What is 'Hardware Acceleration' in FFmpeg?",
+    "counterQuestionAnswer": "Hardware acceleration (using NVENC for NVIDIA or QuickSync for Intel) offloads the heavy math of video encoding/decoding from the CPU to the GPU. This is critical for high-density servers where you need to process hundreds of concurrent video streams without melting the server's CPU.",
+    "category": "realtime",
+    "topic": "media_processing",
+    "difficulty": "medium",
+    "tags": [
+      "ffmpeg",
+      "transcoding",
+      "backend",
+      "ai_infra"
+    ]
+  },
+  {
+    "id": 4,
+    "question": "Compare RTMP, HLS, and WebRTC: When should you use each?",
+    "answer": "1. **RTMP (Real-Time Messaging Protocol)**: Legacy but still standard for *ingesting* video (e.g., OBS to Twitch). Latency: 3-5s. \n2. **HLS (HTTP Live Streaming)**: Designed for mass scale (millions of viewers). It breaks video into small chunks (.ts) served over standard HTTP. Latency: 10-30s. Works on all devices. \n3. **WebRTC**: Designed for sub-second latency (<500ms). Perfect for 2-way interaction (meetings, gaming). **Cons**: Harder to scale to millions of viewers. **Rule**: Use WebRTC for interaction; use HLS for mass-scale one-way broadcasting.",
+    "analogy": "WebRTC is like **A Phone Call** (instant response, but hard to have a million people on one line). HLS is like **A Live TV Broadcast** (everyone can watch it, but there's a delay between the action and the picture on your screen).",
+    "code": "```javascript\n// Choosing a protocol based on Latency requirements:\n// < 500ms -> WebRTC\n// < 5s    -> Low-Latency HLS (LL-HLS) or RTMP\n// > 10s   -> Standard HLS (Mass scale)\n```",
+    "counterQuestion": "What is 'DASH' (Dynamic Adaptive Streaming over HTTP)?",
+    "counterQuestionAnswer": "DASH (or MPEG-DASH) is the industry rival to Apple's HLS. It works similarly by chunking video but is codec-agnostic and more flexible. Most modern players (like Shaka Player or Video.js) support both HLS and DASH to ensure compatibility across all browsers and smart TVs.",
+    "category": "realtime",
+    "topic": "protocols",
+    "difficulty": "medium",
+    "tags": [
+      "webrtc",
+      "hls",
+      "rtmp",
+      "latency"
+    ]
+  },
+  {
+    "id": 5,
+    "question": "How do you handle binary media data in the browser? (ArrayBuffers, Blobs, and Streams).",
+    "answer": "Real-time media is processed as binary data, not strings. \n1. **ArrayBuffer**: A fixed-length raw binary data buffer. You use 'TypedArrays' (like `Uint8Array`) to read/write specific bits. \n2. **Blob**: Represents 'File-like' data. Useful for recording a video chunk and saving it to disk. \n3. **MediaStream**: The high-level Web API that manages audio/video tracks from the camera/mic. To stream this data to a server (e.g., for AI), you often capture chunks using `MediaRecorder`, convert them to `Blobs`, and send them over a **WebSocket** as binary messages.",
+    "analogy": "A **MediaStream** is like water flowing from a tap. An **ArrayBuffer** is like a single glass of that water. A **Blob** is like a sealed bottle of water that you can store or give to someone else. To move the water across the internet, you pour it into the 'WebSocket' pipe as small, binary droplets.",
+    "code": "```javascript\n// Sending raw audio chunks over WebSocket\nmediaRecorder.ondataavailable = async (event) => {\n  if (event.data.size > 0) {\n    const buffer = await event.data.arrayBuffer();\n    socket.send(buffer); // Sent as Binary (not String)\n  }\n};\n```",
+    "counterQuestion": "What is the 'Endianness' of an ArrayBuffer?",
+    "counterQuestionAnswer": "Endianness refers to the order in which bytes are stored in memory (Big-Endian vs Little-Endian). When processing raw audio/video bits across different systems (e.g., JS browser to a C++ backend), you must ensure both sides agree on the byte order, or the media will sound like static or look like garbage. JavaScript's `DataView` allows you to specify the endianness explicitly when reading bits.",
+    "category": "realtime",
+    "topic": "browser_api",
+    "difficulty": "hard",
+    "tags": [
+      "binary",
+      "javascript",
+      "websockets",
+      "media_api"
+    ]
+  },
+  {
+    "id": 6,
+    "question": "What is 'Jitter' and how does a 'Jitter Buffer' solve it?",
+    "answer": "In real-time networking, packets don't always arrive at the same speed (e.g., Packet 1 takes 50ms, Packet 2 takes 150ms). This variation is called **Jitter**. It causes audio to sound 'choppy' or 'robotic'. A **Jitter Buffer** is a small memory space that holds incoming packets for a few milliseconds before playing them. It smooths out the arrival times so the audio/video plays at a constant, steady rate, at the cost of a tiny bit of extra latency.",
+    "analogy": "Jitter is like **A group of friends arriving at a restaurant separately**. If you try to seat them one by one as they arrive, the conversation will be disjointed. A Jitter Buffer is the **Waiting Area**; the host waits until 3 or 4 people are there so they can be seated together and have a smooth conversation.",
+    "code": "```javascript\n// WebRTC internally manages jitter, but you can monitor it:\nconst stats = await peerConnection.getStats();\nstats.forEach(report => {\n  if (report.type === 'inbound-rtp') {\n    console.log(`Current Jitter: ${report.jitter} seconds`);\n  }\n});\n```",
+    "counterQuestion": "What is 'NetEq' in WebRTC?",
+    "counterQuestionAnswer": "NetEq is Google's sophisticated jitter buffer and error concealment algorithm used in WebRTC (and Chrome). It doesn't just buffer packets; it can 'stretch' or 'compress' audio in real-time to hide missing packets (Packet Loss Concealment) without the user noticing the gap, which is why WebRTC audio often sounds better than standard VoIP.",
+    "category": "realtime",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "jitter",
+      "latency",
+      "networking",
+      "webrtc"
+    ]
+  },
+  {
+    "id": 7,
+    "question": "How do you implement 'Screen Capture' and 'Canvas Recording' in the browser?",
+    "answer": "For tools like interview assistants or recorders, you use the `getDisplayMedia` API. This prompts the user to share their screen or a specific window. To record it, you pass the resulting `MediaStream` into a `MediaRecorder`. If you need to manipulate the video (e.g., hide sensitive info or overlay AI highlights), you draw the video frames onto an HTML5 **Canvas**, manipulate the pixels, and then capture a new stream from the canvas using `canvas.captureStream()`. This allows for high-performance, real-time video editing entirely in the browser.",
+    "analogy": "Capturing the screen is like **Setting up a camera in front of a window**. Recording the Canvas is like **Taking a photo of a painting while you are still painting it**. It gives you the power to change the 'reality' of what the user sees or records in real-time.",
+    "code": "```javascript\n// Capture screen and record it\nconst screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });\nconst recorder = new MediaRecorder(screenStream);\nrecorder.start();\n\n// Drawing to canvas for processing\nfunction loop() {\n  context.drawImage(videoElement, 0, 0);\n  // Perform pixel manipulation here...\n  requestAnimationFrame(loop);\n}\n```",
+    "counterQuestion": "What is the 'Frame Rate' (FPS) limit for Screen Capture?",
+    "counterQuestionAnswer": "By default, `getDisplayMedia` tries to capture at the source's frame rate, but you can constrain it (e.g., `{ video: { frameRate: 30 } }`). High FPS results in smoother video but significantly higher CPU and bandwidth usage. For a screen share of a static document, 5-10 FPS is often enough to save resources.",
+    "category": "realtime",
+    "topic": "browser_api",
+    "difficulty": "medium",
+    "tags": [
+      "screen_share",
+      "canvas",
+      "media_recorder",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 8,
+    "question": "Explain 'A/V Sync' (Lip Sync) and why it's hard in distributed systems.",
+    "answer": "Audio and video are usually sent as separate streams. Because video packets are much larger and take longer to encode/decode than audio, they often fall out of sync (the 'Lip Sync' problem). WebRTC solves this using **RTCP (RTP Control Protocol)** sender reports, which include a 'NTP Timestamp' (absolute time). The receiver uses these timestamps to align the two tracks. If your backend processes them separately (e.g., audio to AI, video to disk), you must preserve these timestamps or the combined output will be unwatchable.",
+    "analogy": "A/V Sync is like **A conductor in an orchestra**. The violins (Audio) and the drums (Video) are playing separately. The conductor (NTP Timestamps) keeps a beat so that everyone stays perfectly in time, even if one group is sitting further away from the audience.",
+    "code": "```javascript\n// Preserving sync in a custom player\n// Use 'Presentation Time Stamps' (PTS) from the container metadata\n// to ensure the audio frame matches the video frame exactly.\n```",
+    "counterQuestion": "What is 'Drift'?",
+    "counterQuestionAnswer": "Drift occurs when the 'internal clocks' of two devices run at slightly different speeds (e.g., one device thinks a second is 1.001s). Over a long session (1 hour+), this tiny difference adds up to seconds of lag. Pro-grade media systems use 'Clock Synchronization' (like PTP or NTP) to ensure all devices are on the exact same 'wall-clock' time.",
+    "category": "realtime",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "sync",
+      "audio_video",
+      "latency",
+      "rtp"
+    ]
+  },
+  {
+    "id": 9,
+    "question": "What is 'Adaptive Bitrate Streaming' (ABR)? How does it work in HLS?",
+    "answer": "ABR ensures a smooth viewing experience by changing the video quality in real-time based on the user's internet speed. In **HLS**, the server provides a 'Master Manifest' (.m3u8) that lists different quality levels (1080p, 720p, 360p). The video player (client) monitors the download speed of each chunk. If the speed drops, the player automatically requests the next chunk from the 360p list instead of the 1080p list. This prevents the video from 'buffering' or stopping entirely.",
+    "analogy": "ABR is like **A car with an automatic transmission**. When you're going uphill (Slow Internet), the car shifts to a lower gear (Low Resolution) so it doesn't stall. When you're on a flat highway (Fast Internet), it shifts to a high gear (1080p) for maximum speed and performance.",
+    "code": "```m3u8\n# Master Manifest Example\n#EXT-X-STREAM-INF:BANDWIDTH=1280000,RESOLUTION=720x480\nlow_quality.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=2560000,RESOLUTION=1280x720\nhigh_quality.m3u8\n```",
+    "counterQuestion": "What is 'VBR' vs 'CBR'?",
+    "counterQuestionAnswer": "CBR (Constant Bitrate) uses the same amount of data for every second of video; it's predictable but wastes data on simple scenes. VBR (Variable Bitrate) uses more data for complex action scenes and less for static scenes, resulting in much higher quality for the same average file size. VBR is preferred for almost all modern streaming.",
+    "category": "realtime",
+    "topic": "protocols",
+    "difficulty": "medium",
+    "tags": [
+      "abr",
+      "hls",
+      "streaming",
+      "performance"
+    ]
+  },
+  {
+    "id": 10,
+    "question": "How do you secure a WebRTC stream? (DTLS and SRTP).",
+    "answer": "WebRTC is secure by default; you cannot disable encryption. It uses two main protocols: \n1. **DTLS (Datagram Transport Layer Security)**: Used to perform a secure 'handshake' and exchange keys between the two peers. \n2. **SRTP (Secure Real-time Transport Protocol)**: Once the keys are exchanged via DTLS, SRTP is used to encrypt the actual audio and video packets. This ensures that even if someone intercepts the packets, they cannot see or hear the content. Additionally, WebRTC requires **HTTPS** for camera/mic access to prevent 'Man-in-the-Middle' attacks at the browser level.",
+    "analogy": "DTLS is like **Two people meeting and agreeing on a secret code** in a private room. SRTP is **The rest of the conversation** happening in public, but since it's all in the secret code, no one else can understand it. The HTTPS requirement is like **The ID check at the door** to make sure you are who you say you are before you enter the room.",
+    "code": "```javascript\n// WebRTC encryption is transparent to the developer.\n// You can verify it by checking the 'transport' stats:\nconst stats = await pc.getStats();\n// Look for 'transport' with 'dtlsState: connected'\n```",
+    "counterQuestion": "What is 'Perfect Forward Secrecy' (PFS)?",
+    "counterQuestionAnswer": "PFS is a feature of modern TLS/DTLS where a new, unique session key is generated for every single connection. If an attacker steals the server's long-term private key in the future, they still cannot decrypt *past* recorded sessions because those sessions used different keys that were never stored. WebRTC supports PFS by default.",
+    "category": "realtime",
+    "topic": "security",
+    "difficulty": "hard",
+    "tags": [
+      "security",
+      "encryption",
+      "webrtc",
+      "srtp"
+    ]
+  },
+  {
+    "id": 11,
+    "question": "Discuss Video Codecs (H.264, VP8, VP9, AV1). When would you choose one over the other?",
+    "answer": "Codecs are algorithms that compress/decompress video. \n1. **H.264 (AVC)**: The most widely used. It has **Hardware Acceleration** on almost every device (phone, laptop), meaning it uses very little battery. \n2. **VP8/VP9**: Google's open-source alternatives. VP9 is more efficient than H.264 but has less hardware support on older iPhones. \n3. **AV1**: The future. 30% more efficient than VP9, but encoding it is very CPU-intensive and hardware support is still growing. **Rule**: Use H.264 for maximum compatibility and battery life; use VP9/AV1 if you want to save 30-50% on bandwidth costs at the scale of millions of users.",
+    "analogy": "A Codec is like **A language**. H.264 is like **English** (everyone speaks it, and there are many tools for it). AV1 is like **A highly specialized scientific language**; it can express complex ideas with very few words (high compression), but you need a very powerful brain (CPU) to understand it and not everyone knows it yet.",
+    "code": "```javascript\n// Specifying preferred codecs in WebRTC\nconst transceiver = peerConnection.addTransceiver('video');\nconst { codecpPreferences } = RTCRtpReceiver.getCapabilities('video');\n// Filter for H264 to ensure hardware acceleration\nconst filtered = codecpPreferences.filter(c => c.mimeType === 'video/H264');\ntransceiver.setCodecPreferences(filtered);\n```",
+    "counterQuestion": "What is 'Transcoding' and why is it expensive?",
+    "counterQuestionAnswer": "Transcoding is the process of converting one codec to another (e.g., H.264 to VP9) in real-time. It is extremely CPU-heavy because the server must decode every frame and re-encode it. At scale, companies like YouTube or Twitch use dedicated chips (ASICs) to do this because standard CPUs are too slow and expensive for the task.",
+    "category": "realtime",
+    "topic": "codecs",
+    "difficulty": "hard",
+    "tags": [
+      "codecs",
+      "h264",
+      "av1",
+      "performance"
+    ]
+  },
+  {
+    "id": 12,
+    "question": "Explain GOP (Group of Pictures) and the difference between I-Frames, P-Frames, and B-Frames.",
+    "answer": "Video compression works by only sending the 'changes' between frames. \n1. **I-Frame (Intra)**: A complete image. It's the largest but doesn't need previous frames to be shown. \n2. **P-Frame (Predicted)**: Only stores the changes from the *previous* frame. Much smaller. \n3. **B-Frame (Bi-predictive)**: Stores changes from both the *previous and future* frames. Smallest, but adds latency. **Interview Key**: In real-time WebRTC, we avoid B-frames because they require waiting for a future frame, which adds 30-100ms of lag.",
+    "analogy": "An **I-Frame** is like a **Full Page** in a flipbook. A **P-Frame** is like a note saying **'Everything is the same, but the hand moved 2 inches left'**. A **B-Frame** is like a note saying **'I'm halfway between the last page and the next page'**. The note is much smaller than drawing the whole page again.",
+    "code": "```bash\n# FFmpeg command to see the frame types in a video\nffprobe -show_frames -select_streams v:0 my_video.mp4 | grep pict_type\n# Output: I, P, P, P, P, I, P, P...\n```",
+    "counterQuestion": "What is an 'IDR' frame?",
+    "counterQuestionAnswer": "An IDR (Instantaneous Decoder Refresh) is a special type of I-Frame. It acts as a hard 'reset' point. The decoder can discard all previous reference frames and start fresh. This is what happens when you 'seek' to a new part of a video or when a new person joins a meeting.",
+    "category": "realtime",
+    "topic": "compression",
+    "difficulty": "hard",
+    "tags": [
+      "gop",
+      "iframes",
+      "pframes",
+      "compression"
+    ]
+  },
+  {
+    "id": 13,
+    "question": "How does 'Bandwidth Estimation' (BWE) work in WebRTC? (GCC Algorithm).",
+    "answer": "WebRTC uses the **Google Congestion Control (GCC)** algorithm to prevent network congestion. It works in two ways: \n1. **Delay-based**: It monitors the 'arrival time' of packets. If they start taking longer and longer (increasing delay), it assumes a buffer is filling up and lowers the bitrate *before* packet loss happens. \n2. **Loss-based**: If packets are actually missing, it aggressively drops the bitrate to clear the congestion. This feedback loop happens every few milliseconds to ensure the highest possible quality without crashing the user's internet connection.",
+    "analogy": "BWE is like **A driver watching the brake lights of the car ahead**. If the lights turn on (increasing delay), the driver slows down *before* they hit the car. If they actually hit the car (packet loss), they stop immediately and reassess the situation.",
+    "code": "```javascript\n// Monitoring Available Bandwidth (BWE) in the browser\nconst stats = await pc.getStats();\nstats.forEach(report => {\n  if (report.type === 'candidate-pair' && report.state === 'succeeded') {\n    console.log(`Available Outbound Bandwidth: ${report.availableOutgoingBitrate} bps`);\n  }\n});\n```",
+    "counterQuestion": "What is 'REMB'?",
+    "counterQuestionAnswer": "REMB (Receiver Estimated Maximum Bitrate) is an older feedback mechanism where the *receiver* tells the *sender* exactly how much bandwidth it thinks it can handle. Modern WebRTC has largely moved to 'Transport-wide Congestion Control' (TWCC), where the sender decides based on feedback from the receiver.",
+    "category": "realtime",
+    "topic": "networking",
+    "difficulty": "hard",
+    "tags": [
+      "bwe",
+      "congestion_control",
+      "webrtc",
+      "performance"
+    ]
+  },
+  {
+    "id": 14,
+    "question": "What is 'SVC' (Scalable Video Coding) and how does it improve SFU efficiency?",
+    "answer": "SVC is an extension of H.264/VP9 that allows a single video stream to be encoded in multiple 'layers'. \n1. **Base Layer**: Lowest resolution/framerate. \n2. **Enhancement Layers**: Add more data to increase the resolution or framerate. **Benefit**: Unlike Simulcast (where the client sends 3 separate streams), in SVC the client sends **one** stream. The SFU then 'peels off' the enhancement layers for users with bad internet and sends all layers to users with fast internet. This saves 20-30% of the client's upload bandwidth compared to Simulcast.",
+    "analogy": "SVC is like **A translucent stack of drawings**. The bottom drawing is a rough sketch (Base Layer). Each drawing on top adds more detail and color (Enhancement Layers). If a user has a small screen, the SFU only gives them the bottom sketch. If they have a 4K screen, the SFU gives them the whole stack.",
+    "code": "```javascript\n// Enabling SVC in WebRTC (VP9/AV1 only)\nconst encodings = [\n  { rid: 'r0', scalabilityMode: 'L3T3' } // 3 Spatial layers, 3 Temporal layers\n];\nconst transceiver = pc.addTransceiver('video', { sendEncodings: encodings });\n```",
+    "counterQuestion": "Does H.264 support SVC?",
+    "counterQuestionAnswer": "Standard H.264 (AVC) does not widely support SVC in browsers. To use SVC effectively in modern web apps, you usually need to use **VP9** or **AV1**, as they have built-in support for layered scalability that modern SFUs (like Mediasoup) can exploit.",
+    "category": "realtime",
+    "topic": "scaling",
+    "difficulty": "hard",
+    "tags": [
+      "svc",
+      "simulcast",
+      "sfu",
+      "optimization"
+    ]
+  },
+  {
+    "id": 15,
+    "question": "What are WebRTC 'Data Channels' and how do they use SCTP?",
+    "answer": "WebRTC is not just for A/V. `RTCDataChannel` allows you to send arbitrary binary or text data directly between peers. It uses the **SCTP (Stream Control Transmission Protocol)**, which combines the best of UDP and TCP: \n1. **Reliable/Unreliable**: You can choose if you want the data to be guaranteed (like TCP) or if it's okay to lose some (like UDP). \n2. **Ordered/Unordered**: You can choose if packets must arrive in order. **Use Case**: Real-time gaming state, file transfers, or sending 'Metadata' (like transcriptions or AI labels) that must be perfectly synced with the video stream.",
+    "analogy": "If Audio/Video is **The Main Highway**, Data Channels are **The secret tunnel underneath**. You can send whatever you want through the tunnel (chat, game moves, files) without interfering with the cars on the highway, and you can decide if the tunnel should be 'Express' (Fast but maybe lose things) or 'Certified' (Slow but guaranteed).",
+    "code": "```javascript\n// Creating a reliable, ordered data channel\nconst dc = peerConnection.createDataChannel(\"chat\", {\n  ordered: true,\n  maxRetries: 10\n});\n\ndc.onmessage = (event) => {\n  console.log(\"Received:\", event.data);\n};\ndc.send(\"Hello Peer!\");\n```",
+    "counterQuestion": "What is the maximum message size for a Data Channel?",
+    "counterQuestionAnswer": "While the spec allows for large messages, in practice, most browsers limit individual messages to around **64KB to 256KB** to prevent 'Head-of-Line' blocking on the media streams. For large file transfers, you must 'chunk' the data manually into smaller binary pieces.",
+    "category": "realtime",
+    "topic": "data_channels",
+    "difficulty": "hard",
+    "tags": [
+      "datachannel",
+      "sctp",
+      "p2p",
+      "binary_data"
+    ]
+  }
+]

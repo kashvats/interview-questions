@@ -1,0 +1,1693 @@
+[
+  {
+    "id": 1,
+    "question": "Explain the ACID properties of a database.",
+    "answer": "ACID is a set of properties that guarantee database transactions are processed reliably: \n1. **Atomicity**: 'All or nothing'. Either the entire transaction succeeds, or it is rolled back completely. \n2. **Consistency**: A transaction must take the database from one valid state to another, maintaining all rules and constraints (e.g., unique keys). \n3. **Isolation**: Concurrent transactions must not interfere with each other; the result should be the same as if they ran sequentially. \n4. **Durability**: Once a transaction is committed, it remains saved even in the event of a power failure or system crash. ACID is the gold standard for relational databases like PostgreSQL, ensuring that your data remains accurate and trustworthy in high-concurrency and mission-critical environments.",
+    "analogy": "ACID is like a bank transfer. **Atomicity**: Either the money leaves your account AND arrives at the target, or neither happens. **Consistency**: You can't transfer more money than you have. **Isolation**: If two people send you money at once, the final balance is correct. **Durability**: Once the app says 'Success', even if the bank's power goes out, your money is still there.",
+    "code": "```sql\n-- ACID Transaction Example\nBEGIN;\nUPDATE accounts SET balance = balance - 100 WHERE id = 1;\nUPDATE accounts SET balance = balance + 100 WHERE id = 2;\nCOMMIT; -- Durability ensured here\n```",
+    "counterQuestion": "Which property is often sacrificed in distributed 'NoSQL' databases to achieve better scalability?",
+    "counterQuestionAnswer": "According to the CAP Theorem, distributed systems often sacrifice 'Consistency' (specifically 'Strong Consistency') in favor of 'Availability' and 'Partition Tolerance', leading to 'Eventual Consistency' models where data propagates to all nodes over time rather than being immediate.",
+    "category": "sql",
+    "topic": "fundamentals",
+    "difficulty": "medium",
+    "tags": [
+      "database",
+      "sql",
+      "architecture",
+      "highly_asked"
+    ]
+  },
+  {
+    "id": 2,
+    "question": "What is a 'Primary Key' vs. a 'Foreign Key'?",
+    "answer": "A 'Primary Key' (PK) is a unique identifier for a record in a table; it cannot be null and must be unique for every row. A 'Foreign Key' (FK) is a field in one table that refers to the Primary Key of another table. FKs are used to establish relationships between data (e.g., a 'Book' table has an 'author_id' FK that points to the 'id' PK of the 'Author' table). Foreign Keys also enforce 'Referential Integrity', meaning you cannot delete a parent record if child records still point to it, or you can configure them to 'cascade' the deletion. This structure allows relational databases to store data efficiently without redundancy while maintaining clear links between different types of information.",
+    "analogy": "A Primary Key is like your Social Security Number \u2014 it uniquely identifies you. A Foreign Key is like a Passport Number on a flight booking; the booking 'points' to your identity in the government's database.",
+    "code": "```sql\nCREATE TABLE authors (id INT PRIMARY KEY, name TEXT);\nCREATE TABLE books (\n    isbn TEXT PRIMARY KEY,\n    author_id INT REFERENCES authors(id) ON DELETE CASCADE\n);\n```",
+    "counterQuestion": "What is a 'Composite Primary Key' and when would you use it?",
+    "counterQuestionAnswer": "A Composite Primary Key is a PK made up of two or more columns. It is used when a single column is not enough to uniquely identify a row, but a combination of columns is. A common example is a 'StudentCourse' join table, where the combination of 'student_id' and 'course_id' uniquely identifies a specific enrollment.",
+    "category": "sql",
+    "topic": "fundamentals",
+    "difficulty": "easy",
+    "tags": [
+      "database",
+      "sql",
+      "architecture"
+    ]
+  },
+  {
+    "id": 3,
+    "question": "Explain the difference between 'Inner Join' and 'Left Join'.",
+    "answer": "An 'Inner Join' returns only the rows where there is a match in both tables. If a row in the left table doesn't have a matching row in the right table, it is excluded from the result. A 'Left Join' (or Left Outer Join) returns all rows from the left table, plus the matching rows from the right table. If there is no match, the columns from the right table will contain 'NULL'. For example, an Inner Join between 'Users' and 'Orders' would only show users who have made at least one order. A Left Join would show all users, with order details for those who have them and NULLs for those who haven't ordered anything yet. Left Joins are essential for finding 'missing' or 'optional' data in your relationships.",
+    "analogy": "Imagine two lists: Guests and Paid Tickets. An Inner Join gives you people who are both guests AND have paid. A Left Join gives you ALL guests, with a 'Paid' status next to some and an empty 'NULL' for those who haven't paid.",
+    "code": "```sql\n-- Inner Join (Intersection)\nSELECT * FROM users INNER JOIN orders ON users.id = orders.user_id;\n\n-- Left Join (All Left + Matches)\nSELECT * FROM users LEFT JOIN orders ON users.id = orders.user_id;\n```",
+    "counterQuestion": "What is a 'Full Outer Join' and is it commonly supported in all SQL databases?",
+    "counterQuestionAnswer": "A Full Outer Join returns all records from both tables, filling in NULLs where there is no match on either side. While supported by PostgreSQL and SQL Server, it is notably *not* supported by MySQL. In MySQL, you typically achieve the same result by using a UNION between a LEFT JOIN and a RIGHT JOIN.",
+    "category": "sql",
+    "topic": "fundamentals",
+    "difficulty": "medium",
+    "tags": [
+      "database",
+      "sql",
+      "joins",
+      "highly_asked"
+    ]
+  },
+  {
+    "id": 4,
+    "question": "What is the difference between 'JSON' and 'JSONB' in PostgreSQL? When should you use each?",
+    "answer": "In PostgreSQL, the 'JSON' type stores data as an exact copy of the input text, which means it preserves whitespace and key order but must be reparsed every time it is read. 'JSONB' (JSON Binary) stores data in a decomposed binary format. It is slightly slower to write (because it is processed/validated on input) but significantly faster to read and process. More importantly, JSONB supports indexing (GIN indexes), allowing you to perform extremely fast queries inside the JSON structure itself. You should use 'JSONB' for 99% of use cases where you need to search or manipulate JSON data. Use 'JSON' only if you strictly need to preserve the exact textual formatting of the original input, which is rare in most application contexts.",
+    "analogy": "JSON is like a paper letter \u2014 exactly as written, but slow to read. JSONB is like an indexed digital file \u2014 slightly more work to scan initially, but you can instantly 'search' for keywords using an index.",
+    "code": "```sql\n-- Create index on JSONB field\nCREATE INDEX idx_meta ON products USING GIN (metadata);\n\n-- Fast search within JSONB\nSELECT * FROM products WHERE metadata @> '{\"color\": \"red\"}';\n```",
+    "counterQuestion": "What is a GIN index and how does it improve JSONB performance?",
+    "counterQuestionAnswer": "A GIN (Generalized Inverted Index) allows PostgreSQL to index every key and value within a JSONB object. This turns a slow, full-table scan into a fast index lookup, allowing you to find records containing a specific JSON key or value in milliseconds even with millions of rows.",
+    "category": "sql",
+    "topic": "postgresql",
+    "difficulty": "medium",
+    "tags": [
+      "database",
+      "postgresql",
+      "performance"
+    ]
+  },
+  {
+    "id": 5,
+    "question": "When do you use the 'HAVING' clause instead of 'WHERE'?",
+    "answer": "'WHERE' is used to filter rows *before* any grouping or aggregation occurs. 'HAVING' is used to filter the *results* of an aggregation (after 'GROUP BY'). For example, if you want to find all students in 'Computer Science', you use 'WHERE department = \"CS\"'. If you want to find all departments that have *more than 100 students*, you must use 'GROUP BY department HAVING COUNT(*) > 100'. You cannot use 'WHERE' for this because the count hasn't been calculated yet. In short, 'WHERE' filters records, while 'HAVING' filters groups.",
+    "analogy": "WHERE is like picking only RED boxes from a pile. HAVING is like picking only the PALLETS that have more than 50 boxes on them after you've already grouped the boxes together.",
+    "code": "```sql\n-- Filter groups with HAVING\nSELECT department, COUNT(*)\nFROM students\nGROUP BY department\nHAVING COUNT(*) > 100;\n```",
+    "counterQuestion": "Can you use both 'WHERE' and 'HAVING' in the same query?",
+    "counterQuestionAnswer": "Yes. The 'WHERE' clause will first filter the source data, then the 'GROUP BY' will organize the remaining records, and finally, the 'HAVING' clause will filter those groups based on the aggregated values. This is a common pattern for complex reporting.",
+    "category": "sql",
+    "topic": "fundamentals",
+    "difficulty": "medium",
+    "tags": [
+      "database",
+      "sql",
+      "querying",
+      "highly_asked"
+    ]
+  },
+  {
+    "id": 6,
+    "question": "Explain the difference between 'COUNT(*)' and 'COUNT(column_name)'.",
+    "answer": "'COUNT(*)' counts every single row in the table, including rows where some or all columns are NULL. It is generally very fast because the database engine can often use internal metadata or a primary key index to get the answer. 'COUNT(column_name)' only counts the rows where that specific column is *NOT NULL*. If a row has a NULL value in that column, it is ignored by the count. Use 'COUNT(*)' when you simply need to know the total number of records, and use 'COUNT(column_name)' when you specifically need to know how many records have a valid value for that piece of data.",
+    "analogy": "COUNT(*) counts how many desks are in a classroom. COUNT(student_name) counts how many students are actually sitting at those desks (ignoring empty/NULL ones).",
+    "code": "```sql\n-- Counts all rows\nSELECT COUNT(*) FROM users;\n\n-- Counts rows where 'email' is not NULL\nSELECT COUNT(email) FROM users;\n```",
+    "counterQuestion": "Which one is generally safer to use for general pagination or result counts?",
+    "counterQuestionAnswer": "'COUNT(*)' is safer and more standard for pagination because it accurately reflects the total number of entries in the dataset. Using 'COUNT(column_name)' might accidentally return a smaller number if some records have NULL values, leading to incorrect page counts.",
+    "category": "sql",
+    "topic": "fundamentals",
+    "difficulty": "easy",
+    "tags": [
+      "database",
+      "sql",
+      "querying"
+    ]
+  },
+  {
+    "id": 7,
+    "question": "What is 'Database Indexing' and why is it important for read performance?",
+    "answer": "An index is a separate data structure (most commonly a B-Tree) that the database maintains to allow it to find rows much faster than a 'Full Table Scan'. Without an index, the database must read every single row to find a match, which is O(n). With an index, it can find the location of the data in O(log n) time. While indexes significantly speed up READ operations (SELECT), they slow down WRITE operations (INSERT, UPDATE, DELETE) because the database must update the index every time the data changes. Choosing the right columns to index is one of the most critical aspects of database performance tuning, as it balances retrieval speed with storage overhead and write latency.",
+    "analogy": "An index is like the Table of Contents at the back of a textbook. Instead of flipping through every page (Full Table Scan), you look up the keyword in the index and jump straight to the page number.",
+    "code": "```sql\n-- Create index to speed up reads\nCREATE INDEX idx_user_email ON users(email);\n\n-- View query plan\nEXPLAIN SELECT * FROM users WHERE email = 'test@example.com';\n```",
+    "counterQuestion": "What is a 'Covering Index'?",
+    "counterQuestionAnswer": "A covering index is an index that contains all the columns requested in a query. In this case, the database can return the result directly from the index without even touching the main table data, leading to the absolute maximum query performance.",
+    "category": "sql",
+    "topic": "performance",
+    "difficulty": "medium",
+    "tags": [
+      "database",
+      "sql",
+      "indexing"
+    ]
+  },
+  {
+    "id": 8,
+    "question": "Explain the difference between 'DELETE', 'TRUNCATE', and 'DROP' commands.",
+    "answer": "1. 'DELETE' is a DML (Data Manipulation Language) command that removes specific rows based on a WHERE clause. It is logged, triggers can be fired, and it can be rolled back. \n2. 'TRUNCATE' is a DDL (Data Definition Language) command that removes *all* rows from a table. It is much faster than DELETE because it doesn't log individual row deletions and doesn't fire triggers. It cannot be easily rolled back in some databases. \n3. 'DROP' is a DDL command that removes the entire table structure, including all data, indexes, and triggers. Use 'DELETE' for selective removal, 'TRUNCATE' for clearing a table quickly, and 'DROP' when you no longer need the table at all.",
+    "analogy": "DELETE is like shredding specific folders in a cabinet. TRUNCATE is like dumping the whole drawer but keeping the cabinet. DROP is like throwing the entire cabinet into a fire.",
+    "code": "```sql\n-- DELETE (logged, filterable)\nDELETE FROM logs WHERE created_at < '2023-01-01';\n\n-- TRUNCATE (unlogged, bulk)\nTRUNCATE TABLE logs;\n\n-- DROP (structural)\nDROP TABLE old_logs;\n```",
+    "counterQuestion": "Which of these commands resets the 'Auto-Increment' or 'Serial' ID counter?",
+    "counterQuestionAnswer": "'TRUNCATE' and 'DROP' (if recreated) typically reset the auto-increment counter to its starting value. 'DELETE' does NOT reset the counter; the next inserted row will continue from where the previous one left off, leaving a gap in the ID sequence.",
+    "category": "sql",
+    "topic": "fundamentals",
+    "difficulty": "medium",
+    "tags": [
+      "database",
+      "sql",
+      "commands"
+    ]
+  },
+  {
+    "id": 9,
+    "question": "What is the difference between SQL (Relational) and NoSQL (Document/Key-Value) databases?",
+    "answer": "SQL databases are relational, using a strict schema and predefined tables with relationships. They are optimized for complex JOINs and maintain ACID compliance (Consistency). NoSQL databases are typically non-relational and can be schema-less, storing data as Documents (JSON-like), Key-Value pairs, or Graphs. They are optimized for horizontal scaling (sharding) and high-speed throughput but often sacrifice strict consistency (CAP Theorem). Use SQL when you have complex relationships and need strong data integrity (e.g., banking). Use NoSQL when you have massive amounts of unstructured data, need to scale rapidly across many servers, or have very high write volumes (e.g., real-time analytics or social media feeds).",
+    "analogy": "SQL is like a pre-printed tax form: you must put specific information in specific boxes. NoSQL is like a blank notebook: you can write whatever you want, however you want, on any page.",
+    "code": "```sql\n-- SQL (Structured)\nCREATE TABLE users (id INT, name TEXT);\nINSERT INTO users VALUES (1, 'Alice');\n\n-- NoSQL (MongoDB - Document)\ndb.users.insertOne({ name: \"Alice\", age: 30, tags: [\"dev\"] });\n```",
+    "counterQuestion": "What is the 'Polyglot Persistence' strategy?",
+    "counterQuestionAnswer": "Polyglot Persistence is the practice of using different database types for different parts of an application. For example, using PostgreSQL for user accounts and financial data (Relational/SQL), and Redis for session management and real-time notifications (Key-Value/NoSQL), leveraging the strengths of each.",
+    "category": "sql",
+    "topic": "fundamentals",
+    "difficulty": "medium",
+    "tags": [
+      "database",
+      "sql",
+      "nosql"
+    ]
+  },
+  {
+    "id": 10,
+    "question": "Explain the different 'Transaction Isolation Levels' (Read Uncommitted, Read Committed, Repeatable Read, Serializable).",
+    "answer": "Isolation levels define how transactions are insulated from each other: \n1. **Read Uncommitted**: Lowest level; allows 'Dirty Reads' (reading uncommitted data from other transactions). \n2. **Read Committed**: Default for PostgreSQL/SQL Server; ensures you only read committed data, preventing dirty reads. \n3. **Repeatable Read**: Default for MySQL; ensures that if you read a row twice in one transaction, the data won't change. \n4. **Serializable**: Highest level; transactions are processed as if they ran sequentially, preventing 'Phantom Reads' but significantly impacting performance due to high locking overhead. Choosing the right level is a trade-off between strict data correctness and high concurrency throughput.",
+    "analogy": "Isolation levels are like different types of curtains. Read Uncommitted is no curtain at all. Read Committed is a thin curtain. Repeatable Read is a thick curtain. Serializable is a brick wall.",
+    "code": "```sql\n-- Set isolation level in Postgres\nBEGIN;\nSET TRANSACTION ISOLATION LEVEL REPEATABLE READ;\nSELECT * FROM accounts WHERE id = 1;\n-- Even if another user updates this account and commits, \n-- subsequent reads in THIS transaction will see the old value.\nCOMMIT;\n```",
+    "counterQuestion": "What is a 'Dirty Read'?",
+    "counterQuestionAnswer": "A Dirty Read happens when a transaction reads data that has been modified by another transaction but not yet committed. If the other transaction rolls back, the first transaction has now processed 'fake' data that never officially existed in the database.",
+    "category": "sql",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "sql",
+      "concurrency"
+    ]
+  },
+  {
+    "id": 11,
+    "question": "How do 'B-Tree' indexes work? Compare them with 'Hash' indexes.",
+    "answer": "A **B-Tree** (Balanced Tree) index is a self-balancing tree structure that keeps data sorted and allows for binary-style searches. It is the default in most RDBMS because it supports range queries (e.g., 'BETWEEN', '>', '<') and sorting. A **Hash** index uses a hash table to map keys to row locations. It is extremely fast for exact matches (O(1) vs O(log n) for B-Tree) but CANNOT be used for range queries or sorting because the order of hashes is random. You should use B-Tree for almost everything, and consider Hash indexes only for very specific, high-frequency equality lookups where range scanning will never be required.",
+    "analogy": "A B-Tree is like an alphabetized filing cabinet (you can find everyone whose name starts with 'B'). A Hash index is like a locker room where you have a key with a number on it (you can find EXACTLY your locker, but you have no idea where the 'B' lockers are).",
+    "code": "```sql\n-- Standard B-Tree (Supports Range)\nCREATE INDEX idx_age ON users(age);\nSELECT * FROM users WHERE age > 21; -- Uses index\n\n-- Hash Index (Postgres Equality only)\nCREATE INDEX idx_user_id_hash ON users USING HASH (id);\nSELECT * FROM users WHERE id = 123; -- Very fast equality\n```",
+    "counterQuestion": "Why are B-Trees better than simple Binary Search Trees (BST) for databases?",
+    "counterQuestionAnswer": "B-Trees are 'shallow and wide', meaning they have a high branching factor. This minimizes the 'tree height' and reduces the number of disk I/O operations required to reach a leaf node. In a database where disk access is the primary bottleneck, minimizing I/O is critical for performance.",
+    "category": "sql",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "sql",
+      "indexing"
+    ]
+  },
+  {
+    "id": 12,
+    "question": "Discuss the trade-offs of using UUIDv4 as a Primary Key. Why can it lead to performance degradation in large B-Tree indexes, and what are the alternatives (e.g., ULID, UUIDv7)?",
+    "answer": "UUIDv4 is great for decentralization (generating IDs without a central DB), but it is completely random. In a B-Tree index, this randomness causes 'index fragmentation' because new records are inserted at random locations, forcing the database to frequently rearrange pages on disk. This significantly degrades write performance as the table grows. Alternatives like **ULID** or the modern **UUIDv7** are 'lexicographically sortable'\u2014they include a timestamp at the beginning of the ID. This ensures that new records are appended to the *end* of the B-Tree index (similar to an integer ID), combining the uniqueness of UUIDs with the index-friendly performance of sequential keys.",
+    "analogy": "UUIDv4 is like throwing darts at a wall \u2014 they land everywhere at random. UUIDv7 is like stacking bricks \u2014 they go neatly one after the other because they are ordered by time.",
+    "code": "```sql\n-- Fragmentation issues with UUIDv4\nCREATE TABLE logs (id UUID PRIMARY KEY DEFAULT gen_random_uuid());\n\n-- Efficient UUIDv7 (requires extension or logic in app)\n-- New records are appended to the end of the index\nINSERT INTO users (id) VALUES ('018b39c2-...)'; \n```",
+    "counterQuestion": "What is the storage overhead of a UUID compared to a standard 4-byte Integer?",
+    "counterQuestionAnswer": "A UUID occupies 16 bytes (128 bits), while a standard Integer takes 4 bytes and a BigInt takes 8 bytes. Using UUIDs doubles or quadruples the size of your primary key index and every foreign key index that points to it, which can lead to higher memory usage and slower overall query performance.",
+    "category": "sql",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "sql",
+      "indexing"
+    ]
+  },
+  {
+    "id": 13,
+    "question": "What is 'Database Normalization' (1NF, 2NF, 3NF)? When should you 'Denormalize'?",
+    "answer": "Normalization is the process of organizing data to reduce redundancy and improve integrity: \n1. **1NF**: Atomic values (no lists in columns). \n2. **2NF**: No partial dependencies (every column must depend on the whole primary key). \n3. **3NF**: No transitive dependencies (columns shouldn't depend on other non-key columns). You should **Denormalize** (purposefully add redundancy) when read performance becomes a bottleneck. By combining tables or adding redundant columns, you can eliminate expensive JOINs. This is common in 'Read-Heavy' systems or Data Warehouses where retrieval speed is more important than optimized storage or perfectly clean write paths.",
+    "analogy": "Normalization is like organizing your closet by category (shirts, pants, shoes). It's clean and organized, but finding a 'full outfit' (a JOIN) takes work. Denormalization is like pre-packing an outfit in a bag \u2014 it takes more space and you have to update it if you get new shoes, but you can grab it instantly and go.",
+    "code": "```sql\n-- Normalized (3NF)\n-- User -> Order -> Product\n\n-- Denormalized (Read Optimization)\nALTER TABLE orders ADD COLUMN product_name TEXT;\n-- Now we don't need to JOIN with 'products' table to show the name.\n```",
+    "counterQuestion": "What is the risk of Denormalization?",
+    "counterQuestionAnswer": "The primary risk is 'Data Inconsistency'. Since the same data is stored in multiple places, you must ensure that every update or delete is propagated across all copies. This increases the complexity of your application logic and the risk of the database entering an invalid or conflicting state.",
+    "category": "sql",
+    "topic": "design",
+    "difficulty": "medium",
+    "tags": [
+      "database",
+      "sql",
+      "architecture"
+    ]
+  },
+  {
+    "id": 14,
+    "question": "Explain 'Database Locks': Shared vs Exclusive. What is a 'Deadlock'?",
+    "answer": "Database locks prevent concurrent transactions from corrupting data: \n1. **Shared Lock (S)**: Allows multiple transactions to read a resource simultaneously but prevents any changes. \n2. **Exclusive Lock (X)**: Granted for write operations; only one transaction can hold this lock, and it blocks both readers and other writers. A **Deadlock** occurs when two transactions are stuck waiting for each other (Transaction A holds Lock 1 and wants Lock 2; Transaction B holds Lock 2 and wants Lock 1). Modern databases automatically detect deadlocks and kill one of the transactions (choosing a 'victim') to allow the other to proceed. To avoid them, always acquire locks in the same consistent order across your application code.",
+    "analogy": "Shared Locks are like a public announcement: anyone can listen, but no one can interrupt or change the news. Exclusive Locks are like a private phone call: only one person can talk and listen, and everyone else is blocked until they hang up.",
+    "code": "```sql\n-- Transaction A\nBEGIN; \nUPDATE accounts SET balance = balance - 100 WHERE id = 1; -- Holds lock on 1\n-- Transaction B\nBEGIN;\nUPDATE accounts SET balance = balance - 100 WHERE id = 2; -- Holds lock on 2\n\n-- Now if A tries to update 2 and B tries to update 1 -> DEADLOCK\n```",
+    "counterQuestion": "What is 'Optimistic Concurrency Control'?",
+    "counterQuestionAnswer": "Instead of using heavy locks, Optimistic Concurrency assumes conflicts are rare. It uses a version number or timestamp; when saving data, it checks if the version has changed since it was read. If it has, the update is rejected. this is much more efficient for high-concurrency systems where actual data collisions are infrequent.",
+    "category": "sql",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "sql",
+      "concurrency"
+    ]
+  },
+  {
+    "id": 15,
+    "question": "How do you optimize a slow SQL query? Explain the use of 'EXPLAIN ANALYZE'.",
+    "answer": "To optimize a slow query, first run it with 'EXPLAIN ANALYZE'. 'EXPLAIN' shows the database's execution plan, while 'ANALYZE' actually runs the query and provides the real timings. Look for 'Sequential Scans' on large tables (indicating missing indexes) or 'Hash Joins' that could be improved. Common fixes include: \n1. Adding missing indexes. \n2. Removing unnecessary columns from SELECT. \n3. Rewriting subqueries as JOINs. \n4. Using 'LIMIT' to reduce result sets. \n5. Updating table statistics using 'ANALYZE'. This data-driven approach ensures you are fixing the actual bottleneck (e.g., disk I/O vs CPU) rather than guessing, leading to predictable and significant performance gains.",
+    "analogy": "Running a query without EXPLAIN is like trying to fix a car with the hood closed. EXPLAIN ANALYZE is like opening the hood and using a diagnostic computer to see exactly which part is slow.",
+    "code": "```sql\n-- Use EXPLAIN ANALYZE to see execution plan\nEXPLAIN ANALYZE \nSELECT name, email FROM users \nWHERE email LIKE '%@gmail.com';\n\n-- Result might show: 'Seq Scan on users (cost=0.00..35.50 rows=5 width=32)'\n-- Fix: Add index or change query pattern\n```",
+    "counterQuestion": "What is the difference between a 'Sequential Scan' and an 'Index Scan'?",
+    "counterQuestionAnswer": "A Sequential Scan reads the entire table from beginning to end, which is O(n). An Index Scan uses the B-Tree index to jump directly to the relevant records, which is O(log n). For large tables, an Index Scan is orders of magnitude faster.",
+    "category": "sql",
+    "topic": "optimization",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "sql",
+      "performance"
+    ]
+  },
+  {
+    "id": 16,
+    "question": "What is 'Connection Pooling'? Why do we need tools like PGBouncer for PostgreSQL?",
+    "answer": "Database connections are 'expensive' because each new connection requires the database to allocate memory and spawn a new process/thread. 'Connection Pooling' keeps a set of active connections open and reuses them for different requests, significantly reducing the overhead of establishing new links. PostgreSQL specifically is process-based (one process per connection), meaning it can't handle thousands of direct connections efficiently. Tools like **PgBouncer** act as a lightweight proxy that manages a huge number of client connections while funneling them into a small, efficient pool of real database connections. This allows your application to scale to high levels of concurrency without exhausting the database's memory or process limit.",
+    "analogy": "Connection pooling is like having a set of permanent table reservations at a busy restaurant. Instead of waiting for a new table to be cleaned and set every time you arrive, you just walk in and sit at one of the already-prepared tables.",
+    "code": "```bash\n# PgBouncer configuration (Conceptual)\n[databases]\nmyapp = host=127.0.0.1 port=5432 dbname=myapp\n\n[pgbouncer]\npool_mode = transaction\nmax_client_conn = 1000\ndefault_pool_size = 20\n```",
+    "counterQuestion": "What is the difference between 'Session Pooling' and 'Transaction Pooling' in PgBouncer?",
+    "counterQuestionAnswer": "Session Pooling keeps a DB connection tied to a client for their entire session. Transaction Pooling (the most popular) releases the DB connection back to the pool as soon as a single transaction is finished, allowing a small number of DB connections to serve a massive number of concurrent users.",
+    "category": "sql",
+    "topic": "infrastructure",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "postgresql",
+      "scalability"
+    ]
+  },
+  {
+    "id": 17,
+    "question": "Explain 'Database Replication': Synchronous vs Asynchronous.",
+    "answer": "Replication is the process of copying data from a 'Primary' node to one or more 'Replica' nodes: \n1. **Synchronous Replication**: The Primary waits for the Replica to confirm it has received and written the data before committing. This ensures zero data loss (Consistency) but increases latency for every write. \n2. **Asynchronous Replication**: The Primary commits the data immediately and sends it to the Replica in the background. This is much faster but carries a risk of data loss if the Primary crashes before the Replica receives the update. Most high-traffic systems use Asynchronous replication for performance, accepting a small 'replication lag' in exchange for much lower write latency.",
+    "analogy": "Synchronous replication is like a phone call: you say something and wait for the person to say 'Got it' before you continue. Asynchronous replication is like sending an email: you send it and move on with your day, assuming it will arrive eventually.",
+    "code": "```sql\n-- Async (Default in most Postgres setups)\n-- Writes are fast, slight delay before slave sees it.\n\n-- Sync (Postgres setup)\nALTER SYSTEM SET synchronous_commit = on;\nALTER SYSTEM SET synchronous_standalone_names = 'slave1';\n```",
+    "counterQuestion": "What is 'Read-Replica' scaling?",
+    "counterQuestionAnswer": "Read-Replica scaling is the practice of sending all SELECT (read) queries to replica nodes while sending all INSERT/UPDATE (write) queries to the Primary. This significantly offloads the Primary database, allowing it to handle more traffic by distributing the read load across multiple servers.",
+    "category": "sql",
+    "topic": "scalability",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "sql",
+      "architecture"
+    ]
+  },
+  {
+    "id": 18,
+    "question": "What is 'Horizontal Partitioning' (Sharding) vs 'Vertical Partitioning'?",
+    "answer": "**Vertical Partitioning** involves splitting a table into multiple tables with fewer columns (e.g., putting 'Profile Picture' data in a separate table to keep the main 'User' table lean). **Horizontal Partitioning** (or Sharding) involves splitting the *rows* of a table across different tables or even different servers (e.g., User IDs 1-1M go to Server A, 1M-2M go to Server B). Sharding is the ultimate way to scale a database horizontally, as it allows you to distribute both storage and processing power across a cluster of machines. However, it introduces significant complexity, as you can no longer easily perform JOINs or ACID transactions across different shards.",
+    "analogy": "Vertical Partitioning is like taking a massive book and splitting it into 'Volume 1: Text' and 'Volume 2: Images'. Sharding is like taking that same book and splitting it into 'Chapters 1-5' and 'Chapters 6-10' so two people can read it at once.",
+    "code": "```sql\n-- Vertical: Move heavy/rare columns away\nCREATE TABLE user_profiles (\n    user_id INT REFERENCES users(id),\n    bio TEXT,\n    avatar_blob BYTEA\n);\n\n-- Horizontal (Postgres declarative partitioning)\nCREATE TABLE measurements (city_id int, logdate date, peaktemp int) \nPARTITION BY RANGE (logdate);\n```",
+    "counterQuestion": "What is a 'Shard Key' and why is choosing a good one critical?",
+    "counterQuestionAnswer": "A Shard Key is the field used to determine which shard a piece of data belongs to. A poor shard key (like 'Registration Date') can lead to 'Hot Spots' where one server handles all the traffic while others are idle. A good shard key (like a hashed 'User ID') ensures data is distributed evenly across the entire cluster.",
+    "category": "sql",
+    "topic": "scalability",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "sql",
+      "architecture"
+    ]
+  },
+  {
+    "id": 19,
+    "question": "How do you handle 'Schema Migrations' in a high-traffic production database?",
+    "answer": "To perform migrations without downtime on large tables: \n1. **Avoid locking operations**: Operations like 'ADD COLUMN' with a default value can lock a massive table for minutes. \n2. **Use the Expand/Contract pattern**: Add the new column first (nullable), start writing to both old and new, migrate old data in small batches, and finally remove the old column. \n3. **Run migrations during low-traffic periods**. \n4. **Use tools like 'gh-ost' or 'pt-online-schema-change'**: These tools create a ghost table, copy data in the background, and perform an atomic swap, ensuring that the main table remains readable and writable throughout the entire process. This meticulous approach prevents 'site-down' incidents during routine updates.",
+    "analogy": "A schema migration is like changing the tires on a car while it's driving down the highway at 60mph. You can't just stop the car, so you have to use special equipment to lift one side at a time while traffic keeps moving.",
+    "code": "```sql\n-- Dangerous: ALTER TABLE users ADD COLUMN age INT DEFAULT 0;\n\n-- Safe: ADD column as NULL first\nALTER TABLE users ADD COLUMN age INT;\n\n-- Then backfill in batches\n-- UPDATE users SET age = 0 WHERE id BETWEEN 1 AND 1000;\n```",
+    "counterQuestion": "Why should you never use 'ALTER TABLE' to change a column type on a 100M+ row table directly?",
+    "counterQuestionAnswer": "Changing a column type forces the database to rewrite every single row on disk. This results in an exclusive lock that blocks all other operations for the duration of the rewrite, which could take hours, effectively taking your entire application offline.",
+    "category": "sql",
+    "topic": "maintenance",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "sql",
+      "best_practices"
+    ]
+  },
+  {
+    "id": 20,
+    "question": "Compare PostgreSQL and MongoDB. When would you choose one over the other?",
+    "answer": "PostgreSQL is a relational database (SQL) optimized for structured data, complex JOINs, and strict ACID compliance. MongoDB is a document-oriented database (NoSQL) optimized for flexible schemas, rapid development, and horizontal scaling. Choose **PostgreSQL** for applications with stable schemas and complex relationships (e.g., Finance, ERP). Choose **MongoDB** for unstructured data, real-time analytics, or high-velocity data streams where schema flexibility is a priority. Modern PostgreSQL has excellent JSONB support, effectively bridging the gap and allowing you to store document-style data within a relational system, making it the 'safe' default for 90% of web applications.",
+    "analogy": "Postgres is like a high-end filing cabinet with strict folders. MongoDB is like a giant bucket where you throw in items with tags on them. Postgres is better for keeping things clean and organized; MongoDB is better for when you're moving fast and don't know exactly what you'll be storing next.",
+    "code": "```sql\n-- Postgres JSONB (Best of both worlds)\nCREATE TABLE events (\n    id SERIAL PRIMARY KEY,\n    payload JSONB\n);\n\n-- MongoDB (Pure Document)\ndb.events.insertOne({ type: \"click\", metadata: { x: 10, y: 20 } });\n```",
+    "counterQuestion": "What is the 'dual-database' pitfall when using both SQL and NoSQL?",
+    "counterQuestionAnswer": "The main pitfall is maintaining 'Data Integrity' between the two systems. Since you cannot perform a single ACID transaction across both Postgres and MongoDB, your application must handle the risk of 'Partial Success' (e.g., data is saved in Postgres but failed in MongoDB), leading to complex retry logic and eventual consistency issues.",
+    "category": "sql",
+    "topic": "comparison",
+    "difficulty": "medium",
+    "tags": [
+      "database",
+      "sql",
+      "nosql"
+    ]
+  },
+  {
+    "id": 21,
+    "question": "When would you use a Time-Series DB (like TimescaleDB or InfluxDB) over standard Postgres?",
+    "answer": "Standard relational databases struggle with 'Time-Series' data (metrics, logs, IoT sensors) because they aren't optimized for massive insert volumes or time-range queries on billions of rows. You should use a Time-Series DB when you need: \n1. **High Ingestion Rates**: Handling millions of data points per second. \n2. **Automatic Data Retention**: Effortlessly dropping old data via 'TTL' or 'Retention Policies'. \n3. **Time-based Analytics**: Built-in functions for downsampling, moving averages, and windowing. **TimescaleDB** is an excellent choice as it is an extension for PostgreSQL, allowing you to use standard SQL on optimized 'Hypertables' while keeping your existing Postgres ecosystem.",
+    "analogy": "A standard DB is like a library where books are sorted by title. A Time-Series DB is like a news agency ticker tape: it's optimized to show you exactly what happened in the last hour, day, or year, and it's designed to handle a constant stream of new info without slowing down.",
+    "code": "```sql\n-- TimescaleDB Hypertable creation\nSELECT create_hypertable('metrics', 'time');\n\n-- Optimized time-bucket query\nSELECT time_bucket('1 hour', time) AS hour, \n       AVG(cpu_usage) \nFROM metrics \nGROUP BY hour;\n```",
+    "counterQuestion": "What is 'Downsampling' in the context of Time-Series data?",
+    "counterQuestionAnswer": "Downsampling is the process of reducing the resolution of old data to save storage. For example, you might keep every second of data for the last 24 hours, but then aggregate that into 5-minute averages for data older than a week. This allows you to keep historical trends for years without filling up your disk.",
+    "category": "sql",
+    "topic": "specialized_dbs",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "timeseries",
+      "performance"
+    ]
+  },
+  {
+    "id": 22,
+    "question": "How do Graph Databases (Neo4j) differ from Relational DBs for traversing highly connected data?",
+    "answer": "In a Relational DB, traversing many-to-many relationships (like a social network's 'friends of friends') requires multiple expensive JOINs that slow down exponentially as the depth increases. In a **Graph Database** (like Neo4j), relationships are 'first-class citizens' stored as direct pointers on disk. Traversing a relationship is a simple O(1) pointer hop, meaning query speed is independent of the total size of the database. You should use a Graph DB for recommendation engines, fraud detection, and social graphs where the 'connections' between data are just as important as the data itself. Neo4j uses the 'Cypher' query language, which is specifically designed for intuitive pattern matching across nodes and edges.",
+    "analogy": "Relational DB traversal is like finding a friend's friend by looking through a massive phonebook twice. Graph DB traversal is like your friend literally handing you the phone number of their friend \u2014 you just follow the connection directly.",
+    "code": "```cypher\n// Find friends of friends in Neo4j\nMATCH (me:User {name: 'Alice'})-[:FRIEND]->()-[:FRIEND]->(fof)\nRETURN fof.name;\n\n// No JOINs needed!\n```",
+    "counterQuestion": "What is 'Index-Free Adjacency'?",
+    "counterQuestionAnswer": "Index-Free Adjacency is the core architectural principle of native graph databases where each node maintains direct pointers to its neighbors. This eliminates the need for expensive index lookups during traversal, making graph-style queries significantly faster than equivalent SQL JOIN operations.",
+    "category": "sql",
+    "topic": "specialized_dbs",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "graph",
+      "architecture"
+    ]
+  },
+  {
+    "id": 23,
+    "question": "Explain the 'CAP Theorem'. How does it apply to distributed databases?",
+    "answer": "The CAP Theorem states that a distributed database can only provide two of the following three guarantees: \n1. **Consistency**: Every read receives the most recent write. \n2. **Availability**: Every request receives a (non-error) response. \n3. **Partition Tolerance**: The system continues to operate despite network failures between nodes. Since network partitions are inevitable in distributed systems, you must choose between **CP** (Consistency + Partition Tolerance, e.g., HBase) and **AP** (Availability + Partition Tolerance, e.g., Cassandra). This fundamental trade-off dictates whether your system will block writes during a network split to ensure data correctness, or allow writes to proceed and resolve conflicts later (Eventual Consistency).",
+    "analogy": "CAP is like a restaurant with two cashiers who can't talk to each other (a partition). If a customer orders the last burger from Cashier A, Cashier B won't know. To be consistent, Cashier B must stop taking orders (Availability). To be available, they might sell the same burger twice (Consistency).",
+    "code": "```bash\n# Consistency vs Availability examples\n# MongoDB (Default: CP) - Might block during primary election\n# Cassandra (Default: AP) - Always returns data, but maybe stale\n```",
+    "counterQuestion": "What is the 'PACELC' theorem?",
+    "counterQuestionAnswer": "PACELC is an extension of CAP. It states that even when there is no partition (P), a system must still trade off Latency (L) and Consistency (C). This explains why systems like Amazon Dynamo prioritize low latency (AP/EL) while traditional SQL clusters prioritize strict consistency (CP/EC) even under normal operating conditions.",
+    "category": "sql",
+    "topic": "distributed_systems",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "distributed",
+      "theory"
+    ]
+  },
+  {
+    "id": 24,
+    "question": "Discuss 'Multi-Master Replication' challenges (Conflict resolution, latency).",
+    "answer": "Multi-Master Replication allows writes to happen on multiple nodes simultaneously. The primary challenges are: \n1. **Write Conflicts**: Two users updating the same record on different nodes at the same time. \n2. **Latency**: Propagating changes to all masters to maintain sync. \n3. **Conflict Resolution**: Implementing strategies like 'Last Write Wins' (LWW), 'Vector Clocks', or 'Conflict-free Replicated Data Types' (CRDTs). Because of these complexities, Multi-Master is notoriously difficult to manage and is usually avoided unless geographically distributed low-latency writes are a hard requirement. Most systems prefer 'Single-Master' with multiple 'Read-Replicas' as it provides a much simpler and more predictable consistency model.",
+    "analogy": "Multi-Master is like a group project where everyone can edit the same Google Doc at once. If two people try to change the same sentence, the software has to decide which change to keep (Conflict Resolution).",
+    "code": "```json\n// Conflict Resolution Example (Conceptual CRDT)\n{\n  \"id\": \"user_1\",\n  \"name\": \"Alice\",\n  \"_version\": 5, // Vector Clock\n  \"_timestamp\": 1700000000\n}\n```",
+    "counterQuestion": "What are CRDTs (Conflict-free Replicated Data Types)?",
+    "counterQuestionAnswer": "CRDTs are data structures that can be updated independently on different nodes without coordination. They are mathematically guaranteed to converge to the same state once all nodes have received all updates, making them ideal for collaborative tools (like Google Docs) and distributed multi-master databases.",
+    "category": "sql",
+    "topic": "distributed_systems",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "distributed",
+      "replication"
+    ]
+  },
+  {
+    "id": 25,
+    "question": "How do you implement 'Distributed Transactions' (Two-Phase Commit vs Saga Pattern)?",
+    "answer": "Managing transactions across multiple services/databases is hard. \n1. **Two-Phase Commit (2PC)**: A central coordinator asks all nodes to 'Prepare', then sends a 'Commit' if all agree. It ensures strict consistency but is slow and risky (if the coordinator fails, nodes stay locked). \n2. **Saga Pattern**: A sequence of local transactions where each service updates its own data and publishes an event. If a step fails, 'Compensating Transactions' are triggered to undo previous steps. Sagas provide 'Eventual Consistency' and are much more scalable and resilient for modern microservice architectures.",
+    "analogy": "2PC is like a wedding: the officiant asks 'Do you?' to both, and only if both say 'I do' is the marriage official. A Saga is like a group trip where everyone books their own flight. If one person can't go, everyone else has to call the airline and get a refund (a Compensating Transaction).",
+    "code": "```javascript\n// Saga pattern (Conceptual Orchestrator)\nasync function createOrderSaga(orderData) {\n  try {\n    await paymentService.charge(orderData);\n    await inventoryService.reserve(orderData);\n    await shippingService.ship(orderData);\n  } catch (err) {\n    // Rollback logic\n    await paymentService.refund(orderData);\n  }\n}\n```",
+    "counterQuestion": "What is a 'Compensating Transaction' in a Saga?",
+    "counterQuestionAnswer": "A Compensating Transaction is a 'reverse' operation (like a refund for a failed purchase) that undoes the effects of a previous successful step in a Saga. It ensures that the system eventually returns to a consistent state even if a complex multi-step process fails halfway through.",
+    "category": "sql",
+    "topic": "distributed_systems",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "distributed",
+      "architecture"
+    ]
+  },
+  {
+    "id": 26,
+    "question": "Discuss 'Database Scalability' for 100TB+ datasets.",
+    "answer": "Scaling to 100TB+ requires moving beyond a single server. Strategies include: \n1. **Massive Sharding**: Splitting data across hundreds of nodes based on a shard key. \n2. **Cloud-Native Databases**: Using Aurora or Spanner that decouple storage from compute, allowing storage to grow automatically to petabytes. \n3. **Data Archiving**: Moving 'cold' historical data to S3/Data Lakes while keeping only 'hot' data in the fast database. \n4. **Columnar Storage**: Using ClickHouse or Redshift for analytical queries on massive datasets. At this scale, the primary challenges are rebalancing shards, ensuring global consistency, and managing the sheer cost of storage and backup operations.",
+    "analogy": "Scaling to 100TB is like moving from a single family home (one server) to a massive apartment complex (sharding). You can fit thousands more people, but now you need a dedicated management team just to handle the elevators and mail (the shard coordinator).",
+    "code": "```sql\n-- Cloud-native scaling (e.g. AWS Aurora)\n-- Storage automatically expands up to 128TB\n-- No manual sharding required for many 10-50TB use cases.\n```",
+    "counterQuestion": "What is 'Rebalancing' in a sharded cluster?",
+    "counterQuestionAnswer": "Rebalancing is the process of moving data between shards when a new node is added or when some shards become too large (hot spots). It is a highly resource-intensive operation that must be done carefully to avoid impacting production traffic.",
+    "category": "sql",
+    "topic": "scalability",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "sql",
+      "performance"
+    ]
+  },
+  {
+    "id": 27,
+    "question": "How do you design a 'Highly Available' database cluster with automated failover?",
+    "answer": "A Highly Available (HA) cluster typically consists of a Primary node and multiple Synchronous Replicas. You need: \n1. **Health Checking**: A monitoring tool (like Patroni or Keepalived) that constantly pings the nodes. \n2. **Consensus Algorithm**: Tools like Etcd or Consul use Raft/Paxos to decide when the Primary has failed and elect a new one. \n3. **VIP/Proxy**: A Virtual IP or a proxy (like HAProxy) that points the application to the current leader. \n4. **Fencing**: Ensuring the old Primary is actually 'dead' (STONITH) to prevent 'Split-brain' where two nodes think they are the leader. This setup ensures that if a server dies, the system recovers automatically in seconds with minimal data loss.",
+    "analogy": "A Highly Available cluster is like a co-pilot in a plane. If the pilot (Primary) passes out, the co-pilot (Replica) immediately takes the controls (failover) so the plane doesn't crash.",
+    "code": "```yaml\n# Patroni HA configuration (Conceptual)\nscope: postgres-cluster\nnamespace: /db/\nname: pg-node-1\n\netcd:\n  host: etcd-server:2379\n\npostgresql:\n  listen: 0.0.0.0:5432\n```",
+    "counterQuestion": "What is a 'Split-brain' scenario?",
+    "counterQuestionAnswer": "Split-brain occurs when two nodes in a cluster both believe they are the Primary (usually due to a network partition). This is catastrophic as both nodes will accept writes, leading to divergent data sets that are extremely difficult and sometimes impossible to merge correctly.",
+    "category": "sql",
+    "topic": "infrastructure",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "sql",
+      "high_availability"
+    ]
+  },
+  {
+    "id": 28,
+    "question": "Explain 'Window Functions' (RANK, DENSE_RANK, LEAD, LAG). How do they differ from GROUP BY?",
+    "answer": "Window functions perform calculations across a set of rows that are related to the current row, but they DO NOT collapse the rows into a single output like 'GROUP BY'. \n1. **RANK/DENSE_RANK**: Assigns a rank to rows within a partition. \n2. **LEAD/LAG**: Accesses data from the next or previous row without a self-join. \n3. **OVER()**: Defines the 'window' (partitioning and ordering) for the calculation. They are essential for complex analytics like calculating running totals, year-over-year growth, or finding the 'last login' date alongside user details in a single query. They provide massive performance benefits over complex subqueries or application-side processing.",
+    "analogy": "GROUP BY is like summarizing a whole class's test scores into a single average. A Window Function is like giving each student their own score *plus* a note saying where they rank in the class, without taking away their individual record.",
+    "code": "```sql\n-- Rank users by score within their team\nSELECT name, team, score,\n       RANK() OVER(PARTITION BY team ORDER BY score DESC) as rank\nFROM users;\n\n-- See previous score using LAG\nSELECT name, score, \n       LAG(score) OVER(ORDER BY date) as prev_score\nFROM users;\n```",
+    "counterQuestion": "What is the difference between 'RANK()' and 'DENSE_RANK()'?",
+    "counterQuestionAnswer": "RANK() leaves gaps in the sequence if there are ties (e.g., 1, 2, 2, 4). DENSE_RANK() does not leave gaps (e.g., 1, 2, 2, 3). Choosing between them depends on whether you want the rank to reflect the number of items preceded or just the distinct values.",
+    "category": "sql",
+    "topic": "advanced_querying",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "sql",
+      "analytics"
+    ]
+  },
+  {
+    "id": 29,
+    "question": "What are 'Recursive CTEs' and when are they necessary (e.g., hierarchical data)?",
+    "answer": "A Recursive Common Table Expression (CTE) is a query that refers to its own output. It consists of an 'Anchor' member (the starting point) and a 'Recursive' member (the logic that finds the next level). It is the only way in standard SQL to traverse hierarchical data of unknown depth, such as an organizational chart (manager -> employee), a file system (folder -> subfolder), or a category tree. Without Recursive CTEs, you would need multiple separate queries or a fixed-depth join, making it impossible to handle truly dynamic or deep hierarchies efficiently within the database.",
+    "analogy": "A Recursive CTE is like following a trail of breadcrumbs. You start at the first crumb (Anchor), and then you use that crumb to find the next one, and then the next, until you run out of crumbs (Termination Condition).",
+    "code": "```sql\n-- Traverse an Org Chart\nWITH RECURSIVE subordinates AS (\n    SELECT id, name, manager_id FROM employees WHERE name = 'Alice' -- Anchor\n    UNION\n    SELECT e.id, e.name, e.manager_id \n    FROM employees e\n    INNER JOIN subordinates s ON s.id = e.manager_id -- Recursion\n)\nSELECT * FROM subordinates;\n```",
+    "counterQuestion": "What is a 'Termination Condition' in a Recursive CTE?",
+    "counterQuestionAnswer": "The termination condition is the point where the recursive member returns no more rows (e.g., when an employee has no direct reports). Without a proper structure that leads to an empty set, the recursive query would run infinitely, eventually crashing the database or timing out.",
+    "category": "sql",
+    "topic": "advanced_querying",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "sql",
+      "hierarchical"
+    ]
+  },
+  {
+    "id": 30,
+    "question": "Explain 'Partial Indexes' and 'Expression-based Indexes' in PostgreSQL.",
+    "answer": "PostgreSQL allows you to create highly optimized indexes: \n1. **Partial Index**: An index built over a subset of a table, defined by a WHERE clause (e.g., 'CREATE INDEX ... WHERE is_active = true'). This is significantly smaller and faster than a full index if you only ever query active records. \n2. **Expression-based Index**: An index built on the result of a function or expression rather than a raw column (e.g., 'CREATE INDEX ... ON lower(email)'). This allows for fast, case-insensitive searches or queries based on computed data. Using these advanced indexes reduces disk I/O and storage overhead while dramatically speeding up specialized query patterns that standard indexes cannot handle.",
+    "analogy": "A Partial Index is like a list of just the 'V.I.P.' guests at a party \u2014 it's much shorter and faster to read than the list of everyone who attended. An Expression-based Index is like sorting people by their 'Nickname' even though only their 'Full Name' is in the database.",
+    "code": "```sql\n-- Partial Index (Only active users)\nCREATE INDEX idx_active_users ON users(id) WHERE status = 'active';\n\n-- Expression Index (Case-insensitive email)\nCREATE INDEX idx_lower_email ON users(lower(email));\nSELECT * FROM users WHERE lower(email) = 'alice@example.com'; -- Uses index\n```",
+    "counterQuestion": "When should you avoid using an Expression-based Index?",
+    "counterQuestionAnswer": "You should avoid them if the expression is extremely complex or slow to calculate, as the database must evaluate the expression every time a row is inserted or updated. Additionally, they can only be used if the query's WHERE clause exactly matches the expression defined in the index.",
+    "category": "sql",
+    "topic": "postgresql_optimization",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "postgresql",
+      "indexing"
+    ]
+  },
+  {
+    "id": 31,
+    "question": "What is 'Vacuuming' in PostgreSQL and why is 'Auto-vacuum' critical for performance?",
+    "answer": "In PostgreSQL, when a row is updated or deleted, the old version isn't immediately removed; it's marked as 'dead' (a 'dead tuple'). **Vacuuming** is the process of reclaiming the space occupied by these dead tuples so it can be reused for new data. **Auto-vacuum** is a background daemon that automatically runs vacuuming tasks based on the number of changes. Without it, the database suffers from 'Bloat', where the data files grow indefinitely, slowing down sequential scans and indexes. Auto-vacuum also updates the database statistics, which are critical for the Query Planner to choose the most efficient execution path.",
+    "analogy": "Vacuuming is like taking out the trash in your house. If you don't do it (Auto-vacuum), the trash piles up until you can't walk through the rooms (Database Bloat). 'VACUUM FULL' is like moving all your furniture out to deep-clean the floors \u2014 it's effective, but you can't use the house while it's happening.",
+    "code": "```sql\n-- Check for bloat / dead tuples\nSELECT relname, n_dead_tup, last_autovacuum \nFROM pg_stat_user_tables;\n\n-- Manual vacuum (Non-blocking)\nVACUUM (ANALYZE) users;\n```",
+    "counterQuestion": "What is 'VACUUM FULL' and why is it dangerous in production?",
+    "counterQuestionAnswer": "'VACUUM FULL' completely rewrites the table on disk to eliminate all bloat. However, it requires an **Exclusive Lock** on the entire table, blocking all reads and writes for the duration of the operation. In a production environment, this results in downtime, which is why tuning Auto-vacuum is preferred over manual full vacuums.",
+    "category": "sql",
+    "topic": "postgresql_internals",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "postgresql",
+      "maintenance"
+    ]
+  },
+  {
+    "id": 32,
+    "question": "Explain 'MVCC' (Multi-Version Concurrency Control) in PostgreSQL. How does it handle read/write consistency?",
+    "answer": "MVCC is the mechanism that allows PostgreSQL to handle high concurrency without heavy locking. Instead of locking a row during an update, Postgres creates a *new version* of that row. Each transaction sees a 'snapshot' of the data as it was when the transaction started. This means that **Readers never block Writers, and Writers never block Readers**. Each row has hidden columns ('xmin' and 'xmax') that track which transactions can see it. This ensures that even in highly concurrent environments, every user gets a consistent view of the data while others are modifying it, maintaining ACID compliance with maximum performance.",
+    "analogy": "MVCC is like a library where, instead of locking a book while someone is writing in it, the library instantly prints a new copy for them. Readers keep reading the old copy, and the new copy only becomes the 'official' one once they finish their edits.",
+    "code": "```sql\n-- View hidden MVCC columns\nSELECT xmin, xmax, * FROM users LIMIT 1;\n\n-- xmin: ID of transaction that inserted the row\n-- xmax: ID of transaction that updated/deleted the row\n```",
+    "counterQuestion": "How does MVCC relate to the need for Vacuuming?",
+    "counterQuestionAnswer": "Because MVCC creates new versions of rows for every update, it naturally generates a large number of 'dead' versions (tuples) over time. Vacuuming is the essential cleanup process that removes these obsolete versions once they are no longer visible to any active transaction, preventing table bloat.",
+    "category": "sql",
+    "topic": "postgresql_internals",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "postgresql",
+      "concurrency"
+    ]
+  },
+  {
+    "id": 33,
+    "question": "What is 'Write-Ahead Logging' (WAL) and how does it ensure data durability?",
+    "answer": "WAL is a standard method for ensuring data integrity. Instead of writing data directly to the main data files (which is slow and random), PostgreSQL first records every change in a sequential, append-only log file called the **WAL**. Only after the log is successfully written to disk is the transaction considered committed. If the server crashes, Postgres can replay the WAL to restore the database to its last consistent state. WAL also enables features like **Point-in-Time Recovery (PITR)** and **Streaming Replication**, as the WAL logs can be sent to secondary servers to keep them in sync with the primary.",
+    "analogy": "WAL is like a store keeping a 'day book' of every sale. If the accountant's main ledger (the data files) is destroyed in a fire, they can just look at the day book and reconstruct the ledger from scratch.",
+    "code": "```bash\n# Location of WAL files in Postgres\n# /var/lib/postgresql/data/pg_wal\n\n# Force a WAL switch\nSELECT pg_switch_wal();\n```",
+    "counterQuestion": "What happens if the disk fills up and the WAL cannot be written?",
+    "counterQuestionAnswer": "If the WAL cannot be written, PostgreSQL will immediately shut down to prevent data corruption. Ensuring that the WAL directory has sufficient space and high performance (often by placing it on a separate, fast disk) is a critical part of database administration.",
+    "category": "sql",
+    "topic": "postgresql_internals",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "postgresql",
+      "reliability"
+    ]
+  },
+  {
+    "id": 34,
+    "question": "Explain 'Materialized Views' in PostgreSQL. How do you refresh them and what are the trade-offs?",
+    "answer": "A Materialized View is a query result that is physically saved on disk. Unlike a standard view (which runs the query every time), a materialized view provides instant access to complex aggregated data. To update the data, you must run 'REFRESH MATERIALIZED VIEW'. The primary trade-off is **Data Freshness vs. Performance**: you get extremely fast reads, but the data is only as current as the last refresh. Since the refresh operation can be slow and intensive on large datasets, you must carefully schedule it during low-traffic periods or use 'REFRESH MATERIALIZED VIEW CONCURRENTLY' to allow reads while the view is being updated (requires a unique index).",
+    "analogy": "A standard View is like a calculator that re-calculates your tax return every time you look at it. A Materialized View is like a printed copy of that tax return \u2014 it's instant to read, but if your income changes, you have to print a new one.",
+    "code": "```sql\n-- Create MV for complex sales stats\nCREATE MATERIALIZED VIEW daily_sales AS\nSELECT region, SUM(amount) \nFROM sales \nGROUP BY region;\n\n-- Update data (Non-blocking requires unique index)\nREFRESH MATERIALIZED VIEW CONCURRENTLY daily_sales;\n```",
+    "counterQuestion": "When should you use a Materialized View instead of a standard Table or View?",
+    "counterQuestionAnswer": "Use a Materialized View for expensive, read-heavy analytical queries (like daily sales reports) where the underlying data doesn't change every second and you can tolerate some delay in data freshness in exchange for massive retrieval speed.",
+    "category": "sql",
+    "topic": "postgresql_optimization",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "postgresql",
+      "performance"
+    ]
+  },
+  {
+    "id": 35,
+    "question": "Discuss 'PostgreSQL Full-Text Search' (tsvector, tsquery). What indexes (GIN, GiST) are used?",
+    "answer": "PostgreSQL provides powerful native Full-Text Search (FTS). It uses two main data types: 'tsvector' (a sorted list of distinct words/lexemes) and 'tsquery' (the search terms with boolean logic). To make this fast, you use **GIN** (Generalized Inverted Index) or **GiST** (Generalized Search Tree) indexes. GIN is generally faster for searching but slower to update, making it ideal for standard text search on mostly static data. GiST is faster to update but slower to search. Using native FTS allows you to avoid the complexity of managing an external search engine like Elasticsearch for simple-to-moderate search requirements, keeping your stack lean and your data consistent in a single ACID-compliant database.",
+    "analogy": "A GIN index is like the index at the back of a book: it lists every word and the pages it appears on. It's fast to look up, but adding a new page means updating every entry in the index.",
+    "code": "```sql\n-- Full-text search in Postgres\nSELECT title \nFROM books \nWHERE to_tsvector('english', description) @@ to_tsquery('english', 'postgres & fast');\n\n-- Create GIN index for performance\nCREATE INDEX idx_fts ON books USING GIN (to_tsvector('english', description));\n```",
+    "counterQuestion": "What is 'Stemming' in the context of Full-Text Search?",
+    "counterQuestionAnswer": "Stemming is the process of reducing words to their root form (e.g., 'running' and 'runner' both become 'run'). PostgreSQL handles this using 'Dictionaries', ensuring that a search for 'run' matches all related word forms, significantly improving the quality and relevance of search results.",
+    "category": "sql",
+    "topic": "postgresql_search",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "postgresql",
+      "search"
+    ]
+  },
+  {
+    "id": 36,
+    "question": "What are 'Exclusive Constraints' and how do they prevent overlapping data (e.g., booking intervals)?",
+    "answer": "Standard unique constraints only check for exact equality. **Exclusive Constraints** (using the 'EXCLUDE' clause) allow you to ensure that no two rows satisfy a specific comparison. A classic use case is preventing overlapping time intervals in a booking system. By using the '&&' (overlaps) operator with a GIST index, you can ensure that the database rejects any new record that overlaps with an existing one. This moves critical business logic into the database layer, where it is enforced with strict atomicity, preventing race conditions that are nearly impossible to catch reliably in the application layer alone.",
+    "analogy": "An Exclusive Constraint is like a smart calendar: if you try to book a meeting at 2 PM, and there's already a meeting from 1:30 to 2:30, the calendar won't just check if the start times are the same; it will realize the time blocks 'overlap' and block the new entry.",
+    "code": "```sql\n-- Prevent overlapping bookings\nCREATE TABLE bookings (\n    room_id INT,\n    during TSTZRANGE,\n    EXCLUDE USING GIST (room_id WITH =, during WITH &&)\n);\n```",
+    "counterQuestion": "Why do Exclusive Constraints require a GiST index?",
+    "counterQuestionAnswer": "Standard B-Tree indexes only support equality and range comparisons. Overlap checks ('&&') are geometric/spatial operations that require the multi-dimensional search capabilities of a GiST index to perform efficiently, as it can organize and search through ranges and intervals in a way that B-Trees cannot.",
+    "category": "sql",
+    "topic": "postgresql_internals",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "postgresql",
+      "constraints"
+    ]
+  },
+  {
+    "id": 37,
+    "question": "What are some popular 'PostgreSQL Extensions' (PostGIS, pg_stat_statements, hstore)?",
+    "answer": "PostgreSQL's extensibility is its greatest strength. \n1. **PostGIS**: Adds support for geographic and spatial data, turning Postgres into a full-featured spatial database. \n2. **pg_stat_statements**: Tracks execution statistics of all SQL statements executed by the server; it's essential for identifying slow queries in production. \n3. **hstore**: Provides a key-value store within a single column (the predecessor to JSONB). \n4. **pg_trgm**: Enables fast similarity searches (useful for 'did you mean?' features). These extensions allow you to add massive new capabilities to your database without changing its core, effectively tailoring PostgreSQL to your specific domain requirements.",
+    "analogy": "PostgreSQL extensions are like 'plugins' or 'apps' for your smartphone. The phone does a lot on its own, but you can install an 'App' (Extension) to turn it into a GPS (PostGIS) or a performance monitor (pg_stat_statements).",
+    "code": "```sql\n-- Enable a powerful extension\nCREATE EXTENSION IF NOT EXISTS \"pg_stat_statements\";\n\n-- View query stats\nSELECT query, calls, total_time, rows \nFROM pg_stat_statements \nORDER BY total_time DESC \nLIMIT 5;\n```",
+    "counterQuestion": "How do you enable an extension in a PostgreSQL database?",
+    "counterQuestionAnswer": "You use the command 'CREATE EXTENSION extension_name;'. This must usually be done by a superuser. Once enabled, the new data types, functions, and operators provided by the extension become available for use in your queries and schema definitions.",
+    "category": "sql",
+    "topic": "postgresql_extensions",
+    "difficulty": "medium",
+    "tags": [
+      "database",
+      "postgresql",
+      "features"
+    ]
+  },
+  {
+    "id": 38,
+    "question": "Discuss 'Tuning' parameters like 'shared_buffers', 'work_mem', and 'maintenance_work_mem'.",
+    "answer": "Tuning Postgres is critical for maximizing hardware performance. \n1. **shared_buffers**: Determines how much memory is dedicated to caching data blocks; typically set to 25% of total RAM. \n2. **work_mem**: Specifies the amount of memory used for internal sort operations and hash tables before writing to disk. Setting this too low causes slow 'temp file' usage; setting it too high can lead to OOM errors under high concurrency. \n3. **maintenance_work_mem**: Used for maintenance tasks like indexing and vacuuming. Setting this high speeds up index creation and cleanup. Proper tuning ensures that your database uses available RAM efficiently, minimizing slow disk I/O and maximizing transaction throughput.",
+    "analogy": "Tuning parameters are like adjusting the 'RAM allocation' for a game. 'shared_buffers' is the total memory for the game engine, while 'work_mem' is the extra memory allocated to each individual player (connection) for complex moves (sorts).",
+    "code": "```bash\n# Check current settings in postgresql.conf or via SQL\nSHOW shared_buffers;\nSHOW work_mem;\n\n# Adjust for a session\nSET work_mem = '64MB';\n```",
+    "counterQuestion": "Is 'work_mem' set per-server or per-connection?",
+    "counterQuestionAnswer": "'work_mem' is allocated **per-operation**. A single complex query with multiple joins and sorts might use many times the 'work_mem' value. This is why you must be extremely careful when increasing it, as a spike in concurrent complex queries can quickly exhaust all available system memory.",
+    "category": "sql",
+    "topic": "postgresql_tuning",
+    "difficulty": "hard",
+    "tags": [
+      "database",
+      "postgresql",
+      "performance"
+    ]
+  },
+  {
+    "id": 39,
+    "question": "What is a Composite Index? When does column order matter?",
+    "answer": "A composite index covers multiple columns. Column order is critical because PostgreSQL can use the index for queries that filter on the **leftmost prefix** of the columns.\n\n```sql\n-- Composite index on (user_id, status, created_at)\nCREATE INDEX idx_orders ON orders(user_id, status, created_at);\n\n-- \u2705 Uses index (starts with user_id)\nSELECT * FROM orders WHERE user_id = 1;\nSELECT * FROM orders WHERE user_id = 1 AND status = 'paid';\nSELECT * FROM orders WHERE user_id = 1 AND status = 'paid' AND created_at > '2024-01-01';\n\n-- \u274c Cannot use index (skips user_id)\nSELECT * FROM orders WHERE status = 'paid';\nSELECT * FROM orders WHERE created_at > '2024-01-01';\n```\n\n**Rule for column ordering:**\n1. **Equality filters first** (`WHERE user_id = 1 AND status = 'paid'`)\n2. **Range filters last** (`AND created_at > '2024-01-01'`)\n3. **Most selective column first** (highest cardinality, fewest duplicates)\n\nA single composite index can replace multiple single-column indexes, reducing storage and maintenance overhead.",
+    "analogy": "A composite index is like a phonebook sorted by 'Last Name' then 'First Name'. You can easily find everyone named 'Smith', or 'John Smith'. But if you only have a first name 'John', the sorting is useless and you have to read the whole book.",
+    "code": "```sql\n-- Efficient Composite Index\n-- Equality columns first, Range columns last\nCREATE INDEX idx_user_orders_date \nON orders(user_id, status, created_at);\n```",
+    "counterQuestion": "What is a Covering Index and why does it give maximum performance?",
+    "counterQuestionAnswer": "A covering index includes ALL columns referenced in a query (both WHERE and SELECT). The database engine can return the result entirely from the index without touching the main table ('Index-Only Scan'). This eliminates random I/O to data pages \u2014 the most expensive operation. Example: `CREATE INDEX idx_cover ON orders(user_id) INCLUDE (status, total)` allows `SELECT status, total FROM orders WHERE user_id = 1` to be served entirely from the index.",
+    "category": "sql",
+    "topic": "indexing",
+    "difficulty": "medium",
+    "tags": [
+      "sql",
+      "composite_index",
+      "covering_index",
+      "performance"
+    ]
+  },
+  {
+    "id": 40,
+    "question": "How do you detect and resolve a database deadlock in production?",
+    "answer": "A SQL deadlock occurs when Transaction A holds Lock X and waits for Lock Y, while Transaction B holds Lock Y and waits for Lock X.\n\n**Detection in PostgreSQL:**\n```sql\n-- View current locks and what they're blocking\nSELECT\n    pid, usename, state, wait_event_type, wait_event,\n    query, now() - query_start AS duration\nFROM pg_stat_activity\nWHERE wait_event_type = 'Lock'\nORDER BY duration DESC;\n\n-- Kill a blocking query\nSELECT pg_terminate_backend(pid);\n```\n\n**PostgreSQL logs deadlocks automatically** at `log_min_duration_statement` or with `deadlock_timeout` (default 1s).\n\n**Root cause fixes:**\n1. **Consistent lock ordering:** Always lock tables in alphabetical order across all transactions.\n2. **Keep transactions short:** Don't hold locks across user interactions.\n3. **Use `SELECT ... FOR UPDATE SKIP LOCKED`:** Skip rows already locked instead of waiting.\n4. **Retry on deadlock:** Catch `django.db.utils.OperationalError` and retry the transaction.\n\n```python\nfrom django.db import transaction, OperationalError\nfor attempt in range(3):\n    try:\n        with transaction.atomic():\n            do_work()\n        break\n    except OperationalError:  # deadlock detected\n        if attempt == 2: raise\n        time.sleep(0.1 * (attempt + 1))\n```",
+    "analogy": "A deadlock is like two cars meeting in a narrow one-lane tunnel. Neither can move forward, and neither can move backward because there's a line of traffic behind each. One car has to be 'killed' (towed out) for the other to pass.",
+    "code": "```sql\n-- The 'SKIP LOCKED' pattern to avoid deadlocks in queues\nSELECT * FROM jobs \nFOR UPDATE SKIP LOCKED \nLIMIT 1;\n```",
+    "counterQuestion": "What is `SELECT FOR UPDATE SKIP LOCKED` and when is it useful?",
+    "counterQuestionAnswer": "`SELECT ... FOR UPDATE SKIP LOCKED` acquires a row-level lock on selected rows but **skips** (doesn't wait for) rows that are already locked by another transaction. This is the standard pattern for implementing a job queue in PostgreSQL \u2014 multiple workers can claim different rows simultaneously without blocking each other.",
+    "category": "sql",
+    "topic": "concurrency",
+    "difficulty": "hard",
+    "tags": [
+      "sql",
+      "deadlock",
+      "postgresql",
+      "concurrency",
+      "locking"
+    ]
+  },
+  {
+    "id": 41,
+    "question": "How do you implement an audit log pattern in a database?",
+    "answer": "An audit log records every change (INSERT/UPDATE/DELETE) to critical data with who changed it and when.\n\n**Pattern 1: Trigger-based (PostgreSQL):**\n```sql\nCREATE TABLE audit_log (\n    id BIGSERIAL PRIMARY KEY,\n    table_name TEXT,\n    operation TEXT,  -- INSERT, UPDATE, DELETE\n    old_data JSONB,\n    new_data JSONB,\n    changed_by TEXT,\n    changed_at TIMESTAMPTZ DEFAULT NOW()\n);\n\nCREATE OR REPLACE FUNCTION audit_trigger() RETURNS TRIGGER AS $$\nBEGIN\n    INSERT INTO audit_log(table_name, operation, old_data, new_data)\n    VALUES (TG_TABLE_NAME, TG_OP, to_jsonb(OLD), to_jsonb(NEW));\n    RETURN NEW;\nEND;\n$$ LANGUAGE plpgsql;\n\nCREATE TRIGGER orders_audit\nAFTER INSERT OR UPDATE OR DELETE ON orders\nFOR EACH ROW EXECUTE FUNCTION audit_trigger();\n```\n\n**Pattern 2: Django model approach:**\n```python\nclass AuditMixin(models.Model):\n    created_at = models.DateTimeField(auto_now_add=True)\n    updated_at = models.DateTimeField(auto_now=True)\n    created_by = models.ForeignKey(User, related_name='+', null=True)\n\n    class Meta:\n        abstract = True\n\n# Use django-simple-history or django-auditlog for full history\n```\n\n**Pattern 3: Event Sourcing** \u2014 never update, only append events. The audit log IS the data store.",
+    "analogy": "An audit log is like a security camera in a bank: it records every single person who enters and exactly what they do, so you can look back later to see what happened if money goes missing.",
+    "code": "```sql\n-- Quick trigger-based audit log check\nSELECT * FROM audit_log \nWHERE table_name = 'orders' \nORDER BY changed_at DESC \nLIMIT 10;\n```",
+    "counterQuestion": "What is the difference between a Soft Delete and an audit log?",
+    "counterQuestionAnswer": "**Soft Delete** (`is_deleted=True`) keeps the record but hides it from normal queries \u2014 useful for recovery but doesn't track WHO deleted it or WHEN, and clutters queries. An **audit log** records the full history of changes including deletes, preserving the exact data state before deletion. Use both together: soft delete for recovery, audit log for compliance and forensics.",
+    "category": "sql",
+    "topic": "design",
+    "difficulty": "medium",
+    "tags": [
+      "sql",
+      "audit_log",
+      "soft_delete",
+      "postgresql",
+      "design"
+    ]
+  },
+  {
+    "id": 42,
+    "question": "What is Row-Level Security (RLS) in PostgreSQL?",
+    "answer": "RLS allows you to define policies that control which rows a given database user (or role) can see or modify. The policy is enforced at the database layer \u2014 even if the application has a bug, unauthorized rows are invisible.\n\n```sql\n-- Enable RLS on the table\nALTER TABLE orders ENABLE ROW LEVEL SECURITY;\n\n-- Policy: users can only see their own orders\nCREATE POLICY user_orders_policy ON orders\n    USING (user_id = current_setting('app.current_user_id')::INT);\n\n-- Set the current user context from your app:\n-- SET LOCAL app.current_user_id = 42;\n```\n\n**Using with Django:**\n```python\nclass RLSMiddleware:\n    def __call__(self, request):\n        if request.user.is_authenticated:\n            with connection.cursor() as cursor:\n                cursor.execute(\"SET LOCAL app.current_user_id = %s\", [request.user.id])\n        return self.get_response(request)\n```\n\n**Use cases:**\n- **Multi-tenant SaaS:** Each tenant can only see their data.\n- **HIPAA/GDPR compliance:** Enforce data access at the database layer, not just the ORM.\n- **Defense in depth:** Protect against SQL injection or ORM bugs exposing wrong rows.",
+    "analogy": "RLS is like a hotel where your keycard only works for your specific room. Even if you walk up to another door and try to open it (a query for other rows), the lock (database policy) won't let you in.",
+    "code": "```sql\n-- Create a simple RLS policy\nCREATE POLICY tenant_isolation_policy ON customers\nFOR ALL\nTO authenticated_users\nUSING (tenant_id = current_user_tenant());\n```",
+    "counterQuestion": "Does RLS affect database administrators and superusers?",
+    "counterQuestionAnswer": "By default, RLS does NOT apply to table owners and superusers \u2014 they bypass all policies. Use `ALTER TABLE orders FORCE ROW LEVEL SECURITY` to enforce RLS even for the table owner. This is important for compliance environments where even DBAs should not have unrestricted data access.",
+    "category": "sql",
+    "topic": "security",
+    "difficulty": "hard",
+    "tags": [
+      "sql",
+      "postgresql",
+      "rls",
+      "security",
+      "multi_tenant"
+    ]
+  },
+  {
+    "id": 43,
+    "question": "How do you use EXPLAIN ANALYZE to diagnose slow queries in PostgreSQL?",
+    "answer": "`EXPLAIN ANALYZE` executes the query and shows the actual execution plan with real timing.\n\n```sql\nEXPLAIN ANALYZE\nSELECT * FROM orders\nWHERE user_id = 42 AND status = 'pending';\n```\n\n**Key fields to analyze:**\n- **Seq Scan:** Full table scan \u2014 likely missing an index.\n- **Index Scan:** Using an index \u2014 good.\n- **Rows:** Compare `rows=` (estimated) vs actual. Large differences indicate stale statistics.\n- **cost=X..Y:** Startup cost..total cost. High numbers warrant optimization.\n- **Actual time:** Real milliseconds spent.\n\n**Common fixes:**\n1. Add index on the filter columns.\n2. Run `ANALYZE tablename` to update statistics.\n3. Rewrite query to avoid functions on indexed columns.",
+    "analogy": "Running a query without EXPLAIN is like trying to fix a car with the hood closed. EXPLAIN ANALYZE is like opening the hood and using a diagnostic computer to see exactly which part is slow.",
+    "code": "```sql\n-- Check execution plan with real timing\nEXPLAIN (ANALYZE, BUFFERS) \nSELECT * FROM users WHERE email = 'test@example.com';\n```",
+    "counterQuestion": "What is a 'Nested Loop' vs 'Hash Join' in a query plan?",
+    "counterQuestionAnswer": "**Nested Loop:** For each row in the outer table, scan the inner table. Efficient when the inner table is small or indexed. O(N*M). **Hash Join:** Build a hash table from the smaller table, then probe it for each row in the larger table. Better for large, unsorted datasets. O(N+M). PostgreSQL picks the join type automatically based on table statistics.",
+    "category": "postgresql",
+    "topic": "performance",
+    "difficulty": "medium",
+    "tags": [
+      "postgresql",
+      "explain",
+      "query_optimization",
+      "indexing"
+    ]
+  },
+  {
+    "id": 44,
+    "question": "Explain JSONB vs JSON in PostgreSQL. When should you use each?",
+    "answer": "**JSON:** Stores text as-is. Preserves whitespace and key order. Faster to insert, slower to query.\n\n**JSONB:** Stores data in a binary decomposed format. Removes duplicate keys, does NOT preserve key order. Slower to insert (parsing overhead), but significantly **faster to query** and supports indexing.\n\n```sql\n-- JSONB with GIN index for powerful JSON queries\nCREATE INDEX idx_meta ON products USING GIN(metadata);\n\n-- Query: Find all products where metadata contains a specific key-value\nSELECT * FROM products\nWHERE metadata @> '{\"color\": \"red\"}';\n```\n\n**Rule: Always use JSONB** unless you specifically need to preserve the exact text representation of the JSON (e.g., for audit logging).",
+    "analogy": "JSON is like a paper receipt in your pocket: it's quick to put there, but to find the 'Total' you have to take it out and read it line by line. JSONB is like a digital spreadsheet: it takes a moment to type in, but you can search and sort it instantly.",
+    "code": "```sql\n-- Query JSONB efficiently\nSELECT data->>'name' \nFROM users \nWHERE data @> '{\"active\": true}';\n```",
+    "counterQuestion": "What JSONB operators are most commonly used in queries?",
+    "counterQuestionAnswer": "`->` extracts a JSON field as JSON. `->>` extracts a JSON field as text. `@>` tests if the left value contains the right (useful for filtering). `?` tests if a key exists. `#>>` extracts a nested path as text. The `@>` operator combined with a GIN index is the most powerful and common pattern for flexible document queries.",
+    "category": "postgresql",
+    "topic": "json",
+    "difficulty": "medium",
+    "tags": [
+      "postgresql",
+      "jsonb",
+      "json",
+      "indexing"
+    ]
+  },
+  {
+    "id": 45,
+    "question": "What are CTEs (Common Table Expressions) and when should you use `WITH RECURSIVE`?",
+    "answer": "A CTE defines a temporary named result set within a query, improving readability.\n\n```sql\n-- Regular CTE\nWITH recent_orders AS (\n    SELECT * FROM orders WHERE created_at > NOW() - INTERVAL '7 days'\n)\nSELECT user_id, COUNT(*) FROM recent_orders GROUP BY user_id;\n```\n\n**`WITH RECURSIVE`** is for hierarchical/tree data (org charts, folder structures):\n\n```sql\nWITH RECURSIVE category_tree AS (\n    -- Base case: root categories\n    SELECT id, name, parent_id, 0 AS depth FROM categories WHERE parent_id IS NULL\n    UNION ALL\n    -- Recursive case: children\n    SELECT c.id, c.name, c.parent_id, ct.depth + 1\n    FROM categories c JOIN category_tree ct ON c.parent_id = ct.id\n)\nSELECT * FROM category_tree ORDER BY depth;\n```",
+    "analogy": "A CTE is like using a variable in a mathematical equation. Instead of writing the same complex sub-formula three times, you calculate it once, give it a name like 'X', and then use 'X' in the rest of your calculation.",
+    "code": "```sql\n-- Multi-level CTE for readability\nWITH user_stats AS (\n    SELECT user_id, COUNT(*) as order_count FROM orders GROUP BY 1\n),\ntop_users AS (\n    SELECT * FROM user_stats WHERE order_count > 10\n)\nSELECT u.name, tu.order_count \nFROM top_users tu \nJOIN users u ON u.id = tu.user_id;\n```",
+    "counterQuestion": "Are CTEs always optimized the same as subqueries in PostgreSQL?",
+    "counterQuestionAnswer": "In PostgreSQL 12+, CTEs are 'inlined' by default, allowing the planner to optimize them as part of the main query. Before PostgreSQL 12, CTEs were optimization fences \u2014 the planner treated them as black boxes and couldn't push predicates inside them. You can use `WITH ... AS NOT MATERIALIZED` to force inlining in older versions.",
+    "category": "postgresql",
+    "topic": "queries",
+    "difficulty": "medium",
+    "tags": [
+      "postgresql",
+      "cte",
+      "recursive",
+      "sql"
+    ]
+  },
+  {
+    "id": 46,
+    "question": "Explain Window Functions in PostgreSQL with practical examples.",
+    "answer": "Window functions perform calculations across a set of table rows related to the current row, without collapsing them into groups.\n\n```sql\n-- Rank employees by salary within each department\nSELECT\n    name,\n    department,\n    salary,\n    RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS dept_rank,\n    LAG(salary) OVER (PARTITION BY department ORDER BY salary DESC) AS prev_salary,\n    SUM(salary) OVER (PARTITION BY department) AS dept_total\nFROM employees;\n```\n\n**Common window functions:**\n- `ROW_NUMBER()`: Unique sequential number per partition\n- `RANK()` / `DENSE_RANK()`: Ranking with/without gaps for ties\n- `LAG()` / `LEAD()`: Access previous/next row values\n- `SUM()` / `AVG()` OVER: Running totals\n\n**Key clause:** `PARTITION BY` = group, `ORDER BY` = ordering within group.",
+    "analogy": "A window function is like looking through a 'window' at a specific group of people (PARTITION BY) while they are standing in a line (ORDER BY), and writing a note on their shirt about where they are in that specific line.",
+    "code": "```sql\n-- Calculate percentage of total sales per user\nSELECT user_id, amount,\n       amount / SUM(amount) OVER() * 100 as percent_of_total\nFROM sales;\n```",
+    "counterQuestion": "What is the difference between `RANK()` and `DENSE_RANK()`?",
+    "counterQuestionAnswer": "`RANK()` leaves gaps after ties (1, 2, 2, 4 \u2014 position 3 is skipped). `DENSE_RANK()` does not leave gaps (1, 2, 2, 3 \u2014 no skipping). Use `RANK()` for sports-style leaderboards where position matters. Use `DENSE_RANK()` when you want the count of distinct rankings.",
+    "category": "postgresql",
+    "topic": "advanced_sql",
+    "difficulty": "medium",
+    "tags": [
+      "postgresql",
+      "window_functions",
+      "rank",
+      "analytics"
+    ]
+  },
+  {
+    "id": 47,
+    "question": "What are Partial Indexes and Expression Indexes in PostgreSQL?",
+    "answer": "**Partial Index:** An index that only covers a subset of rows matching a WHERE condition. Much smaller and faster to maintain than a full index.\n\n```sql\n-- Only index pending orders (not completed ones which are rarely queried)\nCREATE INDEX idx_pending_orders\nON orders (created_at)\nWHERE status = 'pending';\n```\n\n**Expression Index:** Index on the result of a function/expression, not a raw column.\n\n```sql\n-- Enable case-insensitive search without a full table scan\nCREATE INDEX idx_lower_email ON users (LOWER(email));\n\n-- Query that uses this index:\nSELECT * FROM users WHERE LOWER(email) = 'user@example.com';\n```\n\n**Key rule:** If you always filter on a specific condition or transform, index the exact expression used in the query.",
+    "analogy": "A Partial Index is like having a list of just the 'Unpaid Bills' instead of every single bill ever sent \u2014 it's much faster to find what needs attention. An Expression Index is like sorting files by 'Date Created' even though the folder only shows the 'Filename'.",
+    "code": "```sql\n-- Partial Index Example\nCREATE INDEX idx_active_tasks ON tasks(id) WHERE completed = false;\n```",
+    "counterQuestion": "Why does `WHERE email = LOWER('User@Example.com')` NOT use the index on `LOWER(email)`?",
+    "counterQuestionAnswer": "Because the index is on `LOWER(email)` (the column transformed). The query needs the WHERE clause to use the exact same expression: `WHERE LOWER(email) = 'user@example.com'`. The index is built on the output of `LOWER(email)`, so the filter must match that exact expression for PostgreSQL to use it.",
+    "category": "postgresql",
+    "topic": "indexing",
+    "difficulty": "hard",
+    "tags": [
+      "postgresql",
+      "partial_index",
+      "expression_index",
+      "performance"
+    ]
+  },
+  {
+    "id": 48,
+    "question": "What is VACUUM and AUTOVACUUM in PostgreSQL? Why is it critical?",
+    "answer": "PostgreSQL uses MVCC (Multi-Version Concurrency Control). When a row is updated or deleted, the old version is marked 'dead' but **not immediately removed**. This is to support concurrent readers who might still need the old version.\n\n**VACUUM** reclaims disk space by removing dead row versions (dead tuples). Without it:\n1. Tables grow indefinitely (table bloat).\n2. Sequential scans slow down (more pages to read).\n3. **Transaction ID Wraparound**: PostgreSQL uses 32-bit XIDs. After ~2 billion transactions, it wraps around, causing data loss without VACUUM.\n\n**AUTOVACUUM** is a background process that triggers VACUUM automatically based on the number of dead tuples. It should almost never be disabled.\n\n```sql\n-- Check table bloat and dead tuples\nSELECT relname, n_dead_tup, n_live_tup, last_autovacuum\nFROM pg_stat_user_tables ORDER BY n_dead_tup DESC;\n```",
+    "analogy": "Vacuuming is like the cleanup crew at a stadium. After a game (updates/deletes), they need to pick up the trash (dead tuples) so the seats are ready for the next fans. If they don't clean (Auto-vacuum), the stadium eventually fills with trash and nobody can watch the game.",
+    "code": "```sql\n-- Check autovacuum settings\nSHOW autovacuum_vacuum_threshold;\nSHOW autovacuum_vacuum_scale_factor;\n```",
+    "counterQuestion": "What is `VACUUM FULL` and when should you use it?",
+    "counterQuestionAnswer": "`VACUUM FULL` reclaims all dead space by rewriting the entire table to a new file, returning space to the OS. However, it requires an **exclusive lock** for the entire duration, blocking all reads and writes. It should only be used during scheduled maintenance windows when table bloat is severe. For routine cleanup, regular `AUTOVACUUM` is sufficient.",
+    "category": "postgresql",
+    "topic": "maintenance",
+    "difficulty": "hard",
+    "tags": [
+      "postgresql",
+      "vacuum",
+      "mvcc",
+      "maintenance"
+    ]
+  },
+  {
+    "id": 49,
+    "question": "What is Connection Pooling in PostgreSQL? Why is PgBouncer used?",
+    "answer": "Every PostgreSQL connection is a full OS process (~5-10 MB RAM each). Creating a new connection per request is expensive (TCP + auth overhead). At high concurrency, hundreds of connections exhaust server memory.\n\n**PgBouncer** is a lightweight connection pooler that sits between your app and PostgreSQL:\n\n```\nApp Instances (1000 connections) \u2192 PgBouncer (pool of 20) \u2192 PostgreSQL\n```\n\n**Pooling modes:**\n1. **Session pooling:** One server connection per client session. Safe but limited benefit.\n2. **Transaction pooling:** (Most common) Server connection is held only for the duration of a transaction, then returned to pool. Allows 1000 app connections \u2192 20 DB connections.\n3. **Statement pooling:** Fastest but incompatible with multi-statement transactions.\n\n**Rule for Django/FastAPI:** Always use transaction pooling with PgBouncer in production.",
+    "analogy": "Connection pooling is like a group of friends sharing a single taxi. Instead of every person calling their own taxi (expensive and clogs the road), they use one car and rotate who is sitting in it for each trip (transaction).",
+    "code": "```ini\n; pgbouncer.ini snippet\n[databases]\nmain_db = host=127.0.0.1 port=5432 dbname=prod\n\n[pgbouncer]\npool_mode = transaction\nmax_client_conn = 1000\ndefault_pool_size = 20\n```",
+    "counterQuestion": "What SQLAlchemy setting maps to PgBouncer's transaction pooling mode?",
+    "counterQuestionAnswer": "Set `pool_pre_ping=True` to detect stale connections, and critically, avoid using `PREPARE` statements (SQLAlchemy's `use_batch_mode=True` or disabling `prepared_statement_cache_size` in asyncpg). PgBouncer in transaction mode doesn't support server-side prepared statements because the same DB connection may be reused by different clients.",
+    "category": "postgresql",
+    "topic": "performance",
+    "difficulty": "hard",
+    "tags": [
+      "postgresql",
+      "pgbouncer",
+      "connection_pooling",
+      "performance"
+    ]
+  },
+  {
+    "id": 50,
+    "question": "How does PostgreSQL replication work? Explain Streaming Replication vs Logical Replication.",
+    "answer": "**Streaming Replication (Physical):**\n- The primary ships WAL (Write-Ahead Log) bytes to replicas.\n- Replicas apply the exact same binary changes.\n- Replicas are byte-for-byte identical copies.\n- Use for **High Availability** (hot standby, automatic failover).\n\n**Logical Replication:**\n- Replicates logical changes (INSERT/UPDATE/DELETE rows) rather than raw bytes.\n- Can replicate to different PostgreSQL versions, different schemas, or partial tables.\n- Use for **data migration, zero-downtime upgrades, or selective replication to read replicas**.\n\n```sql\n-- Logical Replication setup\n-- On Primary:\nCREATE PUBLICATION my_pub FOR TABLE orders, users;\n\n-- On Replica:\nCREATE SUBSCRIPTION my_sub\n    CONNECTION 'host=primary ...' PUBLICATION my_pub;\n```",
+    "analogy": "Streaming replication is like a photocopy machine: it makes an exact byte-for-byte duplicate of the entire page. Logical replication is like a scribe: they read the changes and write down only the specific sentences (rows) you want to copy into a new book.",
+    "code": "```sql\n-- Check replication lag\nSELECT pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) AS lag_bytes\nFROM pg_stat_replication;\n```",
+    "counterQuestion": "What is WAL (Write-Ahead Log) and why must changes be written to it before the data pages?",
+    "counterQuestionAnswer": "WAL ensures durability (the 'D' in ACID). By writing changes to the WAL (an append-only log) before modifying the actual data pages, PostgreSQL can recover from crashes. On restart, it replays the WAL to bring data pages to a consistent state. This is faster than writing to random pages immediately, and it enables replication and point-in-time recovery.",
+    "category": "postgresql",
+    "topic": "replication",
+    "difficulty": "hard",
+    "tags": [
+      "postgresql",
+      "replication",
+      "wal",
+      "high_availability"
+    ]
+  },
+  {
+    "id": 51,
+    "question": "What are PostgreSQL advisory locks? When are they useful?",
+    "answer": "Advisory locks are application-level locks managed by PostgreSQL but not tied to any specific table row or transaction. They are completely under application control.\n\n```sql\n-- Session-level advisory lock (held until explicitly released or session ends)\nSELECT pg_try_advisory_lock(12345);  -- Returns true if acquired\nSELECT pg_advisory_unlock(12345);\n\n-- Transaction-level advisory lock (auto-released at end of transaction)\nSELECT pg_try_advisory_xact_lock(12345);\n```\n\n**Use cases:**\n1. **Preventing duplicate cron job execution:** Lock on a job ID before running.\n2. **Application-level mutex:** Coordinating access to an external resource (S3 bucket, API rate limit) across multiple database-connected workers.\n3. **Background migration locks:** Ensuring only one migration runs at a time.",
+    "analogy": "An advisory lock is like a 'Do Not Disturb' sign on a hotel door. It doesn't physically stop anyone from opening the door, but it's a signal to everyone else that someone is already inside and they should wait.",
+    "code": "```python\n# Using advisory locks in Python (psycopg2)\nwith connection.cursor() as cursor:\n    cursor.execute(\"SELECT pg_try_advisory_lock(42)\")\n    if cursor.fetchone()[0]:\n        # acquired lock, do sensitive work\n        pass\n```",
+    "counterQuestion": "What is the difference between `pg_advisory_lock` and `pg_try_advisory_lock`?",
+    "counterQuestionAnswer": "`pg_advisory_lock` blocks and waits until the lock is available. `pg_try_advisory_lock` returns immediately with `true` (acquired) or `false` (already locked by someone else). In production, `pg_try_advisory_lock` is preferred to avoid blocking database connections indefinitely.",
+    "category": "postgresql",
+    "topic": "concurrency",
+    "difficulty": "hard",
+    "tags": [
+      "postgresql",
+      "advisory_locks",
+      "concurrency",
+      "distributed"
+    ]
+  },
+  {
+    "id": 52,
+    "question": "How do you implement full-text search natively in PostgreSQL?",
+    "answer": "PostgreSQL has built-in full-text search using `tsvector` (document) and `tsquery` (search query).\n\n```sql\n-- Add a tsvector column and index\nALTER TABLE articles ADD COLUMN search_vector tsvector;\n\nUPDATE articles\nSET search_vector = to_tsvector('english', title || ' ' || body);\n\nCREATE INDEX idx_fts ON articles USING GIN(search_vector);\n\n-- Search query with ranking\nSELECT title, ts_rank(search_vector, query) AS rank\nFROM articles, to_tsquery('english', 'python & django') query\nWHERE search_vector @@ query\nORDER BY rank DESC;\n```\n\n**Automatically maintain the vector:**\n```sql\nCREATE TRIGGER tsvector_update\nBEFORE INSERT OR UPDATE ON articles\nFOR EACH ROW EXECUTE FUNCTION\ntsvector_update_trigger(search_vector, 'pg_catalog.english', title, body);\n```",
+    "analogy": "Full-text search is like the index at the back of a textbook. Instead of reading the whole book to find 'Mitosis', you just look up the word 'Mitosis' in the index and it tells you every page (row) where it's mentioned.",
+    "code": "```sql\n-- Simple full-text search query\nSELECT title FROM articles \nWHERE to_tsvector('english', body) @@ to_tsquery('english', 'database');\n```",
+    "counterQuestion": "When should you use Elasticsearch over PostgreSQL's native full-text search?",
+    "counterQuestionAnswer": "Use Elasticsearch when you need: fuzzy matching (typo tolerance), advanced relevance scoring (BM25), faceted search (aggregations by category/price), auto-suggestions, or search across hundreds of millions of documents where PostgreSQL's GIN index performance degrades. For most applications with < 10M documents, PostgreSQL's FTS is perfectly adequate and avoids the operational overhead of a separate ES cluster.",
+    "category": "postgresql",
+    "topic": "search",
+    "difficulty": "medium",
+    "tags": [
+      "postgresql",
+      "full_text_search",
+      "tsvector",
+      "gin_index"
+    ]
+  },
+  {
+    "id": 53,
+    "question": "Explain 'Elasticsearch' (ES) internals: What is an 'Inverted Index'?",
+    "answer": "Elasticsearch is built on Apache Lucene and its core data structure is the **Inverted Index**. Instead of mapping 'Documents to Words' (like a standard DB), it maps 'Words to Documents'. For every unique word found in the dataset, the inverted index stores a list of all documents that contain it, along with its position. This allows ES to perform extremely fast full-text searches across millions of documents in milliseconds, as it only needs to look up the search term in the index to find all matches, rather than scanning through every document. This structure is the foundation of modern high-speed search engines.",
+    "analogy": "A standard DB is like a book where you read every page to find a word. An Inverted Index is like the 'Index' at the back of the book: you look up the word 'Architecture', and it instantly tells you it's on pages 12, 45, and 89.",
+    "code": "```json\n// Conceptual Inverted Index\n{\n  \"distributed\": [doc1, doc4, doc10],\n  \"systems\": [doc1, doc2, doc10],\n  \"scalability\": [doc4, doc5]\n}\n```",
+    "counterQuestion": "What is 'Tokenization' and how does it affect the Inverted Index?",
+    "counterQuestionAnswer": "Tokenization is the process of breaking text into individual words (tokens). It involves removing punctuation, lowercasing, and 'stemming' (reducing words to their root). The quality of the inverted index depends entirely on the tokenizer, as it determines which 'keys' will exist in the index for users to search against.",
+    "category": "nosql",
+    "topic": "elasticsearch",
+    "difficulty": "medium",
+    "tags": [
+      "elasticsearch",
+      "search",
+      "internals"
+    ]
+  },
+  {
+    "id": 54,
+    "question": "What are 'Shards' and 'Replicas' in Elasticsearch?",
+    "answer": "Elasticsearch scales by dividing an index into multiple **Shards**. A Shard is a self-contained Lucene index that can be stored on any node in the cluster. \n1. **Primary Shard**: The main shard where data is written. \n2. **Replica Shard**: A copy of a primary shard. Replicas provide two main benefits: **High Availability** (if a node fails, the replica is promoted) and **Search Throughput** (searches can be performed on both primaries and replicas). Choosing the right number of shards is critical, as you cannot change the number of primary shards once an index is created without 'Reindexing'.",
+    "analogy": "Shards are like splitting a massive encyclopedia into individual volumes (A-G, H-M, etc.) so different people can read different volumes at once. Replicas are like having photocopies of those volumes: if Volume 1 is lost, you have a backup, and more people can read Volume 1 simultaneously.",
+    "code": "```json\n// Index settings with Shards and Replicas\n{\n  \"settings\": {\n    \"index\": {\n      \"number_of_shards\": 3,\n      \"number_of_replicas\": 2\n    }\n  }\n}\n```",
+    "counterQuestion": "What is 'Over-sharding' and why is it a problem?",
+    "counterQuestionAnswer": "Over-sharding happens when you create too many shards for the amount of data you have. Each shard has overhead (memory and CPU). If you have thousands of small shards, the cluster state becomes bloated, and the overhead of managing those shards can significantly slow down your searches and overall cluster performance.",
+    "category": "nosql",
+    "topic": "elasticsearch",
+    "difficulty": "hard",
+    "tags": [
+      "elasticsearch",
+      "scalability",
+      "infrastructure"
+    ]
+  },
+  {
+    "id": 55,
+    "question": "How do you implement 'Fuzzy Search' and 'Autocomplete' in ES?",
+    "answer": "1. **Fuzzy Search**: Uses the 'Levenshtein distance' to find matches that are similar but not exact (e.g., matching 'apple' for 'aple'). You implement it using the 'fuzziness' parameter in your query. \n2. **Autocomplete**: Can be implemented using several techniques: 'Edge N-grams' (storing prefixes of words), the 'Completion Suggester' (an in-memory FST data structure for lightning-fast lookups), or 'Search-as-you-type' fields. The choice depends on whether you need simple prefix matching or more complex, error-tolerant suggestions. Completion suggesters are the gold standard for high-performance, real-time search boxes.",
+    "analogy": "Fuzzy search is like a librarian who knows that when you ask for 'The Great Gatsy', you probably mean 'The Great Gatsby'. Autocomplete is like a smart search bar that finishes your sentence before you're done typing.",
+    "code": "```json\n// Fuzzy query example\n{\n  \"query\": {\n    \"match\": {\n      \"title\": {\n        \"query\": \"lucne\",\n        \"fuzziness\": \"AUTO\"\n      }\n    }\n  }\n}\n```",
+    "counterQuestion": "What is an 'Edge N-gram' analyzer?",
+    "counterQuestionAnswer": "An Edge N-gram analyzer breaks a word into tokens starting from the edge. For example, 'apple' would be stored as 'a', 'ap', 'app', 'appl', and 'apple'. This allows for extremely fast prefix matching using standard full-text search queries, as the user's input will exactly match one of these generated tokens.",
+    "category": "nosql",
+    "topic": "elasticsearch",
+    "difficulty": "hard",
+    "tags": [
+      "elasticsearch",
+      "search",
+      "autocomplete"
+    ]
+  },
+  {
+    "id": 56,
+    "question": "Explain 'ELK Stack' (Elasticsearch, Logstash, Kibana).",
+    "answer": "The ELK Stack (now often called the Elastic Stack) is a collection of three open-source tools used for centralized logging and real-time analytics: \n1. **Elasticsearch**: The search and analytics engine that stores the data. \n2. **Logstash**: A server-side data processing pipeline that ingests data from multiple sources, transforms it, and sends it to ES. \n3. **Kibana**: A visualization layer that allows users to explore and visualize data stored in ES through dashboards and charts. Together, they provide a powerful end-to-end solution for monitoring infrastructure, analyzing application logs, and gaining business insights from massive streams of data.",
+    "analogy": "ELK is like a factory: Logstash is the delivery truck and sorting machine, Elasticsearch is the warehouse, and Kibana is the manager's dashboard showing exactly what's in the warehouse in real-time.",
+    "code": "```yaml\n# Simple Logstash Config\ninput {\n  file { path => \"/var/log/syslog\" }\n}\nfilter {\n  grok { match => { \"message\" => \"% {COMBINEDAPACHELOG}\" } }\n}\noutput {\n  elasticsearch { hosts => [\"localhost:9200\"] }\n}\n```",
+    "counterQuestion": "What are 'Beats' in the modern Elastic Stack?",
+    "counterQuestionAnswer": "Beats are lightweight data shippers that you install on your servers to capture specific types of data (like file logs, network traffic, or system metrics) and send them directly to Logstash or Elasticsearch. They are much more resource-efficient than Logstash for simple data collection tasks.",
+    "category": "nosql",
+    "topic": "elasticsearch",
+    "difficulty": "easy",
+    "tags": [
+      "elasticsearch",
+      "logging",
+      "infrastructure"
+    ]
+  },
+  {
+    "id": 57,
+    "question": "What is 'Mapping' in ES? Explain 'Dynamic' vs 'Static' mapping.",
+    "answer": "Mapping is the process of defining how a document and its fields are stored and indexed. \n1. **Dynamic Mapping**: ES automatically detects the data type (e.g., string, integer) when you index a new document. This is great for rapid prototyping but can lead to 'mapping conflicts' and inefficient indexing. \n2. **Static Mapping**: You explicitly define the field types, analyzers, and search properties before indexing data. Static mapping is the best practice for production because it gives you precise control over how data is handled, ensuring optimal search performance and preventing the creation of unnecessary index fields.",
+    "analogy": "Mapping is like a filing cabinet system. Dynamic mapping is like throwing papers into folders and letting the cabinet decide where they go. Static mapping is like labeling every drawer and folder beforehand so you know exactly where everything is and how to find it later.",
+    "code": "```json\n// Static Mapping Example\n{\n  \"mappings\": {\n    \"properties\": {\n      \"email\": { \"type\": \"keyword\" },\n      \"age\": { \"type\": \"integer\" },\n      \"bio\": { \"type\": \"text\", \"analyzer\": \"english\" }\n    }\n  }\n}\n```",
+    "counterQuestion": "What is a 'Mapping Conflict'?",
+    "counterQuestionAnswer": "A mapping conflict occurs when you try to index a document with a field that already exists but has a different data type (e.g., trying to send a string to a field that was dynamically mapped as an integer). Elasticsearch will reject the document, and you must either fix the data or reindex your data into a new index with the correct mapping.",
+    "category": "nosql",
+    "topic": "elasticsearch",
+    "difficulty": "medium",
+    "tags": [
+      "elasticsearch",
+      "schema",
+      "best_practices"
+    ]
+  },
+  {
+    "id": 58,
+    "question": "Explain 'MongoDB Aggregation Pipeline'.",
+    "answer": "The Aggregation Pipeline is MongoDB's powerful framework for data processing and transformation. It works like a factory assembly line where documents pass through a sequence of **Stages** (e.g., '$match', '$group', '$sort', '$project'). Each stage performs a specific operation and passes the modified documents to the next stage. This allows you to perform complex analytical tasks, like calculating averages, filtering data, and joining collections (using '$lookup'), entirely within the database. It is significantly more efficient than retrieving raw data and performing the processing in your application code, especially for large datasets.",
+    "analogy": "An aggregation pipeline is like a factory assembly line. Raw materials (documents) go in at one end, and they pass through different machines (stages) that paint them (filter), assemble them (group), and package them (sort) until a finished product comes out the other side.",
+    "code": "```javascript\n// Find top spending users\ndb.orders.aggregate([\n  { $match: { status: \"completed\" } },\n  { $group: { _id: \"$user_id\", total: { $sum: \"$amount\" } } },\n  { $sort: { total: -1 } },\n  { $limit: 5 }\n]);\n```",
+    "counterQuestion": "What is the difference between '$match' and '$filter' in a pipeline?",
+    "counterQuestionAnswer": "'$match' is a top-level stage used to filter the *entire* document stream early in the pipeline (similar to a WHERE clause). '$filter' is an operator used within a '$project' or '$addFields' stage to filter elements within an *array* field inside a document. Using '$match' early is critical for performance as it reduces the number of documents processed by later stages.",
+    "category": "nosql",
+    "topic": "mongodb",
+    "difficulty": "hard",
+    "tags": [
+      "mongodb",
+      "analytics",
+      "performance"
+    ]
+  },
+  {
+    "id": 59,
+    "question": "Discuss 'MongoDB Indexing': TTL Indexes, Text Indexes, and Geospatial Indexes.",
+    "answer": "MongoDB supports several specialized index types: \n1. **TTL (Time-To-Live) Indexes**: Automatically delete documents after a certain period, perfect for sessions or logs. \n2. **Text Indexes**: Support basic full-text search capabilities, including stemming and stop-word removal. \n3. **Geospatial Indexes**: (2dsphere/2d) Allow for complex spatial queries like 'find points within a polygon' or 'calculate distance between points'. These indexes allow MongoDB to handle specialized use cases efficiently without needing additional specialized databases, making it a versatile 'Swiss Army Knife' for non-relational data management.",
+    "analogy": "MongoDB indexes are like specialized labels in a warehouse. A TTL index is like an 'Expirable' tag that tells workers to throw the box away tomorrow. A Geospatial index is like a map coordinate on the box that tells you exactly where it belongs in the world.",
+    "code": "```javascript\n// Create a TTL index (expire after 1 hour)\ndb.sessions.createIndex({ \"createdAt\": 1 }, { expireAfterSeconds: 3600 });\n\n// Create a 2dsphere index for location\ndb.places.createIndex({ \"location\": \"2dsphere\" });\n```",
+    "counterQuestion": "Can you have multiple 'Text' indexes on a single MongoDB collection?",
+    "counterQuestionAnswer": "No, a MongoDB collection can have at most one text index. However, that single text index can cover multiple fields, allowing you to perform a combined full-text search across various attributes (like 'title', 'content', and 'tags') simultaneously.",
+    "category": "nosql",
+    "topic": "mongodb",
+    "difficulty": "medium",
+    "tags": [
+      "mongodb",
+      "indexing",
+      "performance"
+    ]
+  },
+  {
+    "id": 60,
+    "question": "What is 'Sharding' in MongoDB and how does it differ from Redis sharding?",
+    "answer": "Sharding in MongoDB is a method for distributing data across multiple servers. It uses a **Shard Key** to partition the data. Unlike Redis (which uses a simple Hash Slot system), MongoDB sharding is much more complex and automated. It involves: \n1. **Config Servers**: Store the cluster's metadata. \n2. **Mongos**: A query router that directs requests to the correct shard. \n3. **Balancer**: Automatically moves 'chunks' of data between shards to keep the cluster balanced. MongoDB sharding is designed for petabyte-scale storage and provides automatic rebalancing, whereas Redis sharding is more focused on high-throughput memory scaling and requires more manual intervention for rebalancing.",
+    "analogy": "Sharding is like moving from a single filing cabinet to a whole room of cabinets. You need a map (Config Servers) and an assistant (Mongos) to tell you which cabinet holds the file you need. If one cabinet gets too full, the assistant automatically moves some files (Balancer) to a less full cabinet.",
+    "code": "```javascript\n// Enable sharding on a collection\nsh.enableSharding(\"prod_db\");\nsh.shardCollection(\"prod_db.orders\", { \"user_id\": 1 });\n```",
+    "counterQuestion": "What is a 'Jumbo Chunk' in MongoDB sharding?",
+    "counterQuestionAnswer": "A Jumbo Chunk is a chunk of data that has grown past the maximum size limit but cannot be split because all its documents share the same Shard Key value. This is a sign of a poor shard key choice and can lead to unbalanced clusters and performance bottlenecks that are difficult to resolve without re-sharding the entire collection.",
+    "category": "nosql",
+    "topic": "mongodb",
+    "difficulty": "hard",
+    "tags": [
+      "mongodb",
+      "scalability",
+      "infrastructure"
+    ]
+  },
+  {
+    "id": 61,
+    "question": "What is Redis and how does it differ from a standard SQL database?",
+    "answer": "Redis (Remote Dictionary Server) is an open-source, in-memory data structure store. It differs from SQL databases (like PostgreSQL) in several key ways: \n1. **Memory vs. Disk**: Redis stores data primarily in RAM, making it orders of magnitude faster (sub-millisecond latency) than disk-based SQL databases. \n2. **Schema-less**: Redis uses simple key-value pairs and complex data structures (Lists, Hashes, Sets) rather than fixed tables and rows. \n3. **Performance**: It is designed for high-throughput, low-latency tasks like caching, session management, and real-time analytics. While SQL is the 'System of Record' for structured, persistent data, Redis is the 'Speed Layer' for frequently accessed, transient data that needs to be retrieved instantly.",
+    "analogy": "SQL is like a massive warehouse where items are carefully filed in drawers; it's slow to find things but the storage is huge and reliable. Redis is like your desk: you keep exactly what you're working on right in front of you for instant access, but you have limited space.",
+    "code": "```bash\n# Simple Key-Value in Redis\nSET user:1 \"Alice\"\nGET user:1\n```",
+    "counterQuestion": "Can Redis be used as a primary database, or is it only for caching?",
+    "counterQuestionAnswer": "While primarily used for caching, Redis supports persistence (RDB/AOF) and high availability, allowing it to be used as a primary database for specific use cases (like real-time leaderboards or message brokers) where sub-millisecond performance is more critical than complex relational querying.",
+    "category": "redis",
+    "topic": "fundamentals",
+    "difficulty": "easy",
+    "tags": [
+      "redis",
+      "caching",
+      "architecture"
+    ]
+  },
+  {
+    "id": 62,
+    "question": "Explain 'SET', 'GET', and 'EXPIRE' commands.",
+    "answer": "These are the most fundamental Redis commands: \n1. **SET**: Stores a value (string) under a key. \n2. **GET**: Retrieves the value associated with a key. \n3. **EXPIRE**: Sets a timeout (Time-to-Live or TTL) on a key in seconds. Once the timeout expires, the key is automatically deleted from Redis. This is the core mechanism for caching, allowing you to store temporary data that automatically clears itself, ensuring that your cache doesn't grow indefinitely and that users eventually see fresh data from the primary database.",
+    "analogy": "SET and GET are like putting a label on a box and putting it on a shelf. EXPIRE is like a self-destruct timer on the box: after 10 minutes, the box and everything inside it simply vanishes.",
+    "code": "```bash\n# Cache a value for 60 seconds\nSET session:123 \"user_data\"\nEXPIRE session:123 60\n\n# Or in one command\nSETEX session:123 60 \"user_data\"\n```",
+    "counterQuestion": "What is 'SETNX' and why is it useful?",
+    "counterQuestionAnswer": "'SETNX' (Set if Not eXists) only sets the key if it doesn't already exist in Redis. It returns 1 if successful and 0 if the key already exists. This is a primary building block for creating distributed locks, ensuring that only one worker can 'claim' a resource at a time.",
+    "category": "redis",
+    "topic": "commands",
+    "difficulty": "easy",
+    "tags": [
+      "redis",
+      "caching",
+      "basics"
+    ]
+  },
+  {
+    "id": 63,
+    "question": "What are Redis 'Lists' and how do you use them as a simple Queue?",
+    "answer": "Redis Lists are simple lists of strings, sorted by insertion order. You can add elements to the head ('LPUSH') or the tail ('RPUSH'). To use a list as a **Queue**, you push to one end and pop from the other (e.g., 'LPUSH' to add tasks and 'RPOP' to process them). Redis also provides 'Blocking' versions like 'BRPOP', which will wait until an item is available rather than returning immediately. This makes Redis a very efficient and lightweight message broker for simple background task processing where the complexity of RabbitMQ or Kafka isn't required.",
+    "analogy": "A Redis List is like a stack of trays in a cafeteria. You can put a new tray on top (LPUSH) and someone else can take a tray from the bottom (RPOP). If the stack is empty, the next person just waits there (BRPOP) until a new tray arrives.",
+    "code": "```bash\n# Producer\nLPUSH my_queue \"task_1\"\n\n# Consumer (Blocks for 10 seconds if empty)\nBRPOP my_queue 10\n```",
+    "counterQuestion": "What is the time complexity of 'LINDEX' (retrieving an item by index) in a Redis List?",
+    "counterQuestionAnswer": "The time complexity is **O(N)**, where N is the number of elements. Because Redis Lists are implemented as linked lists, the server must traverse the list to find the element at a specific index. This is why you should avoid using lists for large-scale random access and instead use them primarily for stack or queue operations.",
+    "category": "redis",
+    "topic": "data_structures",
+    "difficulty": "medium",
+    "tags": [
+      "redis",
+      "queuing",
+      "performance"
+    ]
+  },
+  {
+    "id": 64,
+    "question": "What is a Redis 'Hash' and when is it better than a String?",
+    "answer": "A Redis Hash is a collection of field-value pairs, essentially a dictionary or map stored under a single key. It is better than a String when you want to store an object with multiple attributes (e.g., a 'User' with 'id', 'name', and 'email'). Instead of serializing the whole object as a JSON string, you store each attribute as a separate field in the hash. This allows you to retrieve or update individual fields ('HGET', 'HSET') without downloading and re-uploading the entire object, which saves bandwidth and memory. Hashes are also more memory-efficient when storing many small objects due to internal optimizations like 'Ziplists'.",
+    "analogy": "A Redis Hash is like a folder containing several distinct files. Instead of opening the whole folder and reading every file just to change one line, you can just open the specific file you need and update it.",
+    "code": "```bash\n# Store user profile in a hash\nHSET user:101 name \"Alice\" email \"alice@example.com\" age 30\n\n# Get only the name\nHGET user:101 name\n```",
+    "counterQuestion": "Can you set an expiration (TTL) on an individual field within a Redis Hash?",
+    "counterQuestionAnswer": "No, Redis only supports expiration on the entire key (the whole hash). If you need to expire individual fields, you must either manage them as separate top-level keys or handle the expiration logic manually within your application code.",
+    "category": "redis",
+    "topic": "data_structures",
+    "difficulty": "medium",
+    "tags": [
+      "redis",
+      "optimization",
+      "storage"
+    ]
+  },
+  {
+    "id": 65,
+    "question": "How do you clear a Redis database (FLUSHALL vs FLUSHDB)?",
+    "answer": "1. **FLUSHDB**: Deletes all keys from the *current* selected database. \n2. **FLUSHALL**: Deletes all keys from *every* database in the Redis instance. In production, these commands should be used with extreme caution as they are destructive and cannot be undone. In Redis 4.0+, you can add the 'ASYNC' flag (e.g., 'FLUSHALL ASYNC'), which allows Redis to delete the keys in a background thread. This prevents the server from blocking and becoming unresponsive while clearing millions of keys, ensuring that high-traffic environments remain stable even during maintenance.",
+    "analogy": "FLUSHDB is like emptying a single drawer in your desk. FLUSHALL is like setting the entire desk on fire. Use with caution!",
+    "code": "```bash\n# Clear the current database without blocking the server\nFLUSHDB ASYNC\n```",
+    "counterQuestion": "Why is 'FLUSHALL' considered dangerous even on a non-production development server?",
+    "counterQuestionAnswer": "'FLUSHALL' can take several seconds (or even minutes) to complete if the database is large. Since Redis is primarily single-threaded, the entire server will be completely blocked and unable to serve any other requests during this time, which can lead to cascading failures in connected applications.",
+    "category": "redis",
+    "topic": "administration",
+    "difficulty": "easy",
+    "tags": [
+      "redis",
+      "maintenance",
+      "commands"
+    ]
+  },
+  {
+    "id": 66,
+    "question": "Explain Redis 'Transactions': How do 'MULTI', 'EXEC', and 'WATCH' work?",
+    "answer": "Redis transactions allow you to execute a group of commands in a single atomic step. \n1. **MULTI**: Marks the start of a transaction block. \n2. **EXEC**: Executes all commands in the block. \n3. **WATCH**: Provides 'Optimistic Locking' (Check-and-Set). It monitors specific keys; if any of those keys change before you call 'EXEC', the transaction will fail and return a null response. This ensures that your updates are based on the latest data. Unlike SQL transactions, Redis does NOT support rollbacks; if a command fails in the middle of a block, the others will still execute. Redis transactions are about *atomicity* (all commands run together without interruption) rather than complex error recovery.",
+    "analogy": "MULTI/EXEC is like handing a waiter a list of 5 orders. He doesn't go to the kitchen for each one; he waits until you're done, takes the whole list, and the kitchen prepares them all in one go without starting anyone else's meal in between.",
+    "code": "```bash\n# Atomic increment of two keys\nMULTI\nINCR user:1:score\nINCR global:total_score\nEXEC\n```",
+    "counterQuestion": "Does 'MULTI/EXEC' block other clients while the commands are being queued?",
+    "counterQuestionAnswer": "No, while you are sending commands between 'MULTI' and 'EXEC', Redis just queues them in memory for that specific client. Other clients can continue to run commands normally. The 'blocking' only happens during the actual execution phase after 'EXEC' is called, where all queued commands run sequentially without any other client commands interleaved.",
+    "category": "redis",
+    "topic": "concurrency",
+    "difficulty": "hard",
+    "tags": [
+      "redis",
+      "transactions",
+      "concurrency"
+    ]
+  },
+  {
+    "id": 67,
+    "question": "What are 'Bitmaps' and 'HyperLogLog' in Redis? When would you use them for analytics?",
+    "answer": "These are space-efficient data structures for massive datasets: \n1. **Bitmaps**: Treat strings as a bit array. Perfect for tracking binary state (e.g., 'did user X login today?') for millions of users using very little memory. \n2. **HyperLogLog**: A probabilistic data structure used to estimate the cardinality (number of unique elements) of a set with >99% accuracy while using only a constant 12KB of memory, regardless of the number of items. Use Bitmaps for exact per-user tracking and HyperLogLog for massive-scale unique count estimations (e.g., 'unique visitors per day') where saving memory is more important than 100% precision.",
+    "analogy": "A Bitmap is like a giant checklist where each user is a row and you just put a '1' or '0' (Yes/No). HyperLogLog is like a smart jar of jellybeans: it can't tell you exactly how many are inside, but it can guess with incredible accuracy just by looking at the patterns of the beans.",
+    "code": "```bash\n# Bitmap: Set bit 42 (user_id) to 1 for today\nSETBIT login:2023-10-27 42 1\n\n# HyperLogLog: Add user_id to unique visitors\nPFADD visitors:today 42\nPFCOUNT visitors:today\n```",
+    "counterQuestion": "What is the memory difference between storing 100M unique IDs in a Set vs. a HyperLogLog?",
+    "counterQuestionAnswer": "Storing 100M 64-bit IDs in a standard Redis Set would take several gigabytes of RAM. HyperLogLog would estimate that same count using only 12KB, representing a multi-thousand-fold reduction in memory usage for cases where a tiny margin of error is acceptable.",
+    "category": "redis",
+    "topic": "advanced_data_structures",
+    "difficulty": "hard",
+    "tags": [
+      "redis",
+      "analytics",
+      "optimization"
+    ]
+  },
+  {
+    "id": 68,
+    "question": "How does Redis handle 'Geospatial' data (GEOADD, GEORADIUS)?",
+    "answer": "Redis handles geospatial data by encoding latitude and longitude into a 52-bit 'Geohash', which is then stored inside a **Sorted Set (ZSET)**. \n1. **GEOADD**: Adds a location with its coordinates. \n2. **GEORADIUS**: Returns all members within a certain distance from a specific point. Because it uses Sorted Sets internally, geospatial queries are extremely fast, allowing you to implement features like 'find nearby drivers' or 'locate the closest store' with sub-millisecond response times even with millions of coordinates.",
+    "analogy": "Redis Geospatial is like a digital map of the city. You pin your location (GEOADD), and the server can instantly tell you everyone else who is currently within 5 blocks of you (GEORADIUS).",
+    "code": "```bash\n# Add a driver's location\nGEOADD drivers 13.361389 38.115556 \"driver_1\"\n\n# Find drivers within 5km of a point\nGEORADIUS drivers 15.087269 37.502669 5 km\n```",
+    "counterQuestion": "Can you delete a single geospatial coordinate from a Redis key?",
+    "counterQuestionAnswer": "Yes. Since GEO data is stored in a Sorted Set, you use the 'ZREM' command to remove a specific member from the key. This makes managing dynamic location data (like moving vehicles) simple and efficient.",
+    "category": "redis",
+    "topic": "advanced_data_structures",
+    "difficulty": "medium",
+    "tags": [
+      "redis",
+      "geospatial",
+      "performance"
+    ]
+  },
+  {
+    "id": 69,
+    "question": "Explain the difference between Redis 'RDB' (Snapshotting) and 'AOF' (Append Only File) persistence.",
+    "answer": "Redis provides two persistence models: \n1. **RDB**: Creates a compact point-in-time snapshot of your entire dataset at specified intervals (e.g., every 5 minutes). It is great for backups and fast restarts but carries a risk of data loss between snapshots. \n2. **AOF**: Logs every write operation received by the server in an append-only file. It is much more durable (can be configured to sync every second) but results in larger files and slower restarts. Most production environments use **both** simultaneously: RDB for fast disaster recovery and AOF for maximum data durability, leveraging the strengths of each model.",
+    "analogy": "RDB is like taking a photo of your whiteboard every hour: it's a quick way to save the whole picture, but you lose everything you wrote since the last photo. AOF is like a GoPro recording every single stroke of the marker: you can recreate the board exactly, but it takes much longer to watch the whole video to see the final result.",
+    "code": "```bash\n# Check persistence settings\nCONFIG GET save\nCONFIG GET appendonly\n```",
+    "counterQuestion": "What is 'AOF Rewrite'?",
+    "counterQuestionAnswer": "As the AOF log grows, it can contain many redundant commands (e.g., setting the same key 100 times). An AOF Rewrite creates a new, shorter log that contains only the minimum set of commands needed to rebuild the current dataset, preventing the AOF file from filling up the disk unnecessarily.",
+    "category": "redis",
+    "topic": "persistence",
+    "difficulty": "hard",
+    "tags": [
+      "redis",
+      "reliability",
+      "infrastructure"
+    ]
+  },
+  {
+    "id": 70,
+    "question": "What is 'LRU' vs 'LFU' eviction in Redis? How do you configure the 'maxmemory-policy'?",
+    "answer": "When Redis hits its memory limit ('maxmemory'), it must delete old keys to make room for new ones based on the 'maxmemory-policy': \n1. **LRU (Least Recently Used)**: Deletes keys that haven't been accessed for the longest time. \n2. **LFU (Least Frequently Used)**: Deletes keys that are accessed the least often over time. \n3. **volatile-lru/lfu**: Only evicts keys with an expiration (TTL) set. \n4. **allkeys-lru/lfu**: Can evict any key. Use **LRU** for standard caching where older data is likely stale. Use **LFU** when you have 'hot' items that should stay in cache even if they haven't been accessed in the last few minutes, ensuring that your most valuable data remains instantly available.",
+    "analogy": "LRU is like cleaning out your fridge by throwing away whatever has been sitting at the back the longest. LFU is like throwing away the stuff you rarely use, even if you just bought it (like that weird jar of spice you used once).",
+    "code": "```bash\n# Set eviction policy to allkeys-lru\nCONFIG SET maxmemory-policy allkeys-lru\n```",
+    "counterQuestion": "What happens if Redis hits its memory limit and the policy is set to 'noeviction'?",
+    "counterQuestionAnswer": "If set to 'noeviction', Redis will return an error for all new write operations (like SET, LPUSH), effectively becoming a read-only database until memory is freed up by deleting keys or expiring them. This is the default setting and can lead to application crashes if not monitored.",
+    "category": "redis",
+    "topic": "optimization",
+    "difficulty": "hard",
+    "tags": [
+      "redis",
+      "performance",
+      "caching"
+    ]
+  },
+  {
+    "id": 71,
+    "question": "Explain Redis 'Sorted Sets' (ZSETs) and how they work internally (Skip Lists).",
+    "answer": "A Sorted Set is a collection of unique strings where each member is associated with a floating-point 'score'. Members are kept sorted by their scores. Internally, Redis uses a **Skip List** paired with a Hash Table to implement ZSETs. The hash table provides O(1) lookup for scores, while the Skip List (a multi-layered linked list) allows for fast O(log N) range queries and insertions. ZSETs are the power-horse of Redis, used for leaderboards, priority queues, and time-series indexing. They combine the unique-constraint of a Set with the ordering-capabilities of a List, making them incredibly versatile for complex data management tasks.",
+    "analogy": "A Sorted Set is like a high-score leaderboard in a game. Everyone has a unique name (Set), but they are ranked by their score (Sorted). Internally, the Skip List is like a specialized filing system that lets the computer jump directly to the players with 'Scores between 1000 and 2000' without looking at every single player.",
+    "code": "```bash\n# Add scores to a leaderboard\nZADD leaderboard 100 \"Alice\" 150 \"Bob\" 120 \"Charlie\"\n\n# Get top 3 players\nZREVRANGE leaderboard 0 2 WITHSCORES\n```",
+    "counterQuestion": "Why does Redis use a Skip List instead of a B-Tree for Sorted Sets?",
+    "counterQuestionAnswer": "Skip Lists are much easier to implement and reason about than balanced trees like B-Trees. They provide similar performance (O(log N)) for most operations and are significantly more efficient for 'range' queries (finding all items between two scores), which is a primary use case for Sorted Sets in Redis.",
+    "category": "redis",
+    "topic": "data_structures",
+    "difficulty": "hard",
+    "tags": [
+      "redis",
+      "performance",
+      "internals"
+    ]
+  },
+  {
+    "id": 72,
+    "question": "How do you implement a 'Distributed Lock' with Redis? What is 'Redlock'?",
+    "answer": "A distributed lock ensures that only one worker can process a task across multiple servers. In a single Redis instance, you can use 'SET key value NX PX 30000' (Set if Not exists with a 30s expiry). **Redlock** is an algorithm designed by the Redis creator for distributed environments with multiple independent Redis masters. It works by trying to acquire the lock in most of the nodes (e.g., 3 out of 5) using the same key and random value. If it succeeds within a small fraction of the total lock time, the lock is considered acquired. This provides a much more robust guarantee of mutual exclusion in the face of network partitions or server failures.",
+    "analogy": "A distributed lock is like the only 'Speaker's Gavel' in a room full of people. Only the person holding the gavel can speak. If the person holding it disappears (crashes), the gavel automatically breaks after 30 seconds so someone else can pick it up.",
+    "code": "```bash\n# Acquire a lock for 30 seconds if it doesn't exist\nSET resource_lock \"random_token\" NX PX 30000\n```",
+    "counterQuestion": "What is the 'Fencing Token' in distributed locking?",
+    "counterQuestionAnswer": "A Fencing Token is a monotonically increasing ID (like a version number) returned with the lock. When the worker performs its task (e.g., writing to a DB), it includes this token. The DB checks if the token is still valid. This prevents a 'late' worker (whose lock has already expired) from overwriting data from a 'new' worker who currently holds the lock.",
+    "category": "redis",
+    "topic": "distributed_systems",
+    "difficulty": "hard",
+    "tags": [
+      "redis",
+      "concurrency",
+      "distributed"
+    ]
+  },
+  {
+    "id": 73,
+    "question": "Explain 'Redis Pipelines'. How do they reduce network latency?",
+    "answer": "Redis is a request-response server. In a standard flow, you send a command, wait for the response, and then send the next. This incurs a 'Round Trip Time' (RTT) for every single command. **Pipelining** allows you to send a batch of commands to the server at once without waiting for individual replies. The server processes all commands and sends back all responses in a single block. This dramatically improves performance (often 10x-100x) for bulk operations by minimizing the overhead of network packets and context switching. It's important to note that while pipelining is fast, it is NOT atomic like a transaction.",
+    "analogy": "Pipelining is like going to a restaurant and giving the waiter your entire order (appetizer, main, dessert) at once. Instead of calling the waiter over for every single dish, he just brings everything in one trip (or close to it), saving time for both of you.",
+    "code": "```python\n# Using a pipeline in Python (redis-py)\npipe = r.pipeline()\npipe.set('foo', 'bar')\npipe.get('foo')\npipe.incr('baz')\nresponses = pipe.execute()\n```",
+    "counterQuestion": "What is the primary memory risk of extremely large pipelines?",
+    "counterQuestionAnswer": "When you use a pipeline, the Redis server must buffer all the responses in memory until all commands are processed and sent back. If you send millions of commands in a single pipeline, you can significantly increase the memory usage on the Redis server, potentially leading to performance degradation or OOM errors.",
+    "category": "redis",
+    "topic": "performance",
+    "difficulty": "medium",
+    "tags": [
+      "redis",
+      "optimization",
+      "networking"
+    ]
+  },
+  {
+    "id": 74,
+    "question": "What is 'Redis Sentinel' and how does it provide high availability?",
+    "answer": "Redis Sentinel is a system designed to manage Redis instances in a High Availability (HA) setup. Its main functions are: \n1. **Monitoring**: Constantly checking if your master and replica instances are working. \n2. **Notification**: Alerting other services if a failure occurs. \n3. **Automatic Failover**: If a master fails, Sentinel will promote a replica to master and reconfigure other replicas to use the new master. \n4. **Configuration Provider**: Acts as a source of truth for clients to find the current master. Sentinel ensures that your Redis cluster can recover from a single server failure automatically without manual intervention.",
+    "analogy": "Redis Sentinel is like a group of security guards watching over a main server (Master) and its backups (Replicas). If the guards all agree that the main server has collapsed, they immediately tell one of the backups to take over and start doing the work.",
+    "code": "```bash\n# Check sentinel status\nSENTINEL master mymaster\nSENTINEL slaves mymaster\n```",
+    "counterQuestion": "What is 'Quorum' in Redis Sentinel?",
+    "counterQuestionAnswer": "Quorum is the minimum number of Sentinel processes that must agree that a master is unreachable before a failover is triggered. This prevents a single 'flaky' sentinel from triggering unnecessary and disruptive failovers due to local network issues.",
+    "category": "redis",
+    "topic": "high_availability",
+    "difficulty": "hard",
+    "tags": [
+      "redis",
+      "infrastructure",
+      "reliability"
+    ]
+  },
+  {
+    "id": 75,
+    "question": "What is 'Redis Lua Scripting'. Why is it atomic?",
+    "answer": "Redis allows you to upload and execute Lua scripts directly on the server using the 'EVAL' command. These scripts are **atomic** because Redis is single-threaded; once a script starts running, no other command from any other client can execute until the script finishes. This allows you to perform complex 'Read-Modify-Write' operations (like checking a value and updating it based on a condition) without worrying about race conditions. Lua scripts are also more efficient than multiple round-trips as all logic happens server-side, minimizing network latency for multi-step operations.",
+    "analogy": "Lua scripting is like handing a chef a full recipe and telling him to lock the kitchen door until he's finished. No other orders can come in, and he won't get distracted until the entire dish is ready.",
+    "code": "```lua\n-- Atomic 'Update if equal' script\nlocal val = redis.call('get', KEYS[1])\nif val == ARGV[1] then\n    return redis.call('set', KEYS[1], ARGV[2])\nelse\n    return 0\nend\n```",
+    "counterQuestion": "What is the primary danger of a 'Long-Running' Lua script?",
+    "counterQuestionAnswer": "Because Lua scripts are atomic and Redis is single-threaded, a long-running script will block ALL other clients from using Redis until it finishes. If a script takes 5 seconds to run, your entire application will effectively be frozen for those 5 seconds. Scripts should always be kept extremely small and efficient.",
+    "category": "redis",
+    "topic": "scripting",
+    "difficulty": "hard",
+    "tags": [
+      "redis",
+      "concurrency",
+      "atomicity"
+    ]
+  },
+  {
+    "id": 76,
+    "question": "Explain 'Redis 7 Functions'. How do they differ from legacy Lua scripts?",
+    "answer": "Redis Functions (introduced in Redis 7) are a modern evolution of Lua scripting. Unlike legacy scripts which are sent with every request ('EVAL') or cached by hash ('EVALSHA'), Functions are grouped into **Libraries** that are persisted in the RDB/AOF files and replicated to all replicas automatically. They provide better organization, versioning, and discoverability. While legacy scripts are transient and can be lost if the script cache is cleared, Redis Functions are first-class citizens of the database, making them much more robust for building complex, server-side logic that needs to be maintained across the entire cluster lifetime.",
+    "analogy": "Legacy Lua scripts are like sticky notes you hand to a chef: they work, but they might get lost or thrown away. Redis Functions are like a professionally printed cookbook that is permanently stored in the kitchen library and copied for every new chef that joins.",
+    "code": "```bash\n# Load a library into Redis 7\nFUNCTION LOAD \"#!lua name=mylib\\n redis.register_function('myfunc', function(keys, args) return args[1] end)\"\n\n# Call the function\nFCALL myfunc 0 \"Hello Redis\"\n```",
+    "counterQuestion": "Can you use languages other than Lua for Redis Functions?",
+    "counterQuestionAnswer": "As of now, the primary engine for Redis Functions is still Lua. However, the architecture is designed to be 'pluggable', meaning Redis could potentially support other engines (like JavaScript or WebAssembly) in the future, providing even more flexibility for server-side logic.",
+    "category": "redis",
+    "topic": "scripting",
+    "difficulty": "hard",
+    "tags": [
+      "redis",
+      "features",
+      "modern_redis"
+    ]
+  },
+  {
+    "id": 77,
+    "question": "How does Redis Pub/Sub work? What are its limitations compared to Kafka?",
+    "answer": "**Pub/Sub** is Redis's built-in publish-subscribe messaging system.\n\n```python\nimport redis\nr = redis.Redis()\n\n# Subscriber (in one process/thread)\npubsub = r.pubsub()\npubsub.subscribe('notifications')\nfor message in pubsub.listen():\n    if message['type'] == 'message':\n        print(message['data'])\n\n# Publisher (in another process)\nr.publish('notifications', 'New order placed!')\n```\n\n**Key characteristics:**\n- **Fire-and-forget:** Messages are NOT persisted. If a subscriber is offline when a message is published, it is lost forever.\n- **No history:** New subscribers cannot replay past messages.\n- **Fan-out:** One publish \u2192 all current subscribers receive it.\n\n**Limitations vs Kafka:**\n| Feature | Redis Pub/Sub | Kafka |\n|---|---|---|\n| Persistence | \u274c No | \u2705 Yes (configurable) |\n| Message replay | \u274c No | \u2705 Yes |\n| Consumer groups | \u274c No | \u2705 Yes |\n| Throughput | Medium | Very High |\n\n**Use Pub/Sub for:** Real-time notifications, WebSocket fan-out (chat rooms, live dashboards). **Use Kafka for:** Durable event streams, audit logs, microservice communication.",
+    "analogy": "Redis Pub/Sub is like a live radio broadcast: you only hear the music if your radio is turned on and tuned to the right station at that exact moment. If you miss a song, you can't go back and listen to it later.",
+    "code": "```python\n# Quick Pub/Sub check\nr.publish('chat', 'Hello World!')\n```",
+    "counterQuestion": "How do you implement Pub/Sub in Django Channels?",
+    "counterQuestionAnswer": "Django Channels uses Redis as its Channel Layer backend. When a WebSocket message arrives, the consumer publishes to a Redis channel group (`channel_layer.group_send`). All other consumers subscribed to that group (across multiple server instances) receive the message via Redis Pub/Sub and push it to their connected WebSocket clients. This enables horizontal scaling of WebSocket servers.",
+    "category": "redis",
+    "topic": "messaging",
+    "difficulty": "medium",
+    "tags": [
+      "redis",
+      "pubsub",
+      "messaging",
+      "websockets"
+    ]
+  },
+  {
+    "id": 78,
+    "question": "What are Redis Streams? How do they solve the limitations of Pub/Sub?",
+    "answer": "Redis Streams (added in Redis 5.0) are a persistent, append-only log data structure \u2014 think of it as Redis's native Kafka.\n\n```python\n# Producer: append to stream\nr.xadd('orders', {'order_id': '123', 'status': 'placed', 'total': '99.99'})\n\n# Consumer: read new messages\nmessages = r.xread({'orders': '$'}, block=5000)  # block 5s for new messages\n\n# Consumer Group: multiple consumers share the work\nr.xgroup_create('orders', 'email-workers', id='0')\nmessages = r.xreadgroup('email-workers', 'worker-1', {'orders': '>'}, count=10)\n# Acknowledge after processing\nr.xack('orders', 'email-workers', message_id)\n```\n\n**Advantages over Pub/Sub:**\n- \u2705 Messages are **persisted** \u2014 consumers can reconnect and continue from where they left off.\n- \u2705 **Consumer Groups** \u2014 multiple workers share messages (like Kafka consumer groups).\n- \u2705 **Message ACK** \u2014 track which messages have been processed.\n- \u2705 **Replay** \u2014 read from any point in the stream.\n\n**Use Streams for:** Audit logs, activity feeds, lightweight event queues where Kafka's complexity is unwarranted.",
+    "analogy": "Redis Streams is like a recorded CCTV feed: the camera is always recording, and even if you leave the room, you can come back later and watch everything you missed from the exact second you left.",
+    "code": "```bash\n# Read all messages from the beginning\nXREAD STREAMS orders 0\n```",
+    "counterQuestion": "What is the difference between `XREAD` with `$` vs `0` as the start ID?",
+    "counterQuestionAnswer": "`$` means 'give me only new messages arriving after I started listening' (like Pub/Sub). `0` means 'give me ALL messages from the beginning of the stream'. When setting up a consumer group, you typically use `0` to process historical messages and `>` in `XREADGROUP` to get the next undelivered message.",
+    "category": "redis",
+    "topic": "messaging",
+    "difficulty": "hard",
+    "tags": [
+      "redis",
+      "streams",
+      "messaging",
+      "kafka"
+    ]
+  },
+  {
+    "id": 79,
+    "question": "How do you implement a real-time leaderboard using Redis Sorted Sets?",
+    "answer": "Sorted Sets (ZSET) are the perfect data structure for leaderboards \u2014 members are automatically ranked by score.\n\n```python\nimport redis\nr = redis.Redis()\n\n# Add/update score\nr.zadd('game:leaderboard', {'player:alice': 1500})\nr.zadd('game:leaderboard', {'player:bob': 2200})\nr.zincrby('game:leaderboard', 50, 'player:alice')  # Add 50 points\n\n# Top 10 players (highest scores first)\ntop10 = r.zrevrange('game:leaderboard', 0, 9, withscores=True)\n# [('player:bob', 2200.0), ('player:alice', 1550.0)]\n\n# Player's rank (0-indexed from top)\nrank = r.zrevrank('game:leaderboard', 'player:alice')\n# rank = 1 (second place)\n\n# Players in a score range\nr.zrangebyscore('game:leaderboard', 1000, 2000, withscores=True)\n```\n\n**All operations are O(log N)** \u2014 perfectly scalable to millions of players.\n\n**Common patterns:**\n- Weekly leaderboard: use a new key per week `game:leaderboard:2024-W01`\n- Set TTL on old leaderboard keys to auto-expire",
+    "analogy": "A Redis Leaderboard is like an Olympic podium that updates instantly. As soon as an athlete finishes their race, their name jumps to the correct spot on the podium and everyone else moves down, all in the blink of an eye.",
+    "code": "```bash\n# See player rank\nZREVRANK game:leaderboard player:alice\n```",
+    "counterQuestion": "How would you show a player their surrounding ranks (e.g., 5 above and 5 below)?",
+    "counterQuestionAnswer": "Get the player's rank first with `ZREVRANK`, then use `ZREVRANGE` with `(rank - 5, rank + 5)` as the range. This gives you 11 entries centered on the player. This is the standard 'neighborhood leaderboard' pattern used in gaming apps to make every player feel competitive regardless of their global rank.",
+    "category": "redis",
+    "topic": "data_structures",
+    "difficulty": "medium",
+    "tags": [
+      "redis",
+      "sorted_sets",
+      "leaderboard",
+      "gaming"
+    ]
+  },
+  {
+    "id": 80,
+    "question": "How do you find the Nth highest salary in SQL? (Generalized)",
+    "answer": "To find the Nth highest salary, you can use a window function like `DENSE_RANK()`, a correlated subquery, or the `LIMIT/OFFSET` clause. The window function is the modern standard, while the subquery is useful for understanding the logic of comparing a set to itself.",
+    "analogy": "Finding the Nth highest salary is like finding the Nth person in a line sorted by height. You can either look at their rank directly (Window Function) or count how many people are taller than each person (Correlated Subquery).",
+    "code": "```sql\n-- Method 1: Window Function (Recommended)\nSELECT salary FROM (\n    SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) as rnk\n    FROM employees\n) as t\nWHERE rnk = N;\n\n-- Method 2: Correlated Subquery (Classic logic)\nSELECT salary FROM employees e1\nWHERE (N-1) = (SELECT COUNT(DISTINCT salary) FROM employees e2 WHERE e2.salary > e1.salary);\n\n-- Method 3: 2nd Highest specifically (Simple Subquery)\nSELECT MAX(salary) FROM employees WHERE salary < (SELECT MAX(salary) FROM employees);\n```",
+    "counterQuestion": "What is the difference between RANK() and DENSE_RANK() here?",
+    "counterQuestionAnswer": "RANK() skips positions if there are ties (1, 2, 2, 4), which could cause 'rank = 3' to return nothing. DENSE_RANK() does not skip (1, 2, 2, 3), ensuring the Nth unique rank is always reachable.",
+    "category": "sql",
+    "topic": "query_writing",
+    "difficulty": "hard",
+    "tags": [
+      "sql",
+      "interview",
+      "salary",
+      "window_functions",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 81,
+    "question": "How do you calculate the Median value of a column in SQL?",
+    "answer": "SQL doesn't have a built-in `MEDIAN()` function in many dialects (like standard PostgreSQL or MySQL). To find it, you can: 1. Use `PERCENTILE_CONT(0.5)` if supported. 2. Use a CTE to rank rows and find the middle index. 3. Sort the data and pick the middle value(s).",
+    "analogy": "Finding the median is like finding the middle child in a family. You line everyone up by age and pick the one exactly in the center. If there are two middle children (even count), you average their ages.",
+    "code": "```sql\n-- PostgreSQL/Oracle (Built-in)\nSELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY salary) FROM employees;\n\n-- Generic SQL (Using CTE/Window Function)\nWITH Ranked AS (\n  SELECT salary, \n         ROW_NUMBER() OVER (ORDER BY salary) AS row_id,\n         COUNT(*) OVER () AS total_count\n  FROM employees\n)\nSELECT AVG(salary)\nFROM Ranked\nWHERE row_id IN ((total_count + 1) / 2, (total_count + 2) / 2);\n```",
+    "counterQuestion": "Why is Median often preferred over Mean (Average) in salary data?",
+    "counterQuestionAnswer": "The Mean is highly sensitive to outliers (e.g., a CEO's salary). The Median provides a more accurate representation of the 'typical' employee's experience because it isn't skewed by extreme values at either end.",
+    "category": "sql",
+    "topic": "query_writing",
+    "difficulty": "hard",
+    "tags": [
+      "sql",
+      "statistics",
+      "analytics",
+      "highly_asked"
+    ]
+  },
+  {
+    "id": 82,
+    "question": "How do you find duplicate records in a table?",
+    "answer": "To find duplicates based on specific columns (e.g., email), you use `GROUP BY` on those columns and then use the `HAVING` clause to filter for groups where the count is greater than 1.",
+    "analogy": "Finding duplicate records is like checking a guest list for people who signed in more than once. You group the entries by name and look for any name that appears multiple times.",
+    "code": "```sql\n-- Find duplicate emails\nSELECT email, COUNT(*)\nFROM users\nGROUP BY email\nHAVING COUNT(*) > 1;\n\n-- Find duplicates based on multiple columns\nSELECT first_name, last_name, COUNT(*)\nFROM users\nGROUP BY first_name, last_name\nHAVING COUNT(*) > 1;\n```",
+    "counterQuestion": "How would you see the full rows (all columns) for these duplicates?",
+    "counterQuestionAnswer": "You can join the table back to the results of the duplicate query, or use a window function: `SELECT * FROM (SELECT *, COUNT(*) OVER(PARTITION BY email) as cnt FROM users) t WHERE cnt > 1;`",
+    "category": "sql",
+    "topic": "query_writing",
+    "difficulty": "medium",
+    "tags": [
+      "sql",
+      "interview",
+      "duplicates",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 83,
+    "question": "How do you delete duplicate rows from a table while keeping only one instance?",
+    "answer": "The safest and most common way is to use a Common Table Expression (CTE) with a window function like `ROW_NUMBER()`. You partition the data by the columns that define a 'duplicate' and assign a number to each. Then, you delete any row where the number is greater than 1.",
+    "analogy": "Deleting duplicates is like cleaning a deck of cards where some cards were accidentally added twice. You go through the deck, find the copies of the Ace of Spades, and throw away all but the first one you found.",
+    "code": "```sql\n-- Remove duplicate emails keeping the one with the lowest ID\nWITH CTE AS (\n    SELECT id, \n           ROW_NUMBER() OVER (PARTITION BY email ORDER BY id) as row_num\n    FROM users\n)\nDELETE FROM users\nWHERE id IN (SELECT id FROM CTE WHERE row_num > 1);\n```",
+    "counterQuestion": "What is the difference between ROW_NUMBER() and RANK() in this context?",
+    "counterQuestionAnswer": "`ROW_NUMBER()` always assigns a unique sequential number to every row, even if they are identical. `RANK()` would assign the same number to tied rows (e.g., 1, 1, 3), which would make it impossible to distinguish between the 'first' and 'second' copy of a duplicate for deletion.",
+    "category": "sql",
+    "topic": "query_writing",
+    "difficulty": "hard",
+    "tags": [
+      "sql",
+      "interview",
+      "duplicates",
+      "maintenance"
+    ]
+  },
+  {
+    "id": 84,
+    "question": "Write a query to find employees who earn more than their managers.",
+    "answer": "This requires a 'Self-Join'. You join the Employee table to itself, matching the `manager_id` of the first instance to the `id` of the second instance. Then you filter the results where the employee's salary is greater than the manager's salary.",
+    "analogy": "This is like looking through a family tree to find children who are taller than their parents. You compare each person's height to the height of the person listed as their parent.",
+    "code": "```sql\n-- Self-join on Employee table\nSELECT e.name AS employee_name\nFROM employees e\nJOIN employees m ON e.manager_id = m.id\nWHERE e.salary > m.salary;\n```",
+    "counterQuestion": "What kind of JOIN should you use if some employees don't have managers (like the CEO)?",
+    "counterQuestionAnswer": "An `INNER JOIN` is fine here because an employee without a manager cannot 'earn more' than a manager they don't have. If you used a `LEFT JOIN`, the manager columns would be NULL for the CEO, and the comparison `salary > NULL` would evaluate to UNKNOWN, still excluding them correctly.",
+    "category": "sql",
+    "topic": "query_writing",
+    "difficulty": "medium",
+    "tags": [
+      "sql",
+      "interview",
+      "joins",
+      "self_join",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 85,
+    "question": "Find the department with the highest total salary expenditure.",
+    "answer": "You need to group the employees by their department, calculate the sum of salaries for each group, order the results in descending order, and then take the top record.",
+    "analogy": "This is like finding which department in a hospital has the highest payroll. You add up all the salaries in the 'Surgery' department, 'Radiology' department, etc., and see which total is the largest.",
+    "code": "```sql\nSELECT d.name, SUM(e.salary) as total_salary\nFROM departments d\nJOIN employees e ON d.id = e.department_id\nGROUP BY d.name\nORDER BY total_salary DESC\nLIMIT 1;\n```",
+    "counterQuestion": "What if two departments have the exact same highest total salary?",
+    "counterQuestionAnswer": "`LIMIT 1` will only return one of them arbitrarily. If you need to return both in case of a tie, you should use a subquery with `RANK()` or `WHERE total = (SELECT MAX(total) FROM ...)`.",
+    "category": "sql",
+    "topic": "query_writing",
+    "difficulty": "medium",
+    "tags": [
+      "sql",
+      "interview",
+      "aggregation",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 86,
+    "question": "How do you calculate a running total of sales in SQL?",
+    "answer": "A running total is best calculated using the `SUM()` window function with an `ORDER BY` clause. The window defaults to 'all rows from the start of the partition to the current row', which creates the cumulative sum.",
+    "analogy": "A running total is like your bank account balance after every transaction. Each line shows the amount of that specific transaction, plus the sum of everything that came before it.",
+    "code": "```sql\nSELECT \n    sale_date, \n    amount, \n    SUM(amount) OVER (ORDER BY sale_date) as running_total\nFROM sales;\n```",
+    "counterQuestion": "How would you calculate a running total *per customer*?",
+    "counterQuestionAnswer": "You would add a `PARTITION BY customer_id` to the `OVER` clause. This resets the running total for every new customer: `SUM(amount) OVER (PARTITION BY customer_id ORDER BY sale_date)`.",
+    "category": "sql",
+    "topic": "query_writing",
+    "difficulty": "hard",
+    "tags": [
+      "sql",
+      "interview",
+      "window_functions",
+      "analytics",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 87,
+    "question": "Find the top 3 highest-paid employees in each department.",
+    "answer": "This is a classic 'Top N per Group' problem. The most efficient way is to use a window function like `DENSE_RANK()` or `ROW_NUMBER()` inside a subquery or CTE, and then filter for ranks less than or equal to 3.",
+    "analogy": "This is like awarding Gold, Silver, and Bronze medals to the top three performers in every single Olympic event, rather than just the top three performers in the whole world.",
+    "code": "```sql\nWITH RankedEmployees AS (\n    SELECT \n        name, \n        department_id, \n        salary,\n        DENSE_RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) as rank\n    FROM employees\n)\nSELECT * \nFROM RankedEmployees \nWHERE rank <= 3;\n```",
+    "counterQuestion": "When would you use ROW_NUMBER() instead of DENSE_RANK() for this?",
+    "counterQuestionAnswer": "Use `ROW_NUMBER()` if you strictly want only 3 rows per department, even if there are ties (it will pick one arbitrarily). Use `DENSE_RANK()` if you want to include all employees who share a top-3 salary, which might result in more than 3 rows if there are ties for 3rd place.",
+    "category": "sql",
+    "topic": "query_writing",
+    "difficulty": "hard",
+    "tags": [
+      "sql",
+      "interview",
+      "window_functions",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 88,
+    "question": "Select all employees who joined in the last 30 days.",
+    "answer": "This requires date arithmetic, which varies slightly between SQL dialects. In PostgreSQL, you subtract an `INTERVAL` from `CURRENT_DATE`. In MySQL, you use `DATE_SUB()` or `NOW() - INTERVAL 30 DAY`.",
+    "analogy": "This is like looking at a gym's membership list to find everyone who signed up in the last month to send them a 'Welcome' email.",
+    "code": "```sql\n-- PostgreSQL\nSELECT * \nFROM employees \nWHERE join_date >= CURRENT_DATE - INTERVAL '30 days';\n\n-- MySQL\nSELECT * \nFROM employees \nWHERE join_date >= DATE_SUB(NOW(), INTERVAL 30 DAY);\n```",
+    "counterQuestion": "Is it better to use `join_date >= ...` or a function like `DATEDIFF(join_date, NOW()) <= 30`?",
+    "counterQuestionAnswer": "It is much better to use `join_date >= ...`. This allows the database to use an index on the `join_date` column. If you wrap `join_date` in a function like `DATEDIFF`, the database usually cannot use the index and must perform a slow full-table scan.",
+    "category": "sql",
+    "topic": "query_writing",
+    "difficulty": "medium",
+    "tags": [
+      "sql",
+      "interview",
+      "dates"
+    ]
+  },
+  {
+    "id": 89,
+    "question": "Find customers who have never placed an order.",
+    "answer": "There are three common ways: a `LEFT JOIN` where the right-side ID is NULL, a `NOT IN` subquery, or a `NOT EXISTS` correlated subquery. `NOT EXISTS` is generally considered the most performant and readable for this purpose.",
+    "analogy": "This is like comparing a list of all library members to a list of everyone who has borrowed a book. You want to find the members who don't appear anywhere on the 'borrowed' list.",
+    "code": "```sql\n-- Method 1: LEFT JOIN (Common)\nSELECT c.name\nFROM customers c\nLEFT JOIN orders o ON c.id = o.customer_id\nWHERE o.id IS NULL;\n\n-- Method 2: NOT EXISTS (Often most performant)\nSELECT name\nFROM customers c\nWHERE NOT EXISTS (\n    SELECT 1 FROM orders o WHERE o.customer_id = c.id\n);\n```",
+    "counterQuestion": "What is the danger of using 'NOT IN' with a subquery for this?",
+    "counterQuestionAnswer": "If the subquery returns even a single `NULL` value, the `NOT IN` condition will evaluate to UNKNOWN for all rows, and the query will return zero results. `LEFT JOIN` and `NOT EXISTS` do not have this problem and are safer to use.",
+    "category": "sql",
+    "topic": "query_writing",
+    "difficulty": "medium",
+    "tags": [
+      "sql",
+      "interview",
+      "joins",
+      "subqueries",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 90,
+    "question": "How do you model a Many-to-Many relationship in a relational database?",
+    "answer": "Relational databases cannot directly link two tables in a many-to-many relationship. Instead, you must use a **Junction Table** (also called a Join, Link, or Associative table). This table contains two Foreign Keys, each pointing to the Primary Key of the respective tables. The combination of these two Foreign Keys usually forms a **Composite Primary Key** to ensure no duplicate relationships exist.",
+    "analogy": "A Many-to-Many relationship is like 'Students and Courses'. A student can take many courses, and a course has many students. You can't just put a list of courses on the student card; you need a separate 'Enrollment Ledger' (Junction Table) that records every student-course pair.",
+    "code": "```sql\nCREATE TABLE students (id INT PRIMARY KEY, name TEXT);\nCREATE TABLE courses (id INT PRIMARY KEY, title TEXT);\n\n-- Junction Table\nCREATE TABLE enrollments (\n    student_id INT REFERENCES students(id),\n    course_id INT REFERENCES courses(id),\n    PRIMARY KEY (student_id, course_id) -- Composite PK\n);\n```",
+    "counterQuestion": "What is the benefit of adding extra columns to a Junction Table?",
+    "counterQuestionAnswer": "Adding columns like `enrollment_date` or `grade` allows you to store metadata about the relationship itself. This transforms the junction table into an 'Entry' or 'Transaction' entity, which is common in complex systems like E-commerce (Orders-Items) or Education (Enrollments).",
+    "category": "sql",
+    "topic": "design",
+    "difficulty": "medium",
+    "tags": [
+      "database_design",
+      "many_to_many",
+      "junction_table",
+      "highly_asked"
+    ]
+  },
+  {
+    "id": 91,
+    "question": "What is Referential Integrity, and what are 'Cascading' actions?",
+    "answer": "Referential Integrity ensures that relationships between tables remain consistent. If a row in Table B points to Table A, Table A must exist. **Cascading Actions** define what happens to the 'child' record when the 'parent' is updated or deleted: \n1. **CASCADE**: Delete/Update child if parent is gone. \n2. **RESTRICT/NO ACTION**: Prevent parent deletion if children exist (Default). \n3. **SET NULL**: Keep child but set the FK to NULL. \n4. **SET DEFAULT**: Set FK to a default value.",
+    "analogy": "Referential Integrity is like a 'Library Card'. You can't have a record of a borrowed book if the book itself has been deleted from the catalog. **CASCADE** is like a 'Subscription Bundle': if the main subscription is cancelled, all the add-on channels are automatically removed too.",
+    "code": "```sql\nCREATE TABLE orders (\n    id INT PRIMARY KEY,\n    user_id INT REFERENCES users(id) ON DELETE CASCADE\n);\n-- If a user is deleted, all their orders are automatically purged.\n```",
+    "counterQuestion": "When should you NOT use ON DELETE CASCADE?",
+    "counterQuestionAnswer": "You should avoid it for critical financial or historical data where you need an audit trail. For example, if a user deletes their account, you might want to keep their 'Invoices' for tax reasons but set the `user_id` to NULL or point it to a 'Deleted User' record instead.",
+    "category": "sql",
+    "topic": "fundamentals",
+    "difficulty": "medium",
+    "tags": [
+      "referential_integrity",
+      "cascade",
+      "foreign_key",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 92,
+    "question": "How does 'MongoDB Sharding' work? What is a 'Shard Key'?",
+    "answer": "Sharding is MongoDB's method for horizontal scaling. It distributes data across multiple machines (shards). The **Shard Key** is the field(s) used to determine which shard a document belongs to. MongoDB uses either **Ranged Sharding** (similar values stay together) or **Hashed Sharding** (values are distributed evenly). A poor shard key (like a monotonically increasing timestamp) can lead to 'Hot Shards' where one machine does all the work while others stay idle.",
+    "analogy": "Sharding is like **A huge filing cabinet**. If the cabinet gets too full, you buy a second cabinet (a new shard). The **Shard Key** is the rule for where a file goes (e.g., 'Last Name A-M' goes to Cabinet 1, 'N-Z' goes to Cabinet 2).",
+    "code": "```javascript\n// Enabling sharding on a collection\nsh.shardCollection(\"records.users\", { \"user_id\": \"hashed\" })\n```",
+    "counterQuestion": "Can you change a Shard Key after it's set?",
+    "counterQuestionAnswer": "In older versions of MongoDB, No. You had to dump and re-import the data. In MongoDB 5.0+, you can 'Reshard' a collection online, but it's a very heavy operation that impacts performance during the migration.",
+    "category": "mongodb",
+    "topic": "scaling",
+    "difficulty": "hard",
+    "tags": [
+      "mongodb",
+      "sharding",
+      "scalability",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 93,
+    "question": "Discuss 'Write Concern' and 'Read Preference' in MongoDB.",
+    "answer": "1. **Write Concern (`w`)**: Determines how many members of a replica set must acknowledge a write before it's considered successful. `w: 1` is only the primary; `w: majority` is the most common for safety. \n2. **Read Preference**: Determines which node the client reads from. `primary` is the default (consistency); `secondary` allows you to scale reads at the cost of potential 'stale' data. This allows you to tune the balance between **Consistency** and **Performance** on a per-request basis.",
+    "analogy": "Write Concern is like **Asking for a receipt**. `w: 1` is getting a thumbs up from the clerk. `w: majority` is waiting until the clerk AND the manager both sign off on the transaction. Read Preference is like **Checking the weather**: `primary` is looking out the window; `secondary` is checking a website that might be 5 minutes out of date.",
+    "code": "```javascript\n// Connection string with majority write concern\n// mongodb://host1,host2/?replicaSet=mySet&w=majority&readPreference=secondary\n```",
+    "counterQuestion": "What is 'j: true' in Write Concern?",
+    "counterQuestionAnswer": "The `j` (Journal) flag ensures that the write has been written to the on-disk journal before acknowledging. Without `j: true`, a write might be acknowledged but lost if the server crashes immediately after (before the RAM was flushed to disk).",
+    "category": "mongodb",
+    "topic": "consistency",
+    "difficulty": "hard",
+    "tags": [
+      "mongodb",
+      "reliability",
+      "consistency"
+    ]
+  },
+  {
+    "id": 94,
+    "question": "Explain MongoDB 'Replica Sets' and the 'Oplog'.",
+    "answer": "A Replica Set is a group of MongoDB instances that maintain the same data set. There is one **Primary** (receives all writes) and multiple **Secondaries**. The **Oplog** (Operations Log) is a special capped collection on the Primary that records every change. Secondaries constantly 'tail' the Oplog and apply the same changes to their own data. If the Primary fails, the Set automatically holds an **Election** to promote a new Primary.",
+    "analogy": "A Replica Set is like **A Lead Singer (Primary) and Backup Singers (Secondaries)**. The Lead Singer writes the song as they go (Oplog). The Backup Singers watch the Lead and copy their movements instantly. If the Lead Singer loses their voice, one of the Backups immediately steps up to the main mic.",
+    "code": "```javascript\n// Checking replica set status\nrs.status()\n// Checking the oplog window\nrs.printReplicationInfo()\n```",
+    "counterQuestion": "What happens to writes if a majority of the Replica Set is down?",
+    "counterQuestionAnswer": "The Set will not be able to elect a Primary. The remaining nodes will transition to 'Secondary' mode, and the database will only be able to serve **Reads** (if the client allows it). All writes will be blocked until a majority of nodes are back online.",
+    "category": "mongodb",
+    "topic": "availability",
+    "difficulty": "hard",
+    "tags": [
+      "mongodb",
+      "high_availability",
+      "replication"
+    ]
+  },
+  {
+    "id": 95,
+    "question": "What is the CAP Theorem? How do databases choose between C, A, and P?",
+    "answer": "The CAP Theorem states that in a distributed system, you can only provide two of the following three guarantees: \n1. **Consistency**: Every read receives the most recent write. \n2. **Availability**: Every request receives a (non-error) response. \n3. **Partition Tolerance**: The system continues to operate despite network failures. **Key Insight**: Partition Tolerance is mandatory for any distributed system, so the real choice is between **CP** (Consistency/Partition) or **AP** (Availability/Partition).",
+    "analogy": "Imagine **Two branches of a bank** with a broken phone line (a partition). If a customer tries to withdraw money: \n1. **Consistency (CP)**: You refuse the withdrawal because you don't know if they already took money from the other branch. \n2. **Availability (AP)**: You give them the money anyway so they aren't stuck, but you might end up with an overdraft later.",
+    "code": "```text\nSQL (Postgres/MySQL): Usually CA (until you shard, then it's CP).\nMongoDB: Usually CP (configurable to AP with Read Preferences).\nCassandra/DynamoDB: Usually AP (Eventual Consistency).\n```",
+    "counterQuestion": "What is 'Eventual Consistency'?",
+    "counterQuestionAnswer": "It is a model used in AP systems where it's guaranteed that if no new updates are made, eventually all nodes will return the same value. It favors speed and availability over immediate correctness.",
+    "category": "distributed_systems",
+    "topic": "theory",
+    "difficulty": "hard",
+    "tags": [
+      "cap_theorem",
+      "distributed_systems",
+      "theory",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 96,
+    "question": "Explain 'B-Trees' vs. 'LSM Trees' (Storage Engines).",
+    "answer": "1. **B-Trees**: Optimized for **Reads**. They maintain a balanced tree structure on disk. Every read/write requires finding the correct 'Page'. Used by most SQL databases (Postgres, MySQL, MongoDB WiredTiger). \n2. **LSM Trees (Log-Structured Merge-Trees)**: Optimized for **Writes**. They write all changes to a sorted in-memory buffer (Memtable) and flush them to disk as immutable 'SSTables' later. Background 'Compaction' merges these files. Used by NoSQL giants like Cassandra, ScyllaDB, and LevelDB.",
+    "analogy": "A B-Tree is like **A well-organized Library Shelf**: it's hard to put a new book in exactly the right alphabetical spot (slow write), but it's very easy to find it later (fast read). An LSM Tree is like **A stack of Return Bins**: you can throw books in instantly (fast write), but you might have to look through multiple bins to find the book you want (slower read).",
+    "code": "```text\nB-Tree: O(log N) for Search, Insert, Delete.\nLSM Tree: O(1) for Insert (Append), O(N) for Search (unless using Bloom Filters).\n```",
+    "counterQuestion": "What is a 'Bloom Filter' in LSM Trees?",
+    "counterQuestionAnswer": "A Bloom Filter is a memory-efficient data structure that can tell you if a key is *definitely not* in an SSTable. This prevents the database from wasting time searching through files on disk that don't contain the data you're looking for, making LSM reads much faster.",
+    "category": "databases",
+    "topic": "internals",
+    "difficulty": "hard",
+    "tags": [
+      "storage_engines",
+      "btrees",
+      "lsm",
+      "internals"
+    ]
+  },
+  {
+    "id": 97,
+    "question": "What is 'DynamoDB' and its 'Partition Key' vs. 'Sort Key' strategy?",
+    "answer": "DynamoDB is AWS's serverless NoSQL database. It scales infinitely by partitioning data across many servers. \n1. **Partition Key (PK)**: Used to determine which physical server stores the data (via Hashing). \n2. **Sort Key (SK)**: Used to group related data together on the same server and keep it sorted. This 'Composite Key' allows for powerful queries like 'Get all Orders (PK) for User X, sorted by Date (SK)'. Unlike SQL, you must design your keys specifically for your query patterns.",
+    "analogy": "DynamoDB is like **A massive High School locker room**. The **Partition Key** is the Locker Number. The **Sort Key** is how you organize the items *inside* that specific locker. You can find Locker 501 instantly, and once open, everything inside is already in order.",
+    "code": "```json\n// Querying by PK and SK\n{\n  \"TableName\": \"Orders\",\n  \"KeyConditionExpression\": \"UserId = :uid AND OrderDate > :date\"\n}\n```",
+    "counterQuestion": "What is 'Hot Partitioning' in DynamoDB?",
+    "counterQuestionAnswer": "If a single Partition Key (e.g., a viral celebrity's ID) receives thousands of requests per second, the single server hosting that key will be overwhelmed, even if the rest of the database is idle. You solve this by adding 'entropy' to the key or using a Global Secondary Index (GSI).",
+    "category": "nosql",
+    "topic": "dynamodb",
+    "difficulty": "hard",
+    "tags": [
+      "dynamodb",
+      "aws",
+      "nosql",
+      "scaling"
+    ]
+  }
+]

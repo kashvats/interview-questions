@@ -1,0 +1,2330 @@
+Perfect — I’ll turn this into a clean, structured guide you can actually revise from.
+It will have both:
+
+✅ values (like you wanted)
+
+✅ just enough theory (clear + practical)
+
+
+
+---
+
+📘 Kubernetes Keywords Guide (Industry-Focused)
+
+
+---
+
+🧩 1. apiVersion
+
+✅ Common values:
+
+v1 → Pod, Service, ConfigMap, Secret
+
+apps/v1 → Deployment, StatefulSet, DaemonSet
+
+batch/v1 → Job, CronJob
+
+networking.k8s.io/v1 → Ingress, NetworkPolicy
+
+autoscaling/v2 → HPA
+
+rbac.authorization.k8s.io/v1 → Roles
+
+
+🧠 Theory:
+
+Defines which API group + version Kubernetes should use to understand your YAML.
+Different resources belong to different API groups.
+
+👉 Think: “Which part of Kubernetes handles this?”
+
+
+---
+
+🧱 2. kind
+
+✅ Values:
+
+Pod, Deployment, Service, Ingress
+
+ConfigMap, Secret
+
+Job, CronJob, StatefulSet
+
+
+🧠 Theory:
+
+Specifies what resource you are creating.
+
+👉 Think: “What am I creating?”
+
+
+---
+
+🏷️ 3. metadata
+
+✅ Fields:
+
+name → unique name
+
+namespace → default, dev, prod
+
+labels → key-value pairs
+
+annotations → extra info
+
+
+metadata:
+  name: my-app
+  namespace: prod
+  labels:
+    app: my-app
+
+🧠 Theory:
+
+Holds identity and grouping information.
+
+Labels are used for selection (VERY important)
+
+Annotations are for extra data (not used for selection)
+
+
+👉 Think: “Who is this resource?”
+
+
+---
+
+⚙️ 4. spec
+
+🧠 Theory:
+
+Defines the desired state of the resource.
+
+Every resource has a different spec
+
+Kubernetes tries to match reality to spec
+
+
+👉 Think: “What do I want?”
+
+
+---
+
+🚀 5. replicas (Deployment)
+
+✅ Values:
+
+Any integer: 1, 2, 3, 10
+
+
+🧠 Theory:
+
+Number of Pod copies running simultaneously.
+
+👉 Used for:
+
+Scaling
+
+High availability
+
+
+
+---
+
+🎯 6. selector
+
+selector:
+  matchLabels:
+    app: my-app
+
+🧠 Theory:
+
+Connects Deployment/Service → Pods using labels.
+
+👉 If labels don’t match → system breaks
+
+
+---
+
+🧬 7. template
+
+template:
+  metadata:
+    labels:
+      app: my-app
+  spec:
+
+🧠 Theory:
+
+Blueprint used to create Pods.
+
+👉 Deployment doesn’t create containers directly — it creates Pods via template
+
+
+---
+
+🐳 8. containers
+
+containers:
+  - name: app
+    image: nginx:latest
+
+🧠 Theory:
+
+Defines actual application containers inside a Pod.
+
+A Pod can have multiple containers (sidecars)
+
+
+
+---
+
+🌐 9. ports
+
+ports:
+  - containerPort: 80
+
+🧠 Theory:
+
+Tells Kubernetes: 👉 “This container listens on this port”
+
+
+---
+
+⚡ 10. env
+
+env:
+  - name: ENV
+    value: prod
+
+🧠 Theory:
+
+Passes environment variables to containers.
+
+👉 Used for configuration (like .env files)
+
+
+---
+
+🔐 11. envFrom
+
+envFrom:
+  - configMapRef:
+      name: app-config
+  - secretRef:
+      name: app-secret
+
+🧠 Theory:
+
+Loads multiple environment variables from:
+
+ConfigMap (non-sensitive)
+
+Secret (sensitive)
+
+
+
+---
+
+📊 12. resources
+
+resources:
+  requests:
+    cpu: "250m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+
+🧠 Theory:
+
+Controls CPU & memory usage.
+
+requests → guaranteed minimum
+
+limits → maximum allowed
+
+
+👉 Prevents resource overuse & crashes
+
+
+---
+
+❤️ 13. livenessProbe
+
+✅ Types:
+
+httpGet
+
+tcpSocket
+
+exec
+
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 80
+
+🧠 Theory:
+
+Checks if container is alive.
+
+👉 If it fails → container is restarted
+
+
+---
+
+💚 14. readinessProbe
+
+🧠 Theory:
+
+Checks if container is ready to receive traffic.
+
+👉 If it fails:
+
+Pod is NOT restarted
+
+Traffic is stopped
+
+
+
+---
+
+💾 15. volumes
+
+✅ Types:
+
+emptyDir
+
+persistentVolumeClaim
+
+configMap
+
+secret
+
+
+volumes:
+  - name: data
+    emptyDir: {}
+
+🧠 Theory:
+
+Defines storage available to Pod
+
+
+---
+
+📂 16. volumeMounts
+
+volumeMounts:
+  - name: data
+    mountPath: /data
+
+🧠 Theory:
+
+Mounts volume inside container filesystem
+
+
+---
+
+🌐 17. Service.spec.type
+
+✅ Values:
+
+ClusterIP → internal (default)
+
+NodePort → exposed via node
+
+LoadBalancer → public IP (cloud)
+
+
+🧠 Theory:
+
+Defines how the app is exposed
+
+
+---
+
+🔌 18. Service.ports
+
+ports:
+  - port: 80
+    targetPort: 8080
+    nodePort: 30007
+
+🧠 Theory:
+
+port → service port
+
+targetPort → container port
+
+nodePort → external port (NodePort only)
+
+
+
+---
+
+🌍 19. Ingress
+
+✅ apiVersion:
+
+networking.k8s.io/v1
+
+
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: myapp.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+
+pathType values:
+
+Prefix
+
+Exact
+
+ImplementationSpecific
+
+
+🧠 Theory:
+
+Routes domain → service
+
+👉 Works like a reverse proxy
+
+
+---
+
+🧭 20. nodeSelector
+
+nodeSelector:
+  disktype: ssd
+
+🧠 Theory:
+
+Forces Pod to run on specific nodes
+
+
+---
+
+⚖️ 21. tolerations
+
+tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "backend"
+    effect: "NoSchedule"
+
+🧠 Theory:
+
+Allows Pods to run on tainted nodes
+
+
+---
+
+🔄 22. strategy
+
+✅ Values:
+
+RollingUpdate
+
+Recreate
+
+
+strategy:
+  type: RollingUpdate
+
+🧠 Theory:
+
+Controls how updates happen
+
+
+---
+
+🔁 23. Rolling Update Fields
+
+rollingUpdate:
+  maxSurge: 1
+  maxUnavailable: 0
+
+🧠 Theory:
+
+maxSurge → extra Pods allowed during update
+
+maxUnavailable → Pods allowed to go down
+
+
+
+---
+
+🔐 24. securityContext
+
+securityContext:
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+
+🧠 Theory:
+
+Controls container permissions & security
+
+
+---
+
+🔁 25. restartPolicy
+
+✅ Values:
+
+Always
+
+OnFailure
+
+Never
+
+
+🧠 Theory:
+
+Defines when container restarts
+
+
+---
+
+🧠 FINAL REVISION MAP
+
+apiVersion → version
+kind → resource type
+metadata → identity
+spec → desired state
+status → actual state
+
+
+---
+
+💥 Industry Reality
+
+If you master:
+
+Deployment
+
+Service
+
+Ingress
+
+ConfigMap / Secret
+
+Probes + Resources
+
+
+👉 You can handle real production workloads
+
+
+---
+
+If you want next:
+
+I can convert this into:
+
+📄 PDF notes
+
+🧪 Hands-on lab
+
+💼 Interview cheat sheet
+
+
+Just tell me 👍
+Perfect — I’ll give you the same style Terraform guide:
+👉 keyword → values → clear practical meaning
+👉 From beginner → industry usage
+
+
+---
+
+📘 Terraform Keywords Guide (Industry-Focused)
+
+
+---
+
+🧩 1. terraform (Block)
+
+terraform {
+  required_version = ">= 1.0"
+  required_providers {}
+}
+
+✅ Common fields:
+
+required_version → "~> 1.5", ">= 1.0"
+
+required_providers → define providers
+
+
+🧠 Theory:
+
+Defines Terraform setup requirements.
+
+👉 Think: “What Terraform version & providers do I need?”
+
+
+---
+
+🔌 2. provider
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+✅ Common providers:
+
+aws
+
+azurerm
+
+google
+
+kubernetes
+
+
+🧠 Theory:
+
+Tells Terraform which cloud/service to talk to.
+
+👉 Think: “Where will resources be created?”
+
+
+---
+
+📦 3. resource
+
+resource "aws_instance" "my_ec2" {
+  ami           = "ami-123"
+  instance_type = "t2.micro"
+}
+
+Structure:
+
+"aws_instance" → resource type
+
+"my_ec2" → local name
+
+
+🧠 Theory:
+
+Defines actual infrastructure.
+
+👉 Think: “Create this thing”
+
+
+---
+
+🧾 4. data (Data Source)
+
+data "aws_ami" "latest" {
+  most_recent = true
+}
+
+🧠 Theory:
+
+Fetches existing resources (read-only).
+
+👉 Think: “Get info, don’t create”
+
+
+---
+
+🏷️ 5. variable
+
+variable "instance_type" {
+  default = "t2.micro"
+}
+
+Fields:
+
+type → string, number, bool, list
+
+default → optional
+
+
+🧠 Theory:
+
+Used for input values (dynamic config).
+
+👉 Think: “User input”
+
+
+---
+
+📤 6. output
+
+output "instance_ip" {
+  value = aws_instance.my_ec2.public_ip
+}
+
+🧠 Theory:
+
+Displays values after execution.
+
+👉 Think: “Show result”
+
+
+---
+
+🧮 7. locals
+
+locals {
+  name = "my-app"
+}
+
+🧠 Theory:
+
+Stores reusable values inside config.
+
+👉 Think: “Internal variables”
+
+
+---
+
+🔁 8. count
+
+resource "aws_instance" "app" {
+  count = 3
+}
+
+🧠 Theory:
+
+Creates multiple copies of a resource.
+
+👉 Think: “Loop by number”
+
+
+---
+
+🔂 9. for_each
+
+resource "aws_instance" "app" {
+  for_each = {
+    dev = "t2.micro"
+    prod = "t2.large"
+  }
+}
+
+🧠 Theory:
+
+Creates resources using map or set.
+
+👉 Think: “Loop with keys”
+
+
+---
+
+🔗 10. depends_on
+
+depends_on = [aws_vpc.main]
+
+🧠 Theory:
+
+Forces resource creation order.
+
+👉 Think: “Create this AFTER that”
+
+
+---
+
+📚 11. module
+
+module "vpc" {
+  source = "./vpc"
+}
+
+Sources:
+
+Local → "./folder"
+
+Git → "github.com/..."
+
+Registry → "terraform-aws-modules/vpc/aws"
+
+
+🧠 Theory:
+
+Reusable group of resources.
+
+👉 Think: “Package of infrastructure”
+
+
+---
+
+🔐 12. backend
+
+terraform {
+  backend "s3" {
+    bucket = "my-state"
+  }
+}
+
+Types:
+
+local
+
+s3
+
+azurerm
+
+gcs
+
+
+🧠 Theory:
+
+Stores Terraform state file remotely.
+
+👉 Critical for teams
+
+
+---
+
+📄 13. state (Concept)
+
+🧠 Theory:
+
+Terraform keeps a .tfstate file:
+
+Tracks what is created
+
+Maps config → real infra
+
+
+👉 Without state → Terraform is blind
+
+
+---
+
+⚙️ 14. lifecycle
+
+lifecycle {
+  prevent_destroy = true
+}
+
+Fields:
+
+create_before_destroy
+
+prevent_destroy
+
+ignore_changes
+
+
+🧠 Theory:
+
+Controls resource behavior
+
+
+---
+
+🔑 15. provisioner (Less used but important)
+
+provisioner "local-exec" {
+  command = "echo hello"
+}
+
+Types:
+
+local-exec
+
+remote-exec
+
+
+🧠 Theory:
+
+Runs scripts after resource creation
+
+👉 Avoid in production if possible
+
+
+---
+
+🔄 16. Expressions
+
+instance_type = var.env == "prod" ? "t2.large" : "t2.micro"
+
+🧠 Theory:
+
+Adds logic inside Terraform
+
+
+---
+
+📊 17. Types
+
+✅ Supported:
+
+string
+
+number
+
+bool
+
+list
+
+map
+
+object
+
+
+variable "tags" {
+  type = map(string)
+}
+
+
+---
+
+🏗️ 18. Tags (Very Important)
+
+tags = {
+  Name = "my-app"
+  Env  = "prod"
+}
+
+🧠 Theory:
+
+Used for:
+
+Cost tracking
+
+Organization
+
+Automation
+
+
+
+---
+
+🌐 19. Common AWS Resource Types
+
+Frequently used:
+
+aws_instance → EC2
+
+aws_vpc
+
+aws_subnet
+
+aws_security_group
+
+aws_s3_bucket
+
+aws_iam_role
+
+
+
+---
+
+🔐 20. Sensitive Data
+
+variable "password" {
+  sensitive = true
+}
+
+🧠 Theory:
+
+Prevents secrets from showing in logs
+
+
+---
+
+🧠 FINAL TERRAFORM FLOW
+
+Write code → terraform init → terraform plan → terraform apply
+
+
+---
+
+💥 INDUSTRY CHEAT SHEET
+
+✅ MUST KNOW
+
+provider
+
+resource
+
+variable
+
+output
+
+module
+
+
+
+---
+
+⚡ VERY IMPORTANT
+
+backend (remote state)
+
+depends_on
+
+for_each / count
+
+locals
+
+
+
+---
+
+🔥 ADVANCED
+
+lifecycle
+
+provisioner
+
+complex types (map, object)
+
+
+
+---
+
+🧠 SIMPLE MENTAL MODEL
+
+provider → where
+resource → what
+variable → input
+output → result
+module → reuse
+state → memory
+
+
+---
+
+🚀 Reality (Industry)
+
+In real jobs:
+
+You mostly use:
+
+Modules
+
+Remote state (S3)
+
+Variables
+
+AWS resources
+
+
+You DON’T memorize everything
+
+You reuse templates heavily
+
+
+
+---
+
+Want next?
+
+I can give you:
+
+🧪 Full production Terraform project
+
+☁️ AWS architecture using Terraform
+
+💼 Interview Q&A (very important)
+
+
+Just tell me 👍
+Perfect — here’s the Docker version of your guide, in the same format:
+
+👉 keyword → values → real meaning (with practical theory)
+👉 From beginner → industry usage
+
+
+---
+
+📘 Docker Keywords Guide (Industry-Focused)
+
+
+---
+
+🧩 1. FROM
+
+FROM nginx:latest
+
+✅ Values:
+
+nginx:latest
+
+node:18
+
+python:3.11
+
+ubuntu:22.04
+
+alpine
+
+
+🧠 Theory:
+
+Defines the base image for your container.
+
+👉 Think: “Start from this OS/app”
+👉 Every Dockerfile MUST start with FROM
+
+
+---
+
+📁 2. WORKDIR
+
+WORKDIR /app
+
+✅ Values:
+
+Any path: /app, /usr/src/app
+
+
+🧠 Theory:
+
+Sets the working directory inside container
+
+👉 Like cd in Linux
+
+
+---
+
+📂 3. COPY
+
+COPY . .
+
+✅ Values:
+
+COPY . .
+
+COPY package.json /app/
+
+
+🧠 Theory:
+
+Copies files from your system → container
+
+👉 Used to bring code into image
+
+
+---
+
+📦 4. ADD (Less preferred)
+
+ADD file.tar.gz /app/
+
+🧠 Theory:
+
+Like COPY but:
+
+Can extract archives
+
+Can download URLs
+
+
+👉 Avoid unless needed (use COPY instead)
+
+
+---
+
+⚙️ 5. RUN
+
+RUN npm install
+
+🧠 Theory:
+
+Executes commands during image build
+
+👉 Used for:
+
+Installing packages
+
+Setting up environment
+
+
+
+---
+
+🌐 6. EXPOSE
+
+EXPOSE 3000
+
+🧠 Theory:
+
+Documents which port app uses
+
+👉 Does NOT actually expose port (just info)
+
+
+---
+
+🚀 7. CMD
+
+CMD ["node", "app.js"]
+
+🧠 Theory:
+
+Default command to run container
+
+👉 Can be overridden at runtime
+
+
+---
+
+🔒 8. ENTRYPOINT
+
+ENTRYPOINT ["node"]
+CMD ["app.js"]
+
+🧠 Theory:
+
+ENTRYPOINT → fixed command
+
+CMD → default arguments
+
+
+👉 Together:
+
+node app.js
+
+
+---
+
+⚡ 9. ENV
+
+ENV NODE_ENV=production
+
+🧠 Theory:
+
+Sets environment variables inside container
+
+
+---
+
+🔐 10. ARG
+
+ARG VERSION=1.0
+
+🧠 Theory:
+
+Build-time variable (not available at runtime)
+
+👉 Used during docker build
+
+
+---
+
+👤 11. USER
+
+USER node
+
+🧠 Theory:
+
+Runs container as specific user
+
+👉 Important for security (avoid root)
+
+
+---
+
+📂 12. VOLUME
+
+VOLUME /data
+
+🧠 Theory:
+
+Creates mount point for persistent data
+
+
+---
+
+🔌 13. HEALTHCHECK
+
+HEALTHCHECK CMD curl --fail http://localhost:3000 || exit 1
+
+🧠 Theory:
+
+Checks if container is healthy
+
+
+---
+
+🧱 14. Multi-stage Build
+
+FROM node:18 AS builder
+RUN npm install
+
+FROM nginx
+COPY --from=builder /app /usr/share/nginx/html
+
+🧠 Theory:
+
+Build in one stage
+
+Run in another
+
+
+👉 Reduces image size (VERY important in industry)
+
+
+---
+
+🐳 Docker CLI Commands (Industry MUST KNOW)
+
+
+---
+
+▶️ docker build
+
+docker build -t my-app .
+
+👉 Builds image
+
+
+---
+
+▶️ docker run
+
+docker run -p 3000:3000 my-app
+
+Common flags:
+
+-p → port mapping
+
+-d → detached mode
+
+--name → container name
+
+-e → env variable
+
+
+
+---
+
+📦 docker images
+
+docker images
+
+👉 List images
+
+
+---
+
+📦 docker ps
+
+docker ps
+
+👉 Running containers
+
+
+---
+
+🛑 docker stop
+
+docker stop container_id
+
+
+---
+
+❌ docker rm
+
+docker rm container_id
+
+
+---
+
+🧹 docker system prune
+
+👉 Cleanup unused resources
+
+
+---
+
+🌐 Port Mapping
+
+-p 8080:80
+
+👉 host:container
+
+
+---
+
+📁 Volume Mounting
+
+-v /host:/container
+
+👉 Persist data
+
+
+---
+
+🔐 Environment Variables
+
+-e ENV=prod
+
+
+---
+
+🧠 FINAL DOCKER FLOW
+
+Write Dockerfile → docker build → docker run
+
+
+---
+
+💥 INDUSTRY CHEAT SHEET
+
+✅ MUST KNOW
+
+FROM
+
+COPY
+
+RUN
+
+CMD
+
+WORKDIR
+
+
+
+---
+
+⚡ VERY IMPORTANT
+
+ENV
+
+EXPOSE
+
+ENTRYPOINT
+
+USER
+
+
+
+---
+
+🔥 INDUSTRY CRITICAL
+
+Multi-stage builds
+
+Small base images (alpine)
+
+Security (non-root user)
+
+
+
+---
+
+🧠 SIMPLE MENTAL MODEL
+
+FROM → base
+COPY → code
+RUN → install
+CMD → run app
+
+
+---
+
+🚀 Real Industry Insight
+
+In real jobs:
+
+You optimize images (size & security)
+
+You don’t use latest tag
+
+You use multi-stage builds
+
+You avoid running as root
+
+
+
+---
+
+Want next?
+
+I can give you:
+
+🧪 Full production Dockerfile (Node / Java / Python)
+
+🔗 How Docker connects with Kubernetes
+
+💼 Interview questions (very useful)
+
+
+Just tell me 👍
+Perfect — here’s your Jenkins guide in the same style:
+
+👉 keyword → values → practical meaning (with real industry theory)
+👉 Covers Pipeline (most used in industry)
+
+
+---
+
+📘 Jenkins Keywords Guide (Pipeline-Focused)
+
+
+---
+
+🧩 1. pipeline
+
+pipeline {
+}
+
+🧠 Theory:
+
+Top-level block that defines entire CI/CD workflow
+
+👉 Think: “Whole pipeline starts here”
+
+
+---
+
+🧱 2. agent
+
+agent any
+
+✅ Values:
+
+any → run anywhere
+
+none → define per stage
+
+label 'node1' → specific machine
+
+docker → run inside container
+
+
+agent {
+  docker {
+    image 'node:18'
+  }
+}
+
+🧠 Theory:
+
+Defines where pipeline runs
+
+
+---
+
+📦 3. stages
+
+stages {
+}
+
+🧠 Theory:
+
+Groups pipeline into logical steps
+
+👉 Example: Build → Test → Deploy
+
+
+---
+
+🔁 4. stage
+
+stage('Build') {
+}
+
+🧠 Theory:
+
+Single step inside pipeline
+
+👉 Think: “One task”
+
+
+---
+
+⚙️ 5. steps
+
+steps {
+  sh 'npm install'
+}
+
+🧠 Theory:
+
+Actual commands executed
+
+
+---
+
+🖥️ 6. sh / bat
+
+sh 'npm install'   // Linux
+bat 'dir'          // Windows
+
+🧠 Theory:
+
+Runs shell commands
+
+
+---
+
+🌿 7. environment
+
+environment {
+  ENV = "prod"
+}
+
+🧠 Theory:
+
+Defines environment variables for pipeline
+
+
+---
+
+🔐 8. credentials
+
+environment {
+  AWS_KEY = credentials('aws-creds')
+}
+
+🧠 Theory:
+
+Securely uses stored secrets
+
+👉 Never hardcode passwords
+
+
+---
+
+🔁 9. post
+
+post {
+  always {
+    echo 'Done'
+  }
+  success {
+    echo 'Success'
+  }
+  failure {
+    echo 'Failed'
+  }
+}
+
+🧠 Theory:
+
+Runs actions after pipeline ends
+
+
+---
+
+🔀 10. when
+
+when {
+  branch 'main'
+}
+
+🧠 Theory:
+
+Conditional execution
+
+👉 Run stage only if condition matches
+
+
+---
+
+🔄 11. parallel
+
+parallel {
+  stage('Test1') { steps { sh 'test1' } }
+  stage('Test2') { steps { sh 'test2' } }
+}
+
+🧠 Theory:
+
+Run stages simultaneously
+
+👉 Speeds up pipeline
+
+
+---
+
+🔁 12. options
+
+options {
+  timeout(time: 10, unit: 'MINUTES')
+}
+
+🧠 Theory:
+
+Controls pipeline behavior
+
+
+---
+
+🧮 13. parameters
+
+parameters {
+  string(name: 'ENV', defaultValue: 'dev')
+}
+
+🧠 Theory:
+
+User inputs when running pipeline
+
+
+---
+
+🔂 14. input
+
+input {
+  message "Deploy to production?"
+}
+
+🧠 Theory:
+
+Manual approval step
+
+
+---
+
+🔗 15. tools
+
+tools {
+  maven 'Maven3'
+}
+
+🧠 Theory:
+
+Defines tools installed in Jenkins
+
+
+---
+
+📁 16. checkout
+
+steps {
+  checkout scm
+}
+
+🧠 Theory:
+
+Pulls code from Git
+
+
+---
+
+🧪 17. archiveArtifacts
+
+archiveArtifacts artifacts: '*.jar'
+
+🧠 Theory:
+
+Stores build outputs
+
+
+---
+
+📊 18. stash / unstash
+
+stash name: 'app', includes: '**/*'
+unstash 'app'
+
+🧠 Theory:
+
+Share files between stages
+
+
+---
+
+🐳 19. docker (Agent)
+
+agent {
+  docker {
+    image 'node:18'
+  }
+}
+
+🧠 Theory:
+
+Run pipeline inside container
+
+👉 Common in modern setups
+
+
+---
+
+☁️ 20. deploy (Custom logic)
+
+steps {
+  sh 'kubectl apply -f deployment.yaml'
+}
+
+🧠 Theory:
+
+No fixed keyword — deployment is done via commands
+
+
+---
+
+🧠 FINAL PIPELINE FLOW
+
+Code → Build → Test → Package → Deploy
+
+
+---
+
+💥 COMPLETE SIMPLE EXAMPLE
+
+pipeline {
+  agent any
+
+  stages {
+    stage('Build') {
+      steps {
+        sh 'npm install'
+      }
+    }
+
+    stage('Test') {
+      steps {
+        sh 'npm test'
+      }
+    }
+
+    stage('Deploy') {
+      steps {
+        sh 'kubectl apply -f deployment.yaml'
+      }
+    }
+  }
+}
+
+
+---
+
+💥 INDUSTRY CHEAT SHEET
+
+✅ MUST KNOW
+
+pipeline
+
+agent
+
+stages / stage
+
+steps
+
+sh
+
+
+
+---
+
+⚡ VERY IMPORTANT
+
+environment
+
+credentials
+
+post
+
+when
+
+
+
+---
+
+🔥 INDUSTRY CRITICAL
+
+parallel
+
+docker agent
+
+input (approval)
+
+parameters
+
+
+
+---
+
+🧠 SIMPLE MENTAL MODEL
+
+pipeline → workflow
+stage → step group
+steps → commands
+agent → where to run
+
+
+---
+
+🚀 Real Industry Insight
+
+In real jobs:
+
+Pipelines are stored in Jenkinsfile (Git)
+
+You use:
+
+Docker agents
+
+Credentials
+
+Multi-stage pipelines
+
+
+Deployment is done using:
+
+kubectl
+
+helm
+
+scripts
+
+
+
+
+---
+
+Want next?
+
+I can give you:
+
+🔥 Full production Jenkins pipeline (CI/CD end-to-end)
+
+🔗 Jenkins + Docker + Kubernetes integration
+
+💼 Interview questions (very useful)
+
+
+Just say 👍
+Perfect — here’s your GitHub Actions guide in the same style:
+
+👉 keyword → values → practical meaning (with clear theory)
+👉 Covers real industry CI/CD usage
+
+
+---
+
+📘 GitHub Actions Keywords Guide (Industry-Focused)
+
+
+---
+
+🧩 1. name
+
+name: CI Pipeline
+
+🧠 Theory:
+
+Name of the workflow (just for display in GitHub UI)
+
+👉 Think: “What is this pipeline called?”
+
+
+---
+
+⚡ 2. on (Trigger)
+
+on: push
+
+✅ Common values:
+
+push
+
+pull_request
+
+workflow_dispatch (manual)
+
+schedule (cron)
+
+
+on:
+  push:
+    branches: [main]
+
+🧠 Theory:
+
+Defines when workflow runs
+
+👉 Think: “When should pipeline start?”
+
+
+---
+
+🧱 3. jobs
+
+jobs:
+  build:
+
+🧠 Theory:
+
+A workflow contains one or more jobs
+
+👉 Jobs run independently (or in sequence)
+
+
+---
+
+🖥️ 4. runs-on
+
+runs-on: ubuntu-latest
+
+✅ Values:
+
+ubuntu-latest
+
+windows-latest
+
+macos-latest
+
+self-hosted runner
+
+
+🧠 Theory:
+
+Defines machine/environment where job runs
+
+
+---
+
+🔁 5. steps
+
+steps:
+
+🧠 Theory:
+
+Each job contains steps
+
+👉 Think: “Tasks inside a job”
+
+
+---
+
+▶️ 6. run
+
+- run: npm install
+
+🧠 Theory:
+
+Runs shell command
+
+👉 Same as Jenkins sh
+
+
+---
+
+🔌 7. uses
+
+- uses: actions/checkout@v4
+
+🧠 Theory:
+
+Uses pre-built action (plugin)
+
+Common actions:
+
+actions/checkout → clone repo
+
+actions/setup-node → install Node
+
+docker/build-push-action → build image
+
+
+👉 Think: “Reuse ready-made logic”
+
+
+---
+
+🌿 8. env
+
+env:
+  ENV: prod
+
+🧠 Theory:
+
+Environment variables for workflow/job/step
+
+
+---
+
+🔐 9. secrets
+
+env:
+  AWS_KEY: ${{ secrets.AWS_KEY }}
+
+🧠 Theory:
+
+Secure variables stored in GitHub
+
+👉 Used for passwords, tokens
+
+
+---
+
+📦 10. with
+
+- uses: actions/setup-node@v4
+  with:
+    node-version: 18
+
+🧠 Theory:
+
+Pass inputs to actions
+
+
+---
+
+🔂 11. needs
+
+needs: build
+
+🧠 Theory:
+
+Defines job dependency
+
+👉 Run this job AFTER another
+
+
+---
+
+🔀 12. if (Condition)
+
+if: github.ref == 'refs/heads/main'
+
+🧠 Theory:
+
+Conditional execution
+
+
+---
+
+🔁 13. strategy (Matrix)
+
+strategy:
+  matrix:
+    node: [16, 18]
+
+🧠 Theory:
+
+Run job with multiple configurations
+
+👉 Parallel testing
+
+
+---
+
+📂 14. working-directory
+
+working-directory: ./app
+
+🧠 Theory:
+
+Run commands in specific folder
+
+
+---
+
+📊 15. outputs
+
+outputs:
+  version: ${{ steps.build.outputs.version }}
+
+🧠 Theory:
+
+Pass data between jobs
+
+
+---
+
+🧪 16. artifacts
+
+- uses: actions/upload-artifact@v4
+  with:
+    name: build
+    path: dist/
+
+🧠 Theory:
+
+Save build files
+
+
+---
+
+⏱️ 17. timeout-minutes
+
+timeout-minutes: 10
+
+🧠 Theory:
+
+Stops job if too long
+
+
+---
+
+🔁 18. concurrency
+
+concurrency: production
+
+🧠 Theory:
+
+Prevents multiple runs at same time
+
+
+---
+
+🐳 19. container
+
+container: node:18
+
+🧠 Theory:
+
+Run job inside Docker container
+
+
+---
+
+📅 20. schedule (cron)
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+🧠 Theory:
+
+Run pipeline on schedule
+
+
+---
+
+💥 COMPLETE SIMPLE EXAMPLE
+
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - run: npm install
+      - run: npm test
+
+
+---
+
+🧠 FINAL FLOW
+
+Code push → Workflow trigger → Jobs → Steps → Output
+
+
+---
+
+💥 INDUSTRY CHEAT SHEET
+
+✅ MUST KNOW
+
+on
+
+jobs
+
+runs-on
+
+steps
+
+run
+
+uses
+
+
+
+---
+
+⚡ VERY IMPORTANT
+
+env
+
+secrets
+
+with
+
+needs
+
+
+
+---
+
+🔥 INDUSTRY CRITICAL
+
+strategy (matrix)
+
+if
+
+artifacts
+
+container
+
+
+
+---
+
+🧠 SIMPLE MENTAL MODEL
+
+on → trigger
+jobs → work blocks
+steps → commands
+uses → actions
+
+
+---
+
+🚀 Real Industry Insight
+
+In real projects:
+
+Workflows are stored in:
+
+.github/workflows/*.yml
+
+You mostly use:
+
+actions/checkout
+
+setup-* actions
+
+Docker builds
+
+Deploy scripts
+
+
+
+
+---
+
+⚔️ Jenkins vs GitHub Actions (Quick Reality)
+
+Feature	Jenkins	GitHub Actions
+
+Setup	Manual	Built-in
+Maintenance	High	Low
+Integration	Flexible	GitHub-native
+
+
+
+---
+
+Want next?
+
+I can give you:
+
+🔥 Full CI/CD pipeline (Docker + K8s deploy)
+
+🧪 Hands-on project
+
+💼 Interview questions
+
+
+Just tell me 👍

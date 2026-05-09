@@ -1,0 +1,4058 @@
+STAFF-LEVEL
+KUBERNETES
+17-Step Production Engineering Manual
+PRODUCTION MANUAL: CONTINUED
+STEP 1 ARCHITECTURAL BLUEPRINT & DECISIONS
+Yes — for a real-world production system
+Yes — for a real-world production system, you should not treat Docker, Kubernetes, GitHub Actions,
+and Terraform as separate things. They should fit together as one delivery pipeline and one runtime
+architecture.
+Below is the stack I would recommend for your case:
+Frontend: React
+Backend: Django
+Database: PostgreSQL
+Async jobs: Celery
+Scheduler: Celery Beat
+Cache / broker: Redis
+Image build: Docker
+Infra provisioning: Terraform
+CI/CD : GitHub Actions
+Runtime platform: Kubernetes
+And I would add a few things you did not mention, because they matter in production:
+Nginx or Ingress controller for routing
+object storage for Django media files
+managed Postgres instead of running Postgres inside Kubernetes for production
+monitoring + error tracking
+secrets management
+TLS
+migrations as a separate release step
+Djangoʼs deployment docs explicitly call out the deployment checklist, static file handling, and
+production security concerns. Kubernetes also recommends using readiness, liveness, and startup
+probes for proper container lifecycle handling. Celeryʼs docs support Redis as broker and result
+backend. GitHubʼs official docs support publishing Docker images with Actions, and Dockerʼs official
+build-push action supports Buildx and caching.
+The real production architecture
+Recommended runtime design
+🔱  USERS
+  |
+  v
+🔱  KUBERNETES INGRESS
+  |
+  +----------------------> React frontend
+  |
+  +----------------------> Django API
+                               |
+                               +--> PostgreSQL
+                               |
+                               +--> Redis
+                               |
+                               +--> S3-compatible object storage
+                               |
+                               +--> Celery worker
+                               |
+                               +--> Celery beat
+What I would use in production
+Frontend
+React as a separate app.
+Better production approach
+Build the frontend into static assets and serve it either:
+SOURCE CODE / MANIFEST
+from Nginx in Kubernetes
+or from object storage + CDN
+For a serious public app, CDN/object  storage is often better than keeping frontend delivery inside
+the Django container.
+Backend
+Django behind Gunicorn.
+Why
+Djangoʼs own deployment guidance points to production deployment concerns like static files, error
+reporting, and the deployment checklist rather than using the development server.
+Database
+PostgreSQL, but in production I would strongly prefer:
+AWS RDS
+Cloud SQL
+Azure Database for PostgreSQL
+or another managed Postgres service
+Why
+Running Postgres inside Kubernetes is possible, but for most teams the managed version is more
+reliable operationally. That part is an engineering recommendation from experience, not something
+Iʼm pulling from one specific source.
+Celery
+Use:
+Celery worker
+Celery beat
+Redis as broker
+optionally Redis as result backend too
+Celeryʼs docs document Redis support for broker and result backend. They also note that result
+backend configuration is optional by default and Redis is a supported backend.
+Redis
+Use Redis for:
+Celery broker
+Celery result backend
+optional Django caching
+Static and media
+For production:
+static files: build and upload to object storage or serve via CDN/Nginx
+media files: use object storage like S3
+Djangoʼs docs explicitly call out collectstatic and configuring the web server or deployment target to
+serve files from STATIC_ROOT.
+Kubernetes
+Use separate workloads for:
+frontend
+backend
+celery worker
+celery beat
+And use:
+startup probe
+liveness probe
+readiness probe
+Kubernetes documents that startup probes gate liveness and readiness until startup succeeds,
+which is exactly what you want for slower-starting web apps and workers.
+CI/CD
+Use GitHub Actions to:
+run tests
+build Docker images
+push images to registry
+deploy to Kubernetes
+GitHubʼs docs include publishing Docker images from Actions, and Dockerʼs official actions support
+Buildx and cache-aware image builds.
+Infrastructure
+Use Terraform to create:
+VPC/network
+Kubernetes cluster
+managed Postgres
+Redis
+object storage
+DNS
+TLS
+IAM roles
+container registry
+Final recommended stack
+Here is the opinionated stack I recommend for you.
+App layer
+React frontend
+Django REST API
+Celery worker
+Celery beat
+Data layer
+PostgreSQL
+Redis
+object storage for media
+Delivery layer
+Docker images
+GitHub Actions
+container registry
+Runtime layer
+Kubernetes
+Ingress controller
+cert-manager or cloud-managed TLS
+Infra layer
+Terraform
+Operations layer
+Sentry
+Prometheus/Grafana
+centralized logs
+What you missed that I would add
+1. Redis
+You mentioned Celery but not Redis.
+For Celery, Redis is the obvious broker choice in this stack.
+2. Celery Beat
+If you need scheduled jobs, you want Celery Beat in addition to Celery workers.
+3. Object storage
+Do not keep user-uploaded files only inside pods.
+4. Reverse proxy / Ingress
+You need a proper HTTP  entrypoint.
+5. Error tracking
+Use Sentry or similar.
+6. Monitoring
+Use:
+Prometheus
+Grafana
+alerting
+7. Secrets management
+Do not hardcode secrets in manifests or repo.
+8. Separate migration job
+Do not rely only on app startup to run migrations in mature production environments.
+Best real-world repo structure
+project/
+📁  DIRECTORY STRUCTURE
+├── frontend/                         # React app
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   └── src/
+├── backend/                          # Django app
+│   ├── Dockerfile
+│   ├── entrypoint.sh
+│   ├── gunicorn.conf.py
+│   ├── requirements.txt
+│   ├── manage.py
+│   └── config/
+├── infra/
+│   ├── terraform/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── outputs.tf
+│   │   └── environments/
+│   │       ├── dev/
+│   │       └── prod/
+│   └── kubernetes/
+│       ├── namespace.yaml
+│       ├── backend-deployment.yaml
+│       ├── frontend-deployment.yaml
+│       ├── celery-worker-deployment.yaml
+│       ├── celery-beat-deployment.yaml
+│       ├── services.yaml
+│       ├── ingress.yaml
+│       ├── hpa.yaml
+│       ├── configmap.yaml
+│       ├── secrets.yaml
+│       └── job-migrate.yaml
+└── .github/
+    └── workflows/
+        ├── backend.yml
+        ├── frontend.yml
+        └── deploy.yml
+How Docker fits in
+You should build separate images.
+Frontend image
+builds React
+serves built files via Nginx
+Backend image
+Django + Gunicorn
+Worker image
+same backend image
+different command
+Beat image
+same backend image
+different command
+This is the cleanest pattern.
+Docker setup
+Frontend Dockerfile
+SOURCE CODE / MANIFEST
+FROM node:22-alpine AS buildWORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+FROM nginx:alpineCOPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+What it does
+first stage builds React
+second stage serves static files with Nginx
+Backend Dockerfile
+SOURCE CODE / MANIFEST
+FROM python:3.12-slim
+ENV PYTHONDONTWRITEBYTECODE=1ENV PYTHONUNBUFFERED=1
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential libpq-dev curl netcat-openbsd \ && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
+COPY . .
+RUN chmod +x /app/entrypoint.sh
+EXPOSE 8000
+SOURCE CODE / MANIFEST
+ENTRYPOINT ["/app/entrypoint.sh"]CMD ["gunicorn", "-c", "gunicorn.conf.py", "config.wsgi:application"]
+Worker command
+Same image, different command:
+celery -A config worker --loglevel=info
+Beat command
+Same image, different command:
+celery -A config beat --loglevel=info
+Django production settings
+These should be environment-driven.
+SOURCE CODE / MANIFEST
+import os
+DEBUG = False
+SECRET_KEY  = os.environ["DJANGO_SECRET_KEY "]
+ALLOWED_HOSTS = os.environ["DJANGO_ALLOWED_HOSTS"].split(",")
+DATABASES = {
+SOURCE CODE / MANIFEST
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ["POSTGRES_DB"],
+        "USER": os.environ["POSTGRES_USER"],
+        "PASSWORD": os.environ["POSTGRES_PASSWORD"],        "HOST": os.environ["POSTGRES_HOST"],
+        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+    }
+}
+CELERY_BROKER_URL = os.environ["REDIS_URL"]
+CELERY_RESULT_BACKEND  = os.environ["REDIS_URL"]
+STATIC_URL = "/static/ "
+STATIC_ROOT = "/app/staticfiles "
+MEDIA_URL = "/media/ "
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+Local development with Docker Compose
+This is for local dev and integration testing, not your final production runtime.
+version: "3.9"
+services:
+SOURCE CODE / MANIFEST
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"    depends_on:
+      - backend
+  backend:    build: ./backend
+    env_file:
+      - .env
+    depends_on:      - db
+      - redis
+    ports:
+      - "8000:8000"
+  celery-worker:
+    build: ./backend
+    command: celery -A config worker --loglevel=info
+    env_file:      - .env
+    depends_on:
+      - db
+      - redis
+  celery-beat:
+    build: ./backend
+    command: celery -A config beat --loglevel=info    env_file:
+      - .env
+    depends_on:
+      - db      - redis
+  db:
+    image: postgres:16-alpine
+    environment:      POSTGRES_DB: app
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    volumes:      - postgres_data:/var/lib/postgresql/data
+  redis:
+    image: redis:alpine
+volumes:
+  postgres_data:
+Kubernetes production design
+Separate deployments
+You want these Deployments:
+frontend
+backend
+celery-worker
+celery-beat
+Separate services
+You want Services for:
+frontend
+backend
+Celery usually does not need a public Service.
+Ingress
+One Ingress routes traffic:
+/ to frontend
+/api  to backend
+Config and secrets
+Use:
+ConfigMap for non-secret config
+Secret or ExternalSecret for secrets
+Probes
+Backend should have:
+startup probe
+liveness probe
+readiness probe
+Kubernetes docs explicitly distinguish these roles, and startup probes prevent liveness/readiness
+from running until startup succeeds.
+Example Kubernetes objects you should have
+namespace
+configmap
+secret
+deployment/frontend
+deployment/backend
+deployment/celery-worker
+deployment/celery-beat
+service/frontend
+service/backend
+ingress
+hpa/backend
+pdb/backend
+job/migrate
+networkpolicy
+Example backend Deployment shape
+SOURCE CODE / MANIFEST
+apiVersion: apps/v1
+kind: Deployment
+metadata:  name: backend
+spec:
+  replicas: 3
+  selector:    matchLabels:
+      app: backend
+  template:
+    metadata:      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend          image: ghcr.io/your-org/backend:latest
+          ports:
+            - containerPort: 8000
+          envFrom:            - secretRef:
+                name: app-secrets
+            - configMapRef:
+                name: app-config          readinessProbe:
+            httpGet:
+              path: /health/
+              port: 8000          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+          startupProbe:            httpGet:
+              path: /health/
+              port: 8000
+            failureThreshold: 30            periodSeconds: 5
+Celery worker Deployment shape
+SOURCE CODE / MANIFEST
+apiVersion: apps/v1
+kind: Deployment
+metadata:  name: celery-worker
+spec:
+  replicas: 2
+  selector:    matchLabels:
+      app: celery-worker
+  template:
+    metadata:      labels:
+        app: celery-worker
+    spec:
+      containers:
+        - name: celery-worker          image: ghcr.io/your-org/backend:latest
+          command: ["celery", "-A", "config", "worker", "--loglevel=info"]
+          envFrom:
+            - secretRef:                name: app-secrets
+            - configMapRef:
+                name: app-config
+Celery beat Deployment shape
+SOURCE CODE / MANIFEST
+apiVersion: apps/v1kind: Deployment
+metadata:
+  name: celery-beat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:      app: celery-beat
+  template:
+    metadata:
+      labels:        app: celery-beat
+    spec:
+      containers:
+        - name: celery-beat          image: ghcr.io/your-org/backend:latest
+          command: ["celery", "-A", "config", "beat", "--loglevel=info"]
+          envFrom:
+            - secretRef:                name: app-secrets
+            - configMapRef:
+                name: app-config
+Do not run Postgres in Kubernetes first unless you must
+For your production design, I would do this:
+In Kubernetes
+frontend
+backend
+celery worker
+celery beat
+maybe Redis if you must, though managed Redis is better too
+Outside Kubernetes, managed
+Postgres
+object storage
+optionally Redis
+That split is usually easier to operate.
+Terraform production design
+Terraform should create the platform, not your app code.
+What Terraform should provision
+Networking
+VPC
+subnets
+NAT
+route tables
+Kubernetes
+EKS / GKE / AKS cluster
+node groups
+IAM roles
+Data
+RDS Postgres
+Redis service
+S3 bucket for media/static
+Security
+security groups
+IAM policies
+KMS keys
+secret store
+Edge
+DNS
+TLS certificates
+load balancer integration
+Terraform modules I would create
+modules/
+network/
+kubernetes/
+postgres /
+redis /
+storage/
+dns/
+registry/
+Environment folders
+environments/
+dev/
+staging/
+prod/
+GitHub Actions production pipeline
+You need at least three workflows.
+1. Frontend CI
+install
+lint
+test
+build image
+push image
+2. Backend CI
+install
+Django checks
+tests
+build backend image
+push image
+3. Deploy
+update Kubernetes manifests or Helm values
+run migration job
+roll deployment
+GitHubʼs official docs support publishing Docker images from Actions, and the Docker build-push
+action supports Buildx and cache support, which is exactly what you want for these pipelines.
+Example backend GitHub Action shape
+name: Backend CI
+on:
+SOURCE CODE / MANIFEST
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"      - ".github/workflows/backend.yml"
+jobs:
+SOURCE CODE / MANIFEST
+  build-test-push:
+    runs-on: ubuntu-latest
+    permissions:      contents: read
+      packages: write
+    steps:      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          cd backend          pip install -r requirements.txt
+      - name: Django check
+        run: |          cd backend
+          python manage.py check
+      - name: Django tests        run: |
+          cd backend
+          python manage.py test
+      - name: Login to GHCR        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:          context: ./backend
+          push: true
+          tags: ghcr.io/your-org/backend:${{ github.sha }},ghcr.io/your-org/backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+Example frontend GitHub Action shape
+name: Frontend CI
+on:
+SOURCE CODE / MANIFEST
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"      - ".github/workflows/frontend.yml"
+jobs:
+SOURCE CODE / MANIFEST
+  build-test-push:
+    runs-on: ubuntu-latest
+    permissions:      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install
+        run: |
+          cd frontend          npm ci
+      - name: Test
+        run: |          cd frontend
+          npm test -- --run
+      - name: Build
+        run: |          cd frontend
+          npm run build
+      - name: Login to GHCR        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend          push: true
+          tags: ghcr.io/your-org/frontend:${{ github.sha }},ghcr.io/your-org/frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+Deploy workflow shape
+name: Deploy
+on:
+SOURCE CODE / MANIFEST
+  workflow_run:
+    workflows: ["Backend CI", "Frontend CI"]
+    types: [completed]
+jobs:
+SOURCE CODE / MANIFEST
+  deploy:    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:      - uses: actions/checkout@v4
+      - name: Configure kubectl
+        run: |          echo "set cluster credentials here"
+      - name: Run migrations
+        run: |          kubectl apply -f infra/kubernetes/job-migrate.yaml
+          kubectl wait --for=condition=complete job/backend-migrate --timeout=300s
+      - name: Update backend image        run: |
+          kubectl set image deployment/backend backend=ghcr.io/your-org/backend:latest
+      - name: Update frontend image        run: |
+          kubectl set image deployment/frontend frontend=ghcr.io/your-org/frontend:latest
+      - name: Restart workers
+        run: |          kubectl rollout restart deployment/celery-worker
+          kubectl rollout restart deployment/celery-beat
+Real-world operational rules
+Migrations
+Run them as a job, not hidden inside every pod start.
+Celery beat
+Keep one replica unless you deliberately design leader election.
+Workers
+Scale workers separately from web pods.
+Backend autoscaling
+Use HPA on API pods.
+Frontend autoscaling
+Usually lower priority, since it serves static files.
+Secrets
+Use secret manager integration, not plain files in git .
+My recommended production choices for your stack
+Frontend
+React
+built once
+served by Nginx container or CDN
+Backend
+Django + Gunicorn
+Async
+Celery worker
+Celery beat
+Broker/cache
+Redis
+Database
+managed Postgres
+Media
+S3-compatible object storage
+Infra
+Terraform
+Runtime
+Kubernetes
+Delivery
+GitHub Actions + container registry
+Observability
+Sentry
+Prometheus/Grafana
+centralized logs
+If you want the cleanest production setup, this is the one I would choose
+Use Docker for:
+building immutable app images
+Use Terraform for:
+provisioning cloud infrastructure
+Use GitHub Actions for:
+test, build, publish, deploy
+Use Kubernetes for:
+running frontend, backend, worker, beat
+Use managed services for:
+Postgres
+object storage
+ideally Redis too
+That gives you the cleanest separation of concerns.
+The one thing I would not do
+I would not start by putting absolutely everything inside Kubernetes:
+not Postgres first
+not media storage inside pods
+not secrets directly in YAML forever
+That looks “complete” on paper, but usually becomes harder to operate.
+My final recommended production blueprint
+🔱  ARCHITECTURE FLOWCHART
+React -> Nginx frontend container -> Kubernetes
+Django -> Gunicorn -> Kubernetes
+Celery worker -> Kubernetes
+Celery beat -> Kubernetes
+Redis -> managed or dedicated service
+Postgres -> managed service
+Media/static -> object storage/CDN
+Terraform -> provisions infra
+GitHub Actions -> builds images and deploys
+Ingress -> public entrypoint
+Observability -> Sentry + metrics + logs
+This is the setup I would actually recommend for a serious project.
+Best next step
+I can turn this into a full starter production repository structure with actual files for:
+Dockerfiles
+docker-compose.yml
+Kubernetes manifests
+GitHub Actions workflows
+Terraform module skeletons
+PRODUCTION MANUAL: CONTINUED
+REAL-WORLD SYSTEMS: STAFF ENGINEERSTEP -BY-STEP PRODUCTION GUIDE
+What follows is the complete, file-by-file, annotated production starter you can
+actually copy. Every section builds on the architecture above. Read it in order.
+STEP
+2
+INFRASTRUCTURE AS CODE (VPC & EKS
+FOUNDATION)
+Absolutely. Below is a production-style Terraform example with line-by-line explanations, similar to
+the Kubernetes one.
+What this Terraform example does
+This example provisions a small but strong AWS setup:
+a VPC
+public and private subnets
+an Internet Gateway
+a NAT Gateway
+route tables
+a security group
+an EC2 instance in a private subnet
+an Application Load Balancer
+target group and listener
+This is a good “real infrastructure” example because it shows the main Terraform patterns:
+variables
+locals
+provider config
+data sources
+resources
+outputs
+Fully explained Terraform example
+Save as main.tf.
+SOURCE CODE / MANIFEST
+terraform {                                                     # Terraform block configures Terraform itself.
+  required_version = ">= 1.5.0"                                 # Require Terraform version 1.5.0 or newer.
+  required_providers {                                          # Declare which providers this configuration needs.
+    aws = {                                                     # AWS provider definition.
+      source  = "hashicorp/aws"                                 # Official AWS provider source.      version = "~> 5.0"                                        # Use AWS provider version 5.x.
+    }
+  }
+}
+provider "aws " { # Configure the AWS provider.
+SOURCE CODE / MANIFEST
+  region = var.aws_region                                       # AWS region comes from an input variable.
+}
+variable "aws_region" { # Input variable for AWS region.
+SOURCE CODE / MANIFEST
+  description = "AWS region to deploy into"                     # Human-readable description.
+  type        = string                                          # Value must be a string.  default     = "us-east-1"                                     # Default region is us-east-1.
+}
+variable "project_name" { # Input variable for project naming.
+SOURCE CODE / MANIFEST
+  description = "Project name used for tagging and naming"      # Explains how this variable is used.
+  type        = string                                          # Must be a string.  default     = "production-app"                                # Default project name.
+}
+variable "vpc_cidr" { # Input variable for the VPC CIDR block.
+SOURCE CODE / MANIFEST
+  description = "CIDR block for the VPC"                        # Description of purpose.
+  type        = string                                          # Must be a string like 10.0.0.0/16.  default     = "10.0.0.0/16"                                   # Default VPC range.
+}
+variable "public_subnet_cidrs" { # Input variable for public subnet CIDRs.
+SOURCE CODE / MANIFEST
+  description = "CIDR blocks for public subnets"                # Public subnet ranges.
+  type        = list(string)                                    # Must be a list of strings.
+  default     = ["10.0.1.0/24", "10.0.2.0/24"]                  # Two public subnets.
+}
+variable "private_subnet_cidrs" { # Input variable for private subnet CIDRs.
+SOURCE CODE / MANIFEST
+  description = "CIDR blocks for private subnets"               # Private subnet ranges.
+  type        = list(string)                                    # Must be a list of strings.
+  default     = ["10.0.11.0/24", "10.0.12.0/24"]                # Two private subnets.
+}
+variable "instance_type" { # Input variable for EC2 instance size.
+SOURCE CODE / MANIFEST
+  description = "EC2 instance type"                             # Description of instance size variable.
+  type        = string                                          # Must be a string.
+  default     = "t3.micro"                                      # Default EC2 type.
+}
+variable "allowed_ingress_cidr" { # Input variable for allowed inbound access.
+SOURCE CODE / MANIFEST
+  description = "CIDR allowed to access the load balancer"      # Defines who can hit the ALB.
+  type        = string                                          # Must be a CIDR string.
+  default     = "0.0.0.0/0"                                     # Default allows internet access.
+}
+locals { # Local values reduce repetition.
+SOURCE CODE / MANIFEST
+  common_tags = {                                               # Shared tags for all resources.
+    Project     = var.project_name                              # Project tag from variable.
+    Environment = "production"                                  # Hardcoded environment tag.
+    ManagedBy   = "terraform"                                   # Indicates Terraform manages these resources.  }
+}
+data "aws_availability_zones" "available" { # Fetch available AZs in the chosen region.
+SOURCE CODE / MANIFEST
+  state = "available"                                           # Only include AZs that are currently available.
+}
+data "aws_ami" "amazon_linux" { # Look up an AMI dynamically.
+SOURCE CODE / MANIFEST
+  most_recent = true                                            # Use the newest matching image.
+  owners = ["amazon"]                                           # Only use Amazon-owned official AMIs.
+  filter {                                                      # First AMI search filter.
+    name   = "name"                                             # Filter on the AMI name field.
+    values = ["al2023-ami-*-x86_64"]                            # Match Amazon Linux 2023 x86_64 images.
+  }
+  filter {                                                      # Second AMI search filter.
+    name   = "virtualization-type"                              # Filter by virtualization type.
+    values = ["hvm"]                                            # Require HVM virtualization.
+  }}
+resource "aws_vpc" "main" {                                     # Create the main VPC.
+  cidr_block           = var.vpc_cidr                           # Set VPC CIDR from variable.  enable_dns_support   = true                                   # Enable internal DNS resolution.
+  enable_dns_hostnames = true                                   # Enable DNS hostnames for instances.
+  tags = merge(local.common_tags, {                             # Merge common tags with resource-specific tags.    Name = "${var.project_name}-vpc"                            # Name tag for the VPC.
+  })
+}
+resource "aws_internet_gateway" "igw" {                         # Create an Internet Gateway.
+  vpc_id = aws_vpc.main.id                                      # Attach it to the main VPC.
+  tags = merge(local.common_tags, {                             # Merge tags.    Name = "${var.project_name}-igw"                            # Name tag for the IGW.
+  })
+}
+resource "aws_subnet" "public" {                                # Create public subnets.  count = length(var.public_subnet_cidrs)                       # Create one subnet per public CIDR.
+  vpc_id                  = aws_vpc.main.id                     # Place subnet inside the main VPC.
+  cidr_block              = var.public_subnet_cidrs[count.index]# Pick the current subnet CIDR.  availability_zone       = data.aws_availability_zones.available.names[count.index] # Spread across AZs.
+  map_public_ip_on_launch = true                                # Auto-assign public IPs to instances launched here.
+  tags = merge(local.common_tags, {                             # Merge common tags with specific ones.    Name = "${var.project_name}-public-${count.index + 1}"      # Name public subnet sequentially.
+    Tier = "public"                                             # Mark subnet as public tier.
+  })
+}
+resource "aws_subnet" "private" {                               # Create private subnets.
+  count = length(var.private_subnet_cidrs)                      # Create one subnet per private CIDR.
+  vpc_id            = aws_vpc.main.id                           # Place subnet inside the main VPC.  cidr_block        = var.private_subnet_cidrs[count.index]     # Pick the current private subnet CIDR.
+  availability_zone = data.aws_availability_zones.available.names[count.index] # Spread across AZs.
+  tags = merge(local.common_tags, {                             # Merge common tags with resource-specific tags.    Name = "${var.project_name}-private-${count.index + 1}"     # Name private subnet sequentially.
+    Tier = "private"                                            # Mark subnet as private tier.
+  })
+}
+resource "aws_eip" "nat" {                                      # Allocate an Elastic IP for the NAT Gateway.
+  domain = "vpc"                                                # EIP is for use in a VPC.
+  tags = merge(local.common_tags, {                             # Merge tags.    Name = "${var.project_name}-nat-eip"                        # Name tag for EIP.
+  })
+}
+resource "aws_nat_gateway" "nat" {                              # Create a NAT Gateway.
+  allocation_id = aws_eip.nat.id                                # Use the Elastic IP allocated above.
+  subnet_id     = aws_subnet.public[0].id                       # Place the NAT in the first public subnet.
+  depends_on = [aws_internet_gateway.igw]                       # Ensure IGW exists before NAT is created.
+  tags = merge(local.common_tags, {                             # Merge tags.
+    Name = "${var.project_name}-nat"                            # Name tag for NAT Gateway.  })
+}
+resource "aws_route_table" "public" {                           # Create a route table for public subnets.
+  vpc_id = aws_vpc.main.id                                      # Attach it to the main VPC.
+  route {                                                       # Define a route in this route table.
+    cidr_block = "0.0.0.0/0"                                    # Default route to anywhere.
+    gateway_id = aws_internet_gateway.igw.id                    # Send internet traffic through the IGW.  }
+  tags = merge(local.common_tags, {                             # Merge tags.
+    Name = "${var.project_name}-public-rt"                      # Name tag for public route table.  })
+}
+resource "aws_route_table" "private" {                          # Create a route table for private subnets.  vpc_id = aws_vpc.main.id                                      # Attach it to the main VPC.
+  route {                                                       # Define the default route.
+    cidr_block     = "0.0.0.0/0"                                # Route outbound internet traffic.
+    nat_gateway_id = aws_nat_gateway.nat.id                     # Send it through the NAT Gateway.  }
+  tags = merge(local.common_tags, {                             # Merge tags.
+    Name = "${var.project_name}-private-rt"                     # Name tag for private route table.  })
+}
+resource "aws_route_table_association" "public" {               # Associate each public subnet to the public route ta  count = length(aws_subnet.public)                             # One association per public subnet.
+  subnet_id      = aws_subnet.public[count.index].id            # Current public subnet ID.
+  route_table_id = aws_route_table.public.id                    # Attach public route table.
+}
+resource "aws_route_table_association" "private" {              # Associate each private subnet to the private route 
+  count = length(aws_subnet.private)                            # One association per private subnet.
+  subnet_id      = aws_subnet.private[count.index].id           # Current private subnet ID.  route_table_id = aws_route_table.private.id                   # Attach private route table.
+}
+resource "aws_security_group" "alb" {                           # Security group for the Application Load Balancer.  name        = "${var.project_name}-alb-sg"                    # Security group name.
+  description = "Allow HTTP inbound to ALB"                     # Description of the security group.
+  vpc_id      = aws_vpc.main.id                                 # Create in the main VPC.
+  ingress {                                                     # Inbound rule.
+    description = "HTTP from allowed CIDR"                      # Human-readable rule description.
+    from_port   = 80                                            # Start port 80.
+    to_port     = 80                                            # End port 80.
+    protocol    = "tcp"                                         # TCP protocol.    cidr_blocks = [var.allowed_ingress_cidr]                    # Allow traffic from the configured CIDR.
+  }
+  egress {                                                      # Outbound rule.    from_port   = 0                                             # Start port 0 means all.
+    to_port     = 0                                             # End port 0 means all.
+    protocol    = "-1"                                          # -1 means all protocols.
+    cidr_blocks = ["0.0.0.0/0"]                                 # Allow outbound to anywhere.  }
+  tags = merge(local.common_tags, {                             # Merge tags.
+    Name = "${var.project_name}-alb-sg"                         # Name tag for ALB SG.
+  })}
+resource "aws_security_group" "app" {                           # Security group for the EC2 application instance.
+  name        = "${var.project_name}-app-sg"                    # Security group name.  description = "Allow app traffic from ALB only"               # Description of the group.
+  vpc_id      = aws_vpc.main.id                                 # Create in the main VPC.
+  ingress {                                                     # Inbound rule for app traffic.    description     = "HTTP from ALB"                           # Rule description.
+    from_port       = 8080                                      # App listens on port 8080.
+    to_port         = 8080                                      # Single-port rule.
+    protocol        = "tcp"                                     # TCP protocol.    security_groups = [aws_security_group.alb.id]               # Only allow traffic from the ALB security group.
+  }
+  egress {                                                      # Outbound rule.
+    from_port   = 0                                             # All ports.    to_port     = 0                                             # All ports.
+    protocol    = "-1"                                          # All protocols.
+    cidr_blocks = ["0.0.0.0/0"]                                 # Allow outbound to anywhere.
+  }
+  tags = merge(local.common_tags, {                             # Merge tags.
+    Name = "${var.project_name}-app-sg"                         # Name tag for app SG.
+  })}
+resource "aws_lb" "app" {                                       # Create an Application Load Balancer.
+  name               = substr("${var.project_name}-alb", 0, 32) # ALB names have a length limit, so trim to 32 chars.  internal           = false                                    # false means internet-facing.
+  load_balancer_type = "application"                            # This is an Application Load Balancer.
+  security_groups    = [aws_security_group.alb.id]              # Attach the ALB security group.
+  subnets            = aws_subnet.public[*].id                  # Place ALB in all public subnets.
+  enable_deletion_protection = true                             # Prevent accidental deletion in production.
+  tags = merge(local.common_tags, {                             # Merge tags.
+    Name = "${var.project_name}-alb"                            # Name tag for ALB.  })
+}
+resource "aws_lb_target_group" "app" {                          # Create a target group for the app instances.  name     = substr("${var.project_name}-tg", 0, 32)            # Target group name, trimmed for AWS limits.
+  port     = 8080                                               # Forward traffic to port 8080 on targets.
+  protocol = "HTTP"                                             # Use HTTP between ALB and targets.
+  vpc_id   = aws_vpc.main.id                                    # Target group belongs to this VPC.
+  health_check {                                                # Configure health checks.
+    enabled             = true                                  # Turn health checks on.
+    interval            = 30                                    # Check every 30 seconds.
+    path                = "/ready"                              # Health check path.    port                = "traffic-port"                        # Use the same port as normal traffic.
+    healthy_threshold   = 3                                     # Need 3 successful checks to mark healthy.
+    unhealthy_threshold = 3                                     # Need 3 failed checks to mark unhealthy.
+    timeout             = 5                                     # Health check timeout is 5 seconds.    matcher             = "200-399"                             # Treat HTTP 200-399 as healthy.
+  }
+  tags = merge(local.common_tags, {                             # Merge tags.    Name = "${var.project_name}-tg"                             # Name tag for target group.
+  })
+}
+resource "aws_lb_listener" "http" {                             # Create a listener on the ALB.
+  load_balancer_arn = aws_lb.app.arn                            # Attach listener to the ALB.  port              = 80                                        # Listen on port 80.
+  protocol          = "HTTP"                                    # Use HTTP.
+  default_action {                                              # Define what to do with incoming requests.    type             = "forward"                                # Forward traffic to a target group.
+    target_group_arn = aws_lb_target_group.app.arn              # Forward to the app target group.
+  }
+}
+resource "aws_instance" "app" {                                 # Create an EC2 instance for the application.
+  ami                         = data.aws_ami.amazon_linux.id    # Use the looked-up Amazon Linux AMI.
+  instance_type               = var.instance_type               # Use the configured EC2 instance size.  subnet_id                   = aws_subnet.private[0].id        # Place the instance in the first private subnet.
+  vpc_security_group_ids      = [aws_security_group.app.id]     # Attach the app security group.
+  associate_public_ip_address = false                           # Do not assign a public IP because this is a private
+  user_data = <<-EOF                                            # Bootstrap script that runs on first launch.              #!/bin/bash                                       # Tell Linux to run this script with bash.
+              dnf update -y                                     # Update packages.
+              dnf install -y python3                            # Install Python 3.
+              mkdir -p /opt/app                                 # Create app directory.              cat > /opt/app/server.py <<'PYEOF'                # Write a small demo web server.
+              from http.server import BaseHTTPRequestHandler, HTTPServer
+              class Handler(BaseHTTPRequestHandler):
+                  def do_GET(self):                      if self.path in ["/", "/ready"]:
+                          self.send_response(200)
+                          self.end_headers()
+                          self.wfile.write(b"hello from terraform app")
+                      else:                          self.send_response(404)
+                          self.end_headers()
+              HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+              PYEOF              nohup python3 /opt/app/server.py > /var/log/app.log 2>&1 &  # Run the demo app in background.
+              EOF
+  tags = merge(local.common_tags, {                             # Merge tags.    Name = "${var.project_name}-app-instance"                   # Name tag for EC2 instance.
+  })
+}
+resource "aws_lb_target_group_attachment" "app" {               # R
+PRODUCTION MANUAL: CONTINUED
+STEP
+3
+FULL PRODUCTION TERRAFORM MODULES
+(EKS/RDS/S3)
+A staff engineer does not deploy a service without knowing what it is doing.
+This is the minimum observability setup for a production Kubernetes app.
+--- 4.1 Prometheus ServiceMonitor ---
+Install kube-prometheus -stack via Helm first:
+SOURCE CODE / MANIFEST
+  helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+  helm upgrade --install kube-prometheus prometheus-community/kube-prometheus-stack \
+    --namespace monitoring --create-namespace
+Save as: infra/kubernetes/servicemonitor.yaml
+SOURCE CODE / MANIFEST
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: backend-monitor
+  namespace: monitoring  labels:
+    release: kube-prometheus
+spec:
+  namespaceSelector:    matchNames:
+      - production-app
+  selector:
+    matchLabels:      app: backend
+  endpoints:
+    - port: http
+      path: /metrics      interval: 30s
+      scrapeTimeout: 10s
+How to expose Django metrics:
+SOURCE CODE / MANIFEST
+  pip install django-prometheus
+  Add 'django_prometheus' to INSTALLED_APPS.  Add path('', include('django_prometheus.urls')) to urls.py.
+  This exposes /metrics automatically.
+--- 4.2 PrometheusRule for alerting ---
+Save as: infra/kubernetes/prometheusrule.yaml
+SOURCE CODE / MANIFEST
+apiVersion: monitoring.coreos.com/v1kind: PrometheusRule
+metadata:
+  name: backend-alerts
+  namespace: monitoring  labels:
+    release: kube-prometheus
+spec:
+  groups:    - name: backend.rules
+      rules:
+        - alert: BackendHighErrorRate
+          expr: |            rate(django_http_responses_total_by_status_total{status=~"5.."}[5m])
+/
+rate(django_http_responses_total_by_status_total[5m]) > 0.01
+SOURCE CODE / MANIFEST
+          for: 2m          labels:
+            severity: critical
+          annotations:
+            summary: "Backend 5xx error rate exceeded 1%"
+        - alert: BackendHighLatency
+          expr: |
+            histogram_quantile(0.95,
+              rate(django_http_requests_latency_seconds_bucket[5m])) > 0.5          for: 5m
+          labels:
+            severity: warning
+          annotations:            summary: "Backend p95 latency exceeded 500ms"
+        - alert: PodNotReady
+          expr: |            kube_pod_status_ready{namespace="production-app",condition="true"} == 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:            summary: "Pod not ready in production-app namespace"
+--- 4.3 Structured logging in Django ---
+Add to Django settings (settings.py):
+SOURCE CODE / MANIFEST
+import os
+LOGGING = {
+SOURCE CODE / MANIFEST
+    "version": 1,    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",            "format": "%(asctime)s %(name)s %(levelname)s %(message)s",
+        }
+    },
+    "handlers": {
+        "stdout": {            "class": "logging.StreamHandler",
+            "formatter": "json",
+        }
+    },    "root": {
+        "handlers": ["stdout"],
+        "level": "INFO",
+    },    "loggers": {
+        "django": {
+            "handlers": ["stdout"],
+            "level": "INFO",            "propagate": False,
+        },
+        "celery": {
+            "handlers": ["stdout"],
+            "level": "INFO",            "propagate": False,
+        },
+    },
+}
+Add to requirements.txt:
+python-json-logger
+💡  ARCHITECTURE REASONING
+Why structured JSON  logging:
+Cloud log aggregators (CloudWatch, Loki, Datadog) can parse JSON  fields and
+let you filter by status_code or request_id as structured fields.
+Plain text forces regex, which breaks on multi-line tracebacks.
+PRODUCTION MANUAL: CONTINUED
+STEP
+4
+PRODUCTION CONTAINERIZATION (DOCKER &
+GUNICORN)
+Youʼre right. The last one was good, but not really production-grade.
+For real Django production with Docker, the baseline should usually be:
+Django + Gunicorn
+Nginx in front
+Postgres
+non-root containers
+static/media volumes
+health checks
+env-based config
+no runserver
+no “all-in-one dev-style” shortcuts
+Below is a much more production-style Docker setup for Django, with line-by-line explanation.
+What this production setup includes
+You will get:
+Dockerfile for Django app
+entrypoint.sh
+gunicorn.conf.py
+nginx/default.conf
+docker-compose.yml
+.dockerignore
+This assumes:
+Django project module is config
+app exposes WSGI at config.wsgi :application
+static files go to /app/staticfiles
+media files go to /app/media
+Replace config with your actual project package name.
+1. Production Django Dockerfile
+Save as Dockerfile.
+SYNTAX=DOCKER/DOCKERFILE:1.7 #
+USE MODERN DOCKERFILE SYNTAX.
+SOURCE CODE / MANIFEST
+FROM python:3.12-slim AS base                                # Start from a slim official Python image.
+ENV PYTHONDONTWRITEBYTECODE=1                                # Prevent Python from creating .pyc files.
+ENV PYTHONUNBUFFERED=1                                       # Flush stdout/stderr immediately for container logs.
+ENV PIP_NO_CACHE_DIR=1                                       # Prevent pip from storing cache files.WORKDIR /app                                                 # Set working directory inside the container.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \    libpq-dev \
+    netcat-openbsd \
+    curl \
+ && rm -rf /var/lib/apt/lists/*                              # Install system packages needed for Python builds, Post
+FROM base AS builder                                          # Builder stage for installing Python dependencies.
+COPY requirements.txt .                                       # Copy requirements file first for better cache reuse.
+RUN pip install --upgrade pip && pip install -r requirements.txt  # Install Python dependencies into the image.
+FROM python:3.12-slim AS runtime                              # Final runtime stage starts clean for a smaller produc
+ENV PYTHONDONTWRITEBYTECODE=1                                 # Keep Python from writing bytecode.
+ENV PYTHONUNBUFFERED=1                                        # Keep logs unbuffered.WORKDIR /app                                                  # Set working directory.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \    curl \
+ && rm -rf /var/lib/apt/lists/*                               # Install only runtime packages needed in production.
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser  # Create a dedicated non-root user and
+COPY --from=builder /usr/local /usr/local                     # Copy installed Python packages from the builder stage
+COPY . .                                                      # Copy the Django project source code.
+COPY entrypoint.sh /entrypoint.sh                             # Copy the startup script.
+COPY gunicorn.conf.py /app/gunicorn.conf.py                   # Copy Gunicorn configuration file.
+RUN chmod +x /entrypoint.sh && \                              # Make entrypoint executable.
+    mkdir -p /app/staticfiles /app/media && \                 # Create directories for static and media files.
+    chown -R appuser:appgroup /app /entrypoint.sh             # Give ownership to the non-root user.
+USER appuser # Run the application as a non-root user.
+EXPOSE 8000 # Document that the Django app listens on port 8000.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+SOURCE CODE / MANIFEST
+  CMD curl -f http://127.0.0.1:8000/health/ || exit 1         # Check the app health endpoint inside the container.
+ENTRYPOINT ["/entrypoint.sh"]                                 # Run the entrypoint when the container starts.
+CMD ["gunicorn", "-c", "/app/gunicorn.conf.py", "config.wsgi:application"]  # Start Django with Gunicorn using a dedi
+Why this Dockerfile is actually production-grade
+This is better because it uses:
+Multi-stage build
+Keeps the final image cleaner.
+Non-root user
+Avoids running Django as root.
+Gunicorn
+Uses a real production WSGI server.
+Separate runtime image
+Builder tools do not stay in the final image.
+Health checks
+Makes monitoring easier.
+Static/media directories
+Prepared for volume mounting.
+2. Production entrypoint
+Save as entrypoint.sh.
+SOURCE CODE / MANIFEST
+#!/bin/sh
+set -e
+if [ -n "$DATABASE_HOST" ] && [ -n "$DATABASE_PORT" ]; then
+  echo "Waiting for database at $DATABASE_HOST:$DATABASE_PORT..."
+while ! nc -z "$DATABASE_HOST" "$DATABASE_PORT"; do
+sleep 1
+done
+fi
+pythonmanage.py collectstatic --noinput
+pythonmanage.py migrate --noinput
+exec "$@"
+Line-by-line explanation
+SOURCE CODE / MANIFEST
+#!/bin/sh
+Run this script with sh.
+SOURCE CODE / MANIFEST
+set -e
+Exit immediately if any command fails.
+SOURCE CODE / MANIFEST
+if [ -n "$DATABASE_HOST" ] && [ -n "$DATABASE_PORT" ]; then
+Only wait for the database if those environment variables exist.
+echo "Waiting for database at $DATABASE_HOST:$DATABASE_PORT..."
+Print a message so logs are easier to read.
+while ! nc -z "$DATABASE_HOST" "$DATABASE_PORT"; do
+sleep 1
+done
+Keep checking until the database port is reachable.
+pythonmanage.py collectstatic --noinput
+Collect static files into STATIC_ROOT.
+pythonmanage.py migrate --noinput
+Apply migrations automatically.
+exec "$@"
+Replace the shell with the main process, which will be Gunicorn.
+Important production note about migrations
+In strict production setups, migrations are often run as a separate job, not every app startup.
+This entrypoint is still acceptable for many deployments, but the more mature pattern is:
+app container starts Gunicorn
+one separate release job runs migrate
+another optional job runs collectstatic
+Still, for Docker-based production, this pattern is commonly used and practical.
+3. Production Gunicorn config
+Save as gunicorn.conf.py.
+SOURCE CODE / MANIFEST
+import multiprocessing
+bind = "0.0.0.0:8000" # Listen on all interfaces on port 8000.
+workers = multiprocessing.cpu_count() * 2 + 1 # Standard Gunicorn worker formula based on CPU
+count.
+threads = 2 # Run 2 threads per worker.
+timeout = 60 # Kill workers that are silent for more than 60 seconds.
+graceful_timeout = 30 # Allow workers 30 seconds to shut down gracefully.
+keepalive = 5 # Keep connections alive for 5 seconds.
+accesslog = "-" # Send access logs to stdout.
+errorlog = "-" # Send error logs to stderr.
+loglevel = "info" # Use info log level.
+worker_tmp_dir = "/dev/shm " # Use shared memory for temp worker files for better performance.
+Why this matters
+Using a separate Gunicorn config is better than stuffing all options into one long command.
+It gives you:
+cleaner Dockerfile
+easier tuning
+better maintainability
+4. Production Nginx config
+Save as nginx /default.conf.
+upstream django_app {
+SOURCE CODE / MANIFEST
+    server web:8000;                                   # Send proxied requests to the Django web container on port 80
+}
+server {
+listen 80; # Nginx listens on port 80.
+server_name _; # Catch all hostnames.
+client_max_body_size 20M; # Limit upload size to 20 MB.
+SOURCE CODE / MANIFEST
+    location /static/ {
+        alias /vol/static/;                            # Serve collected static files directly from the shared volume
+        access_log off;                                # Disable access logging for static files.
+        expires 30d;                                   # Cache static files for 30 days.
+    }
+    location /media/ {
+        alias /vol/media/;                             # Serve uploaded media files directly from the shared volume.
+        access_log off;                                # Disable access logging for media files.
+        expires 7d;                                    # Cache media files for 7 days.    }
+    location /health/ {
+        proxy_pass http://django_app;                  # Forward health check requests to Django.        proxy_set_header Host $host;                   # Preserve the original Host header.
+        proxy_set_header X-Real-IP $remote_addr;       # Pass the client IP.
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;  # Preserve proxy chain.
+        proxy_set_header X-Forwarded-Proto $scheme;    # Tell Django whether the original request was HTTP or HTTPS.    }
+    location / {
+        proxy_pass http://django_app;                  # Forward app traffic to Django.
+        proxy_set_header Host $host;                   # Pass original host header.        proxy_set_header X-Real-IP $remote_addr;       # Pass real client IP.
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;  # Pass full proxy chain.
+        proxy_set_header X-Forwarded-Proto $scheme;    # Pass protocol information.
+        proxy_redirect off;                            # Disable automatic rewriting of redirect headers.        proxy_read_timeout 60s;                        # Wait up to 60 seconds for upstream response.
+    }
+}
+Why Nginx is here
+For real production, Nginx usually handles:
+static file serving
+media file serving
+reverse proxying to Gunicorn
+buffering and client request handling
+That is much more production-like than exposing Gunicorn directly.
+5. Production Docker Compose
+Save as docker -compose.yml.
+version: "3.9" # Compose file format version.
+services:
+SOURCE CODE / MANIFEST
+  db:                                                               # PostgreSQL service.
+    image: postgres:16-alpine                                       # Lightweight Postgres image.
+    restart: unless-stopped                                         # Restart automatically unless manually stopped.    environment:                                                    # Postgres configuration environment.
+      POSTGRES_DB: django_db                                        # Database name.
+      POSTGRES_USER: django_user                                    # Database username.
+      POSTGRES_PASSWORD: django_password                            # Database password.    volumes:
+      - postgres_data:/var/lib/postgresql/data                      # Persist Postgres data.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U django_user -d django_db"] # Check whether Postgres is accepting connections
+      interval: 10s      timeout: 5s
+      retries: 5
+  web:                                                              # Django + Gunicorn service.    build:
+      context: .                                                    # Build from the current directory.
+      dockerfile: Dockerfile                                        # Use the project Dockerfile.
+    image: django-prod-web:latest                                   # Tag the built image.    restart: unless-stopped                                         # Restart unless manually stopped.
+    depends_on:
+      db:
+        condition: service_healthy                                  # Start after Postgres is healthy.    environment:
+      DJANGO_SETTINGS_MODULE: config.settings                       # Django settings module.
+      DJANGO_SECRET_KEY: "change-this-in-real-production"           # Secret key placeholder.
+      DJANGO_DEBUG: "False"                                         # Production mode.
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"                   # Allowed hosts.      DATABASE_NAME: django_db                                      # Database name.
+      DATABASE_USER: django_user                                    # Database user.
+      DATABASE_PASSWORD: django_password                            # Database password.
+      DATABASE_HOST: db                                             # Database host points to Compose service.      DATABASE_PORT: "5432"                                         # Postgres port.
+      SECURE_PROXY_SSL_HEADER_HTTP_X_FORWARDED_PROTO: "https"       # Helps Django detect original HTTPS behind rever
+    volumes:
+      - static_data:/app/staticfiles                                # Shared static file volume.      - media_data:/app/media                                       # Shared media file volume.
+    expose:
+      - "8000"                                                      # Expose Django only to other containers, not dir
+  nginx:                                                            # Nginx reverse proxy service.
+    image: nginx:1.27-alpine                                        # Lightweight Nginx image.
+    restart: unless-stopped                                         # Restart automatically.
+    depends_on:      - web                                                         # Start after web service exists.
+    ports:
+      - "80:80"                                                     # Publish Nginx on host port 80.
+    volumes:      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro      # Mount Nginx config as read-only.
+      - static_data:/vol/static:ro                                  # Mount static files read-only.
+      - media_data:/vol/media:ro                                    # Mount media files read-only.
+volumes:  postgres_data:                                                    # Named volume for database persistence.
+  static_data:                                                      # Named volume for collected static files.
+  media_data:                                                       # Named volume for uploaded media files.
+Why this is more production-like
+This is much closer to what people actually deploy because:
+database is separate
+app is separate
+reverse proxy is separate
+Gunicorn is internal only
+Nginx serves static/media
+volumes persist important data
+only Nginx is exposed publicly
+6. .dockerignore
+Save as .dockerignore.
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+.git /
+.gitignore
+docker-compose.yml
+.dockerignore
+*.sqlite3
+media/
+staticfiles/
+.env
+.env.*
+.pytest_cache/
+.mypy_cache/
+coverage/
+htmlcov/
+dist/
+build/
+node_modules/
+Why this matters
+It avoids sending junk and secrets into Docker build context:
+local virtualenvs
+sqlite databases
+test artifacts
+env files
+generated static/media
+7. Production Django settings you should have
+Your Django settings should use environment variables.
+Example:
+SOURCE CODE / MANIFEST
+import os
+SECRET_KEY  = os.getenv("DJANGO_SECRET_KEY ", "unsafe-dev-key")
+DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
+ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",") if
+host.strip()]
+DATABASES = {
+SOURCE CODE / MANIFEST
+    "default": {        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("DATABASE_NAME", "django_db"),
+        "USER": os.getenv("DATABASE_USER", "django_user"),
+        "PASSWORD": os.getenv("DATABASE_PASSWORD", "django_password"),        "HOST": os.getenv("DATABASE_HOST", "db"),
+        "PORT": os.getenv("DATABASE_PORT", "5432"),
+    }
+}
+STATIC_URL = "/static/ "
+STATIC_ROOT = "/app/staticfiles "
+MEDIA_URL = "/media/ "
+MEDIA_ROOT = "/app/media"
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO ", "https")
+8. Health endpoint
+Your health check depends on this URL existing.
+Example urls.py:
+SOURCE CODE / MANIFEST
+from django.http import HttpResponse
+from django.urls import path
+def health_check(request):
+return HttpResponse("ok")
+urlpatterns = [
+path("health/", health_check),
+]
+9. Production improvements you should add in real deployments
+For real production, also add these Django settings:
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF  = True
+X_FRAME_OPTIONS = "DENY "
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO ", "https")
+And if serving over HTTPS:
+SECURE_SSL_REDIRECT = True
+Also consider:
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD  = True
+Only enable HSTS when HTTPS is fully set up correctly.
+10. Example requirements.txt
+A production setup might include:
+Django>=5.0,<6.0
+gunicorn>=22.0
+psycopg[binary]>=3.1
+whitenoise>=6.0
+Note on Whitenoise
+In this Nginx-based setup, Whitenoise is optional.
+If Nginx serves static files, Whitenoise is not required.
+If you want a simpler single-container deployment, Whitenoise is often useful.
+11. Commands to run it
+Build
+SOURCE CODE / MANIFEST
+docker compose build
+Start
+SOURCE CODE / MANIFEST
+docker compose up -d
+View logs
+SOURCE CODE / MANIFEST
+docker compose logs -f
+Stop
+SOURCE CODE / MANIFEST
+docker compose down
+12. What to customize first
+Project module
+Replace everywhere:
+config
+with your actual Django project name.
+Especially:
+config.wsgi :application
+and
+DJANGO_SETTINGS_MODULE: config.settings
+Secret key
+Replace:
+DJANGO_SECRET_KEY : "change-this-in-real-production"
+Allowed hosts
+Replace:
+DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
+with your real domain names.
+Database credentials
+Replace the demo values.
+13. What makes this production instead of dev
+This setup is production-style because it:
+uses Gunicorn
+places Nginx in front
+uses Postgres
+isolates services
+serves static/media properly
+runs as non-root
+uses health checks
+keeps the app private behind Nginx
+uses named volumes for persistence
+It avoids common non-production mistakes like:
+pythonmanage.py runserver
+exposing Django directly on the internet
+storing everything in one container
+running as root
+ignoring static/media handling
+skipping reverse proxying
+14. One more truth about “real production”
+For larger teams, production often goes one step beyond Docker Compose:
+Docker images built in CI
+deployed to Kubernetes, ECS, or similar
+managed secrets
+separate migration job
+HTTPS termination with real certs
+logging/monitoring
+autoscaling
+But for Docker-based production, this is a solid baseline.
+Next move
+I can turn this into either:
+a single-container production Django image using Whitenoise
+a full production deployment with HTTPS, Nginx, Postgres, Redis, and Celery
+PRODUCTION MANUAL: CONTINUED
+STEP 5 CORE KUBERNETES MANIFESTS (BASE LAYER)
+SOURCE CODE / MANIFEST
+apiVersion: v1                          # Uses the core Kubernetes API group, version v1.kind: Namespace                         # Declares that this object is a Namespace.
+metadata:                               # Metadata section for naming and labeling the object.
+  name: production-app                  # The namespace will be called "production-app".
+  labels:                               # Key-value labels attached to this namespace.    name: production-app                # A label named "name" with value "production-app".
+SOURCE CODE / MANIFEST
+---
+apiVersion: v1                          # Core Kubernetes API group, version v1.
+kind: ServiceAccount                    # Creates a ServiceAccount for pods to use.
+metadata:                               # Metadata for the ServiceAccount.  name: app-sa                          # The ServiceAccount name is "app-sa".
+  namespace: production-app             # It is created inside the "production-app" namespace.
+automountServiceAccountToken: false     # Prevents automatic mounting of Kubernetes API credentials into the pod for 
+SOURCE CODE / MANIFEST
+---
+apiVersion: v1                          # Core API group, version v1.
+kind: ConfigMap                         # Stores non-sensitive configuration values.metadata:                               # Metadata for the ConfigMap.
+  name: app-config                      # The ConfigMap name is "app-config".
+  namespace: production-app             # It lives in the "production-app" namespace.
+data:                                   # Key-value configuration data.
+  APP_ENV: "production"                 # Sets application environment to production.  LOG_LEVEL: "info"                     # Sets logging level to info.
+  PORT: "8080"                          # Tells the app to listen on port 8080.
+SOURCE CODE / MANIFEST
+---
+apiVersion: v1                          # Core API group.
+kind: Secret                            # Stores sensitive configuration such as passwords or API keys.metadata:                               # Metadata for the Secret.
+  name: app-secrets                     # Secret name is "app-secrets".
+  namespace: production-app             # The Secret belongs to the "production-app" namespace.
+type: Opaque                            # Generic Secret type for arbitrary key-value pairs.
+stringData:                             # Lets you provide plain text values that Kubernetes converts to base64 inter  DATABASE_URL: "postgres://user:password@postgres:5432/appdb"  # Database connection string.
+  API_KEY: "replace-me"                 # Placeholder API key. Replace with a real secret.
+SOURCE CODE / MANIFEST
+---
+apiVersion: apps/v1                     # Uses the apps API group for workloads like Deployments.
+kind: Deployment                        # Creates a Deployment to manage stateless app pods.
+metadata:                               # Metadata for the Deployment.  name: app                             # Deployment name is "app".
+  namespace: production-app             # It is created in the "production-app" namespace.
+  labels:                               # Labels attached to the Deployment object itself.
+    app: app                            # Label key "app" with value "app".spec:                                   # Specification of the Deployment behavior.
+  replicas: 3                           # Start with 3 pod replicas for availability.
+  revisionHistoryLimit: 5               # Keep the last 5 ReplicaSet revisions for rollback history.
+  strategy:                             # Defines how updates are performed.    type: RollingUpdate                 # Update pods gradually instead of replacing all at once.
+    rollingUpdate:                      # Settings specific to rolling updates.
+      maxUnavailable: 0                 # Never allow any desired pod to be unavailable during update.
+      maxSurge: 1                       # Allow 1 extra temporary pod above the desired replica count during update.  selector:                             # Tells the Deployment which pods it owns.
+    matchLabels:                        # Pods with these labels belong to this Deployment.
+      app: app                          # Match pods labeled app=app.
+  template:                             # Template used to create each pod.
+    metadata:                           # Metadata for pods created by the Deployment.      labels:                           # Labels attached to each pod.
+        app: app                        # Pod label app=app, must match the selector.
+    spec:                               # Pod specification.
+      serviceAccountName: app-sa        # Pods will run using the "app-sa" ServiceAccount.      terminationGracePeriodSeconds: 30 # Allow up to 30 seconds for graceful shutdown before force kill.
+      securityContext:                  # Pod-level security settings.
+        runAsNonRoot: true              # Force containers to run as a non-root user.
+        fsGroup: 2000                   # Files in mounted volumes can be group-owned by GID 2000.        seccompProfile:                 # Linux seccomp filtering settings.
+          type: RuntimeDefault          # Use the container runtime’s default syscall restrictions.
+      affinity:                         # Pod scheduling preferences and constraints.
+        podAntiAffinity:                # Prefer not to place identical pods on the same node.
+          preferredDuringSchedulingIgnoredDuringExecution:  # A soft preference, not a hard requirement.            - weight: 100               # Strong preference weight.
+              podAffinityTerm:          # Defines the anti-affinity rule.
+                topologyKey: kubernetes.io/hostname  # Spread across different nodes by hostname.
+                labelSelector:          # Match against pods with these labels.                  matchLabels:          # Label selector section.
+                    app: app            # Avoid scheduling near other pods labeled app=app.
+      containers:                       # List of containers in this pod.
+        - name: app                     # Container name is "app".          image: YOUR_IMAGE:TAG         # Container image to run. Replace with your real image.
+          imagePullPolicy: IfNotPresent # Pull the image only if not already cached on the node.
+          ports:                        # Ports exposed by the container.
+            - containerPort: 8080       # The container listens on port 8080.
+              name: http                # Names this port "http" for easier referencing elsewhere.
+          envFrom:                      # Import environment variables from other Kubernetes resources.
+            - configMapRef:             # Reference a ConfigMap.                name: app-config        # Load env vars from the "app-config" ConfigMap.
+            - secretRef:                # Reference a Secret.
+                name: app-secrets       # Load env vars from the "app-secrets" Secret.
+          resources:                    # CPU and memory resource controls.            requests:                   # Minimum resources reserved for the container.
+              cpu: "250m"               # Request 0.25 CPU core.
+              memory: "256Mi"           # Request 256 MiB of memory.
+            limits:                     # Maximum resources the container may use.              cpu: "1000m"              # Limit CPU to 1 full core.
+              memory: "512Mi"           # Limit memory to 512 MiB.
+          securityContext:              # Container-level security restrictions.
+            allowPrivilegeEscalation: false  # Prevent processes from gaining extra privileges.            readOnlyRootFilesystem: true     # Make the container root filesystem read-only.
+            capabilities:              # Linux capabilities control.
+              drop:                    # Drop listed capabilities.
+                - ALL                  # Remove all extra Linux capabilities.
+          readinessProbe:              # Determines whether the app is ready to receive traffic.            httpGet:                   # Perform an HTTP GET request.
+              path: /ready             # Request the /ready endpoint.
+              port: http               # Use the named port "http".
+            initialDelaySeconds: 5     # Wait 5 seconds after container start before first check.            periodSeconds: 10          # Check every 10 seconds.
+            timeoutSeconds: 2          # Fail the check if it takes over 2 seconds.
+            failureThreshold: 3        # Mark unready after 3 failed checks.
+          livenessProbe:               # Determines whether the container is still alive.            httpGet:                   # HTTP GET health check.
+              path: /live              # Request the /live endpoint.
+              port: http               # Use the named container port.
+            initialDelaySeconds: 15    # Wait 15 seconds before first liveness check.
+            periodSeconds: 20          # Check every 20 seconds.            timeoutSeconds: 2          # Timeout after 2 seconds.
+            failureThreshold: 3        # Restart after 3 failed checks.
+          startupProbe:                # Used for slow-starting apps.
+            httpGet:                   # HTTP GET startup check.              path: /startup           # Request the /startup endpoint.
+              port: http               # Use the named port.
+            failureThreshold: 30       # Allow up to 30 failures before considering startup failed.
+            periodSeconds: 5           # Check every 5 seconds during startup.          lifecycle:                   # Lifecycle hooks for container events.
+            preStop:                   # Run this just before container termination.
+              exec:                    # Execute a command inside the container.
+                command: ["/bin/sh", "-c", "sleep 10"]  # Wait 10 seconds to help drain in-flight traffic.          volumeMounts:                # Mount volumes into the container filesystem.
+            - name: tmp                # Refers to the volume named "tmp".
+              mountPath: /tmp          # Mount it at /tmp so the app has writable temporary storage.
+      volumes:                         # Volumes available to the pod.
+        - name: tmp                    # Volume name "tmp".          emptyDir: {}                 # Creates an empty ephemeral directory for the lifetime of the pod.
+SOURCE CODE / MANIFEST
+---
+apiVersion: v1                         # Core API group.
+kind: Service                          # Creates a stable network endpoint for pods.
+metadata:                              # Metadata for the Service.
+  name: app-service                    # Service name is "app-service".  namespace: production-app            # Service is in the "production-app" namespace.
+  labels:                              # Labels for the Service object.
+    app: app                           # Label app=app.
+spec:                                  # Service behavior.  selector:                            # Which pods this Service forwards traffic to.
+    app: app                           # Select pods labeled app=app.
+  ports:                               # Port mappings for the Service.
+    - name: http                       # Name this service port "http".      port: 80                         # The Service is exposed internally on port 80.
+      targetPort: http                 # Forward traffic to the container port named "http" = 8080.
+  type: ClusterIP                      # Expose only inside the cluster.
+SOURCE CODE / MANIFEST
+---
+apiVersion: policy/v1                  # Policy API group for disruption controls.
+kind: PodDisruptionBudget              # Limits how many pods can be voluntarily disrupted at once.metadata:                              # Metadata for the PDB.
+  name: app-pdb                        # PDB name is "app-pdb".
+  namespace: production-app            # Created in the "production-app" namespace.
+spec:                                  # PDB rules.  minAvailable: 2                      # At least 2 pods must remain running during voluntary disruptions.
+  selector:                            # Applies to pods matching this selector.
+    matchLabels:                       # Label matching rules.
+      app: app                         # Applies to pods labeled app=app.
+SOURCE CODE / MANIFEST
+---
+apiVersion: autoscaling/v2             # Autoscaling API version 2 for advanced HPA features.
+kind: HorizontalPodAutoscaler          # Automatically scales pods based on metrics.metadata:                              # Metadata for the HPA.
+  name: app-hpa                        # HPA name is "app-hpa".
+  namespace: production-app            # Created in the "production-app" namespace.
+spec:                                  # HPA settings.  scaleTargetRef:                      # The workload this HPA controls.
+    apiVersion: apps/v1                # Target workload API version.
+    kind: Deployment                   # Target kind is a Deployment.
+    name: app                          # Target Deployment name is "app".  minReplicas: 3                       # Never scale below 3 replicas.
+  maxReplicas: 10                      # Never scale above 10 replicas.
+  behavior:                            # Fine-grained scale-up and scale-down behavior.
+    scaleUp:                           # Rules for scaling upward.      stabilizationWindowSeconds: 0    # No waiting window before scaling up.
+      policies:                        # Allowed scale-up policies.
+        - type: Percent                # Scale based on a percentage.
+          value: 100                   # Can grow by up to 100% in one period.
+          periodSeconds: 60            # That scaling limit applies per 60 seconds.    scaleDown:                         # Rules for scaling downward.
+      stabilizationWindowSeconds: 300  # Wait 5 minutes before reducing replicas to avoid flapping.
+      policies:                        # Allowed scale-down policies.
+        - type: Percent                # Scale down by percentage.          value: 50                    # Reduce by at most 50% in one period.
+          periodSeconds: 60            # That limit applies per 60 seconds.
+  metrics:                             # Metrics used to decide scaling.
+    - type: Resource                   # Use a built-in resource metric.      resource:                        # Resource metric details.
+        name: cpu                      # CPU utilization metric.
+        target:                        # Target threshold.
+          type: Utilization            # Use average percent utilization versus requested CPU.
+          averageUtilization: 70       # Scale when average CPU usage is around 70%.    - type: Resource                   # Another built-in resource metric.
+      resource:                        # Resource metric details.
+        name: memory                   # Memory utilization metric.
+        target:                        # Target threshold.          type: Utilization            # Use average percent utilization versus requested memory.
+          averageUtilization: 75       # Scale when memory usage is around 75%.
+SOURCE CODE / MANIFEST
+---
+apiVersion: networking.k8s.io/v1       # Networking API group.
+kind: NetworkPolicy                    # Restricts allowed network traffic to and from pods.
+metadata:                              # Metadata for the NetworkPolicy.  name: app-network-policy             # NetworkPolicy name.
+  namespace: production-app            # Created in the "production-app" namespace.
+spec:                                  # Network policy rules.
+  podSelector:                         # Select pods this policy applies to.    matchLabels:                       # Match pods by label.
+      app: app                         # Applies to pods labeled app=app.
+  policyTypes:                         # Which traffic directions are controlled.
+    - Ingress                          # Control incoming traffic.    - Egress                           # Control outgoing traffic.
+  ingress:                             # Rules for incoming traffic.
+    - from:                            # Allowed sources.
+        - namespaceSelector: {}        # Allows traffic from any namespace. This is broad and can be tightened later.
+      ports:                           # Allowed destination ports.        - protocol: TCP                # Allow TCP traffic.
+          port: 8080                   # Allow incoming traffic to container port 8080.
+  egress:                              # Rules for outgoing traffic.
+    - {}                               # Allow all outgoing traffic. Good default, but can be tightened later.
+SOURCE CODE / MANIFEST
+---apiVersion: networking.k8s.io/v1       # Networking API group.
+kind: Ingress                          # Exposes HTTP/HTTPS routes from outside the cluster to internal Services.
+metadata:                              # Metadata for the Ingress.
+  name: app-ingress                    # Ingress name is "app-ingress".
+  namespace: production-app            # Created in the "production-app" namespace.  annotations:                         # Controller-specific settings, here for NGINX Ingress.
+    kubernetes.io/ingress.class: nginx # Tells Kubernetes this Ingress should be handled by the nginx ingress control
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"   # Allow request bodies up to 10 MB.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60" # Upstream read timeout of 60 seconds.    nginx.ingress.kubernetes.io/proxy-send-timeout: "60" # Upstream send timeout of 60 seconds.
+spec:                                  # Ingress routing rules.
+  rules:                               # Host and path rules.
+    - host: app.example.com            # Requests for this hostname will use this rule.      http:                            # HTTP routing config.
+        paths:                         # URL path rules.
+          - path: /                    # Match all paths beginning with /.
+            pathType: Prefix           # Prefix means / matches everything under it.
+            backend:                   # Where matched requests are sent.              service:                 # Send traffic to a Service.
+                name: app-service      # Service name to route to.
+                port:                  # Service port to route to.
+                  number: 80           # Route to service port 80.
+  tls:                                 # TLS configuration for HTTPS.
+    - hosts:                           # Hostnames covered by this TLS cert.        - app.example.com              # TLS applies to app.example.com.
+      secretName: app-tls              # Kubernetes Secret containing the TLS certificate and key.
+Namespace
+Creates an isolated space in the cluster so your app resources stay grouped together.
+ServiceAccount
+Gives pods an identity. Here it is hardened by not automatically mounting cluster API credentials.
+ConfigMap
+Stores plain config like environment, log level, and port.
+Secret
+Stores sensitive values like database URL and API keys.
+Deployment
+Runs your app pods and keeps the desired number alive. Also handles rolling updates.
+Service
+Provides a stable internal address for your pods.
+PodDisruptionBudget
+Protects availability during node drains or maintenance.
+HorizontalPodAutoscaler
+Adds or removes replicas based on CPU and memory usage.
+NetworkPolicy
+Controls which traffic can reach the pods and what traffic can leave them.
+Ingress
+Exposes the app to the outside world through HTTP  or HTTPS.
+The most important lines to customize
+These are the first things you should edit:
+1. Container image
+YAML
+SOURCE CODE / MANIFEST
+image: YOUR_IMAGE:TAG
+Example:
+YAML
+SOURCE CODE / MANIFEST
+image: ghcr.io/acme/myapp:1.2.3
+2. Domain name
+YAML
+host: app.example.com
+3. TLS secret
+YAML
+secretName: app-tls
+4. Secret values
+YAML
+DATABASE_URL: "postgres :-/user :password@postgres :5432/appdb"
+API_KEY : "replace-me"
+5. Health check paths
+YAML
+/ready
+/live
+/startup
+These must exist in your app. If they do not, change them.
+A few important notes
+readOnlyRootFilesystem: true
+This is excellent for security, but your app must not try to write to random places on disk. That is why
+/tmp is mounted as writable.
+maxUnavailable: 0
+This helps aim for zero-downtime rolling updates, but only works well if:
+your app starts correctly
+readiness checks are accurate
+enough cluster capacity exists
+NetworkPolicy
+This example is safer than no policy, but it still allows:
+ingress from any namespace
+all egress out
+A stricter production version would allow only:
+ingress from your ingress controller namespace
+egress only to DNS, database, cache, and required external APIs
+Better than this, in real production
+The next level usually includes:
+Helm for reusable templating
+Kustomize for dev/staging/prod overlays
+cert-manager for automatic TLS
+External Secrets for secret management
+topologySpreadConstraints for better pod distribution
+Prometheus metrics and alerts
+strict NetworkPolicies
+initContainers if migrations or setup are needed
+One practical improvement
+Your current NetworkPolicy is still broad. A more locked-down version would only allow traffic from
+your ingress controller. For example, if your ingress controller runs in namespace ingress-nginx ,
+you could restrict it much more tightly.
+What “best” really depends on
+There is no single best Kubernetes script for every case. The best version depends on:
+app type: Node, Python, Go, Java
+runtime behavior: fast start or slow start
+cloud: EKS, GKE, AKS, on-prem
+traffic type: API, web app, internal service
+storage needs
+database and cache dependencies
+ingress controller
+observability stack
+For a generic web app, this is a strong baseline.
+PRODUCTION MANUAL: CONTINUED
+STEP 6 ENVIRONMENT MANAGEMENT WITH KUSTOMIZE
+These are the decisions you will be asked to justify in staff+ interviews,
+architecture reviews, and production incident post-mortems.
+💡  ARCHITECTURE REASONING
+Why replicas: 3 minimum for backend:
+SOURCE CODE / MANIFEST
+  - 1 pod is a single point of failure.
+  - 2 pods: one node drain takes you to 1 pod (PDB allows it if minAvailable: 1).  - 3 pods with maxUnavailable: 0 and PDB minAvailable: 2 ensures no node drain
+    or rolling update ever drops below 2 running pods simultaneously.
+💡  ARCHITECTURE REASONING
+Why maxUnavailable: 0 and maxSurge: 1:
+SOURCE CODE / MANIFEST
+  - maxUnavailable: 0 means no pod is terminated before a replacement is healthy.
+  - maxSurge: 1 creates one extra pod above desired count during rollout.
+  - Result is zero-downtime rolling update, at the cost of needing extra capacity    for 1 pod during the window. Rollout is sequential, one pod at a time.
+💡  ARCHITECTURE REASONING
+Why managed Postgres over self-hosted in Kubernetes:
+SOURCE CODE / MANIFEST
+  - Stateful systems in Kubernetes require persistent volumes, replication
+    configuration, backup automation, and careful pod disruption management.
+  - AWS RDS provides automatic failover, backups, point-in-time recovery,    encryption, security patching, and Performance Insights out of the box.
+  - Self-managing Postgres in Kubernetes is rarely worth the operational cost
+    unless you are at very large scale or have unusual compliance requirements.
+💡  ARCHITECTURE REASONING
+Why readOnlyRootFilesystem: true:
+SOURCE CODE / MANIFEST
+  - A read-only root filesystem means an attacker who achieves code execution    cannot write malicious files to the container filesystem.
+  - The app can still write to explicitly mounted emptyDir volumes like /tmp.
+  - This is a CIS Kubernetes Benchmark requirement. Most security audits
+    and SOC 2 reviews will flag its absence.
+💡  ARCHITECTURE REASONING
+Why terminationGracePeriodSeconds: 30:
+SOURCE CODE / MANIFEST
+  - When Kubernetes sends SIGTERM, the app should drain in-flight requests.
+  - The preStop sleep hook delays shutdown by 5 seconds to give the load
+    balancer time to stop routing new traffic before SIGTERM is sent.
+  - If your app drains in more than 30s, increase this value. Kubernetes    sends SIGKILL unconditionally after terminationGracePeriodSeconds.
+💡  ARCHITECTURE REASONING
+Why replicas: 1 for Celery Beat:
+SOURCE CODE / MANIFEST
+  - Celery Beat is a scheduler. Two instances simultaneously enqueue the same
+    periodic task twice, causing double-execution that can corrupt data.
+  - Use django-celery-beat with DatabaseScheduler so the schedule is stored in    Postgres and can be modified without redeploying beat.
+💡  ARCHITECTURE REASONING
+Why separate Deployments for worker and beat:
+SOURCE CODE / MANIFEST
+  - Different scaling requirements: HPA-scale workers but keep beat at exactly 1.
+  - Separate Deployments give separate resource limits, separate rollout history,    and separate monitoring targets. Coupling them adds operational complexity.
+💡  ARCHITECTURE REASONING
+Why topologyKey: kubernetes.io/hostname for pod anti-affinity:
+SOURCE CODE / MANIFEST
+  - Without anti-affinity, the scheduler may place all backend pods on the same
+    node. A single node failure then kills all replicas simultaneously.
+  - Preferred anti-affinity (not required) tells the scheduler to spread pods    across different nodes without blocking scheduling if only one node exists.
+💡  ARCHITECTURE REASONING
+Why External Secrets Operator over SealedSecrets or plain Secrets:
+SOURCE CODE / MANIFEST
+  - Plain Secrets committed to git expose credentials to every git user.
+  - SealedSecrets requires re-encrypting and committing every time a secret rotates.
+  - ESO with SSM: rotate the value in SSM, ESO picks it up within refreshInterval.    No git commit, no re-encryption, no manual intervention needed.
+💡  ARCHITECTURE REASONING
+Why IRSA instead of IAM user credentials for S3 and SSM access:
+SOURCE CODE / MANIFEST
+  - IAM user access keys are long-lived static credentials. If leaked via logs,
+    environment dumps, or git history, they remain valid until manually rotated.
+  - IRSA issues short-lived tokens to pods via Kubernetes service account OIDC.    Tokens expire every 15-60 minutes and are scoped to the specific SA.
+    No keys to store, no rotation to manage, no leakage risk in CI log output.
+💡  ARCHITECTURE REASONING
+Why transit_encryption_enabled for Redis:
+SOURCE CODE / MANIFEST
+  - Celery tasks can contain user data, PII, or business-critical payloads.
+  - Unencrypted Redis in the same VPC is an internal threat vector if any other
+    service or node is compromised. TLS in transit is cheap and mandatory.
+💡  ARCHITECTURE REASONING
+Why PDB minAvailable: 2 for backend:
+SOURCE CODE / MANIFEST
+  - Cluster upgrades, spot interruptions, and voluntary node drains all trigger
+    voluntary disruptions. Without a PDB, Kubernetes can evict all backend pods
+    from a node at once during a drain.
+  - minAvailable: 2 ensures at least 2 pods remain healthy during any voluntary    disruption, keeping the service operational through maintenance windows.
+PRODUCTION MANUAL: CONTINUED
+FINALPRODUCTION BLUEPRINTSUMMARY
+This is the complete production system assembled across these ten steps:
+Infrastructure layer (Terraform):
+VPC with public and private subnets across multiple AZs
+NAT Gateway per AZ for HA egress
+EKS cluster with managed node groups and IRSA enabled
+RDS PostgreSQL multi-AZ with encryption and automated backups
+ElastiCache Redis with TLS and automatic failover
+S3 bucket with KMS encryption and all public access blocked
+IAM roles for ESO and backend S3 access via IRSA
+Secrets layer (External Secrets Operator):
+ClusterSecretStore backed by AWS SSM Parameter Store
+ExternalSecret syncing DATABASE_URL, REDIS_URL, DJANGO_SECRET_KEY
+Automatic rotation awareness with 1-hour refresh interval
+TLS layer (cert-manager):
+ClusterIssuer using Let's Encrypt HTTP01 solver
+Automatic certificate issuance and renewal for production domain
+Kubernetes workloads:
+SOURCE CODE / MANIFEST
+  Namespace: production-app
+  ServiceAccount: app-sa with no auto-mount
+  ConfigMap: non-sensitive runtime configuration  Deployment: frontend (Nginx serving React, 2 replicas, readOnly root)
+  Deployment: backend (Django + Gunicorn, 3 replicas, full probes, preStop)
+  Deployment: celery-worker (2 replicas, exec liveness probe, 60s grace)
+  Deployment: celery-beat (1 replica, DatabaseScheduler, never scale above 1)
+  Job: backend-migrate (runs before rollout, auto-deletes in 10 min)
+  Service: frontend ClusterIP port 80
+  Service: backend ClusterIP port 8000  Ingress: path-based routing to frontend and backend with TLS
+  HPA: backend (3 to 12, 65% CPU) and celery-worker (2 to 8, 70% CPU)
+  PDB: backend minAvailable 2 and celery-worker minAvailable 1
+  NetworkPolicy: least-privilege per workload, egress locked to known ports
+CI/CD  layer (GitHub Actions):
+SOURCE CODE / MANIFEST
+  test job: Django checks and full test suite gate
+  build-and-push job: GHCR image push with SHA-based tag as output
+  deploy job: OIDC AWS auth, EKS kubeconfig, migration job run, image rollout
+Observability layer:
+Prometheus ServiceMonitor scraping Django /metrics  at 30s interval
+PrometheusRule with alerts for 5xx rate, p95 latency, pod readiness
+Structured JSON  logging via python-json-logger
+Sentry DSN wired through environment variable for error tracking
+GitOps layer (ArgoCD):
+Application watching git  for drift with selfHeal and prune enabled
+ignoreDifferences for HPA-managed replica counts
+Helm-based variant available for parameterized environments
+Operations layer (Runbook):
+SOURCE CODE / MANIFEST
+  CrashLoopBackOff: describe pod, previous logs, OOMKilled detection
+  Rollback: kubectl rollout undo and helm rollback with revision targeting
+  DB pool exhaustion: PgBouncer sidecar pattern in transaction mode
+  HPA not scaling: metrics-server install and request field verification
+  Celery queue backup: manual scale-up and queue depth diagnosis  Pre-deploy checklist: 9-point gate before every production push
+Architecture decisions:
+All design choices documented with reasoning for staff-level review
+Security hardening rationale (readOnly root, IRSA, TLS, ESO vs SealedSecrets)
+Availability reasoning (3 replicas, PDB, anti-affinity, managed services)
+Operational rationale (beat replicas, graceful shutdown, separate deployments)
+PRODUCTION MANUAL: CONTINUED
+END OF REAL-WORLD SYSTEMSGUIDE
+STEP 7 CLOUD-NATIVE SECRETS MANAGEMENT (ESO)
+--- 1.1 Migration Job ---
+A migration Job is a one-shot task that runs Django migrate before pods roll.
+It uses the same backend image but a different command.
+Save as: infra/kubernetes/job-migrate.yaml
+SOURCE CODE / MANIFEST
+apiVersion: batch/v1                       # Batch API group for one-off tasks.
+kind: Job                                  # A Job runs to completion, not forever.
+metadata:  name: backend-migrate                    # Job name.
+  namespace: production-app               # Same namespace as app pods.
+  labels:
+    app: backend                           # Label for querying and selection.    component: migration                   # Mark this as a migration job.
+spec:
+  backoffLimit: 2                          # Retry up to 2 times before marking Failed.
+  ttlSecondsAfterFinished: 600            # Auto-delete 10 min after completion.  template:
+    spec:
+      restartPolicy: OnFailure             # Retry the pod on failure, not on success.
+      serviceAccountName: app-sa           # Same SA as app containers.
+      securityContext:        runAsNonRoot: true                 # Non-root required.
+        seccompProfile:
+          type: RuntimeDefault             # Default seccomp restrictions.
+      containers:        - name: migrate
+          image: ghcr.io/your-org/backend:latest   # Same backend image.
+          command: ["python", "manage.py", "migrate", "--noinput"]  # Only run migrations.
+          envFrom:            - secretRef:
+                name: app-secrets          # DB credentials come from the Secret.
+            - configMapRef:
+                name: app-config           # Non-secret config from ConfigMap.          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:              cpu: "500m"
+              memory: "256Mi"
+          securityContext:
+            allowPrivilegeEscalation: false            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+💡  ARCHITECTURE REASONING
+Why this matters (staff-level reasoning):
+Running migrations as a Job instead of in every pod startup prevents race
+conditions when you have 3+ replicas all trying to migrate simultaneously.
+The ttlSecondsAfterFinished cleans up the completed pod automatically so
+you do not accumulate stale Job objects in the cluster.
+--- 1.2 Frontend Deployment ---
+Save as: infra/kubernetes/frontend-deployment.yaml
+SOURCE CODE / MANIFEST
+apiVersion: apps/v1kind: Deployment
+metadata:
+  name: frontend
+  namespace: production-app  labels:
+    app: frontend
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0      maxSurge: 1
+  selector:
+    matchLabels:
+      app: frontend  template:
+    metadata:
+      labels:
+        app: frontend    spec:
+      serviceAccountName: app-sa
+      terminationGracePeriodSeconds: 15   # Frontend needs less drain time than backend.
+      securityContext:        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: frontend          image: ghcr.io/your-org/frontend:latest
+          ports:
+            - containerPort: 80
+              name: http          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          securityContext:
+            allowPrivilegeEscalation: false            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL          readinessProbe:
+            httpGet:
+              path: /
+              port: http            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          volumeMounts:            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /var/cache/nginx   # Nginx needs a writable cache dir.            - name: run
+              mountPath: /var/run           # Nginx needs a writable run dir.
+      volumes:
+        - name: tmp          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+        - name: run          emptyDir: {}
+--- 1.3 Backend Deployment (full production version) ---
+Save as: infra/kubernetes/backend-deployment.yaml
+SOURCE CODE / MANIFEST
+apiVersion: apps/v1kind: Deployment
+metadata:
+  name: backend
+  namespace: production-app
+  labels:    app: backend
+spec:
+  replicas: 3
+  revisionHistoryLimit: 5  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0      maxSurge: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:    metadata:
+      labels:
+        app: backend
+      annotations:
+        prometheus.io/scrape: "true"          # Tell Prometheus to scrape this pod.        prometheus.io/path: "/metrics"        # Path for Django metrics endpoint.
+        prometheus.io/port: "8000"            # Port for metrics.
+    spec:
+      serviceAccountName: app-sa      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 2000        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:                  matchLabels:
+                    app: backend
+      containers:
+        - name: backend          image: ghcr.io/your-org/backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000              name: http
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:                name: app-secrets
+          resources:
+            requests:
+              cpu: "250m"              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:              drop:
+                - ALL
+          readinessProbe:
+            httpGet:
+              path: /health/              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health/              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health/
+              port: http            failureThreshold: 30
+            periodSeconds: 5
+          lifecycle:
+            preStop:              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]  # Give LB time to drain.
+          volumeMounts:
+            - name: tmp              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+--- 1.4 Celery Worker Deployment ---
+Save as: infra/kubernetes/celery-worker-deployment.yaml
+SOURCE CODE / MANIFEST
+apiVersion: apps/v1
+kind: Deployment
+metadata:  name: celery-worker
+  namespace: production-app
+  labels:
+    app: celery-worker
+spec:  replicas: 2
+  selector:
+    matchLabels:
+      app: celery-worker  template:
+    metadata:
+      labels:
+        app: celery-worker    spec:
+      serviceAccountName: app-sa
+      terminationGracePeriodSeconds: 60   # Give Celery tasks time to finish gracefully.
+      securityContext:        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: celery-worker          image: ghcr.io/your-org/backend:latest
+          command: ["celery", "-A", "config", "worker", "--loglevel=info", "--concurrency=4"]
+          envFrom:
+            - configMapRef:                name: app-config
+            - secretRef:
+                name: app-secrets
+          resources:            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"              memory: "512Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true            capabilities:
+              drop:
+                - ALL
+          livenessProbe:            exec:
+              command: ["celery", "-A", "config", "inspect", "ping", "-d", "celery@$HOSTNAME"]
+            initialDelaySeconds: 30
+            periodSeconds: 60            timeoutSeconds: 10
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp      volumes:
+        - name: tmp
+          emptyDir: {}
+💡  ARCHITECTURE REASONING
+Why celery liveness uses exec not httpGet:
+Celery workers do not serve HTTP . The celery inspect ping command asks the
+worker process itself whether it is alive. This is the correct liveness
+approach for non-HTTP  processes.
+--- 1.5 Celery Beat Deployment ---
+Save as: infra/kubernetes/celery-beat-deployment.yaml
+SOURCE CODE / MANIFEST
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-beat  namespace: production-app
+  labels:
+    app: celery-beat
+spec:  replicas: 1                              # ALWAYS 1. Multiple beats = double-firing tasks.
+  selector:
+    matchLabels:
+      app: celery-beat  template:
+    metadata:
+      labels:
+        app: celery-beat    spec:
+      serviceAccountName: app-sa
+      terminationGracePeriodSeconds: 30
+      securityContext:        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:        - name: celery-beat
+          image: ghcr.io/your-org/backend:latest
+          command:
+            - "celery"            - "-A"
+            - "config"
+            - "beat"
+            - "--loglevel=info"
+            - "--scheduler"            - "django_celery_beat.schedulers:DatabaseScheduler"
+          envFrom:
+            - configMapRef:
+                name: app-config            - secretRef:
+                name: app-secrets
+          resources:
+            requests:              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+--- 1.6 Services ---
+Save as: infra/kubernetes/services.yaml
+SOURCE CODE / MANIFEST
+apiVersion: v1
+kind: Servicemetadata:
+  name: frontend
+  namespace: production-app
+  labels:
+    app: frontendspec:
+  selector:
+    app: frontend
+  ports:    - name: http
+      port: 80
+      targetPort: http
+  type: ClusterIP
+SOURCE CODE / MANIFEST
+---
+apiVersion: v1kind: Service
+metadata:
+  name: backend
+  namespace: production-app  labels:
+    app: backend
+spec:
+  selector:    app: backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http  type: ClusterIP
+--- 1.7 Ingress with path-based routing ---
+Save as: infra/kubernetes/ingress.yaml
+SOURCE CODE / MANIFEST
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: main-ingress
+  namespace: production-app  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:  tls:
+    - hosts:
+        - yourdomain.com
+      secretName: main-tls
+  rules:    - host: yourdomain.com
+      http:
+        paths:
+          - path: /api/            pathType: Prefix
+            backend:
+              service:
+                name: backend                port:
+                  number: 8000
+          - path: /health/
+            pathType: Prefix            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000          - path: /admin/
+            pathType: Prefix
+            backend:
+              service:                name: backend
+                port:
+                  number: 8000
+          - path: /            pathType: Prefix
+            backend:
+              service:
+                name: frontend                port:
+                  number: 80
+💡  ARCHITECTURE REASONING
+Why the order matters:
+Nginx Ingress matches paths in the order they appear. Put more specific paths
+(/api/ , /admin/ ) before the catch-all (/). Otherwise / absorbs everything.
+--- 1.8 HPA for Backend and Workers ---
+Save as: infra/kubernetes/hpa.yaml
+SOURCE CODE / MANIFEST
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:  name: backend-hpa
+  namespace: production-app
+spec:
+  scaleTargetRef:    apiVersion: apps/v1
+    kind: Deployment
+    name: backend
+  minReplicas: 3
+  maxReplicas: 12
+  behavior:
+    scaleUp:      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:        - type: Percent
+          value: 33
+          periodSeconds: 60
+  metrics:    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization          averageUtilization: 65
+    - type: Resource
+      resource:
+        name: memory        target:
+          type: Utilization
+          averageUtilization: 75
+SOURCE CODE / MANIFEST
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscalermetadata:
+  name: celery-worker-hpa
+  namespace: production-app
+spec:  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: celery-worker  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+--- 1.9 PodDisruptionBudgets ---
+Save as: infra/kubernetes/pdb.yaml
+SOURCE CODE / MANIFEST
+apiVersion: policy/v1
+kind: PodDisruptionBudgetmetadata:
+  name: backend-pdb
+  namespace: production-app
+spec:  minAvailable: 2
+  selector:
+    matchLabels:
+      app: backend
+SOURCE CODE / MANIFEST
+---
+apiVersion: policy/v1kind: PodDisruptionBudget
+metadata:
+  name: celery-worker-pdb
+  namespace: production-app
+spec:  minAvailable: 1
+  selector:
+    matchLabels:
+      app: celery-worker
+--- 1.10 Strict NetworkPolicies ---
+Save as: infra/kubernetes/networkpolicy.yaml
+ALLOW ONLY INGRESS-NGINX TO
+REACH THE FRONTEND.
+SOURCE CODE / MANIFEST
+apiVersion: networking.k8s.io/v1kind: NetworkPolicy
+metadata:
+  name: frontend-netpol
+  namespace: production-app
+spec:  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:    - Ingress
+    - Egress
+  ingress:
+    - from:        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:        - protocol: TCP
+          port: 80
+  egress:
+    - {}
+ALLOW ONLY INGRESS-NGINX TO
+REACH THE BACKEND.
+SOURCE CODE / MANIFEST
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:  name: backend-netpol
+  namespace: production-app
+spec:
+  podSelector:    matchLabels:
+      app: backend
+  policyTypes:
+    - Ingress
+    - Egress  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8000  egress:
+    - ports:
+        - port: 5432
+          protocol: TCP        - port: 6379
+          protocol: TCP
+        - port: 53
+          protocol: UDP
+        - port: 443          protocol: TCP
+CELERY WORKERS NEED REDIS
+AND POSTGRES ONLY.
+SOURCE CODE / MANIFEST
+apiVersion: networking.k8s.io/v1kind: NetworkPolicy
+metadata:
+  name: celery-worker-netpol
+  namespace: production-appspec:
+  podSelector:
+    matchLabels:
+      app: celery-worker  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:    - ports:
+        - port: 5432
+          protocol: TCP
+        - port: 6379          protocol: TCP
+        - port: 53
+          protocol: UDP
+        - port: 443          protocol: TCP
+PRODUCTION MANUAL: CONTINUED
+STEP 8 AUTOMATIC TLS WITH CERT-MANAGER
+Never store plaintext secrets in Kubernetes YAML or in git .
+The production pattern is: secrets live in AWS SSM or Secrets Manager,
+and the External Secrets Operator (ESO) syncs them into Kubernetes Secrets.
+--- 2.1 ClusterSecretStore (AWS SSM) ---
+Save as: infra/kubernetes/cluster-secret-store.yaml
+SOURCE CODE / MANIFEST
+apiVersion: external-secrets.io/v1beta1
+kind: ClusterSecretStore
+metadata:
+  name: aws-ssm-storespec:
+  provider:
+    aws:
+      service: ParameterStore      region: us-east-1
+      auth:
+        jwt:
+          serviceAccountRef:            name: external-secrets
+            namespace: external-secrets
+--- 2.2 ExternalSecret pulling app secrets ---
+Save as: infra/kubernetes/external-secret-app.yaml
+SOURCE CODE / MANIFEST
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: app-external-secret  namespace: production-app
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: aws-ssm-store    kind: ClusterSecretStore
+  target:
+    name: app-secrets
+    creationPolicy: Owner  data:
+    - secretKey: DATABASE_URL
+      remoteRef:
+        key: /production-app/DATABASE_URL    - secretKey: API_KEY
+      remoteRef:
+        key: /production-app/API_KEY
+    - secretKey: DJANGO_SECRET_KEY      remoteRef:
+        key: /production-app/DJANGO_SECRET_KEY
+    - secretKey: REDIS_URL
+      remoteRef:
+        key: /production-app/REDIS_URL
+💡  ARCHITECTURE REASONING
+Why use ESO instead of SealedSecrets or plain Secrets:
+ESO pulls the live value from SSM every refreshInterval. When you rotate in
+SSM, ESO automatically updates the Kubernetes Secret. SealedSecrets requires
+re-encrypting and re-committing. Plain Secrets in git  are never acceptable.
+PRODUCTION MANUAL: CONTINUED
+STEP 9 ADVANCED INGRESS & NETWORKING
+A staff engineer owns the runbook. Here is the baseline operational playbook.
+--- 9.1 Pod crash loop ---
+Symptoms:
+SOURCE CODE / MANIFEST
+  kubectl get pods -n production-app  STATUS: CrashLoopBackOff
+Diagnosis:
+SOURCE CODE / MANIFEST
+  kubectl describe pod <pod-name> -n production-app
+  kubectl logs <pod-name> -n production-app --previous
+Common causes:
+1. Missing environment variable (DB URL, Redis URL not set in Secret)
+2. Failed migration (table does not exist, schema mismatch)
+3. OOMKilled (memory limit too low for the workload)
+4. Liveness probe timing out before app starts (wrong probe path or threshold)
+Fix for OOMKilled:
+SOURCE CODE / MANIFEST
+  kubectl get pod <pod-name> -n production-app \
+    -o jsonpath="{.status.containerStatuses[*].lastState}"
+  Look for reason: OOMKilled, then increase memory limit in deployment spec.
+--- 9.2 Deployment rollback ---
+If a bad deploy goes out immediately roll back:
+SOURCE CODE / MANIFEST
+  kubectl rollout history deployment/backend -n production-app
+  kubectl rollout undo deployment/backend -n production-app  kubectl rollout undo deployment/backend -n production-app --to-revision=3
+  kubectl rollout status deployment/backend -n production-app
+Using Helm:
+SOURCE CODE / MANIFEST
+  helm rollback backend 2 -n production-app
+--- 9.3 Database connection pool exhaustion ---
+Symptoms:
+SOURCE CODE / MANIFEST
+  Django logs: remaining connection slots are reserved for non-replication superuser
+  Or: FATAL: sorry, too many clients already
+Diagnosis:
+SOURCE CODE / MANIFEST
+  Check open connections on RDS:    SELECT count(*) FROM pg_stat_activity WHERE datname = 'your_db';
+Root cause:
+Django + Gunicorn without a connection pooler can exhaust Postgres limits.
+Each Gunicorn worker holds one connection per active request.
+SOURCE CODE / MANIFEST
+  3 pods x 9 workers x 2 threads = 54 potential simultaneous connections.
+Fix:
+SOURCE CODE / MANIFEST
+  Add PgBouncer in transaction pooling mode as a sidecar:
+  containers:
+    - name: backend
+      image: ghcr.io/your-org/backend:latest      env:
+        - name: DATABASE_URL
+          value: postgresql://user:pass@localhost:5432/db
+    - name: pgbouncer      image: edoburu/pgbouncer:latest
+      env:
+        - name: DATABASE_URL
+          value: postgresql://user:pass@your-rds-host:5432/db        - name: POOL_MODE
+          value: transaction
+        - name: MAX_CLIENT_CONN
+          value: "200"
+--- 9.4 HPA not scaling ---
+Symptoms:
+High CPU observed, but replica count stuck at minimum.
+Diagnosis:
+SOURCE CODE / MANIFEST
+  kubectl describe hpa backend-hpa -n production-app
+  Look for: unable to fetch metrics or metric not available
+Common causes:
+1. metrics-server not installed
+2. Resource requests not set on the container (HPA needs requests to derive utilization ratio)
+3. CPU actually not as high as expected once normalized against requests
+Fix:
+SOURCE CODE / MANIFEST
+  Install metrics-server:    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+  Verify resource requests are set:
+    kubectl get deployment backend -n production-app \
+      -o jsonpath="{.spec.template.spec.containers[0].resources}"
+--- 9.5 Celery task queue backing up ---
+Symptoms:
+Slow task processing. Queue length growing.
+SOURCE CODE / MANIFEST
+  Check queue length: redis-cli -h <redis-host> llen celery
+Diagnosis:
+SOURCE CODE / MANIFEST
+  Check worker logs:
+    kubectl logs -l app=celery-worker -n production-app --tail=100
+Immediate fix:
+SOURCE CODE / MANIFEST
+  kubectl scale deployment celery-worker --replicas=6 -n production-app
+Root cause investigation:
+Is there a task hanging? Check for stuck ETA tasks.
+Is a downstream service (RDS, Redis, external API) slow or throttled?
+Are tasks retrying on failure and filling the queue?
+--- 9.6 Pre-deploy checklist ---
+Before every production deployment verify:
+[ ] All tests pass in CI.
+[ ] Docker image successfully built and pushed to registry.
+[ ] Migration tested on a staging environment first.
+SOURCE CODE / MANIFEST
+  [ ] Rollback plan: previous image tag documented.
+  [ ] On-call engineer notified if deployment is in high-traffic window.
+  [ ] Monitoring dashboards open and baseline captured.  [ ] PDB in place: kubectl get pdb -n production-app.
+  [ ] New ConfigMap or Secret values pushed to SSM before deploying.
+  [ ] Canary observation planned if the change is risky.
+PRODUCTION MANUAL: CONTINUED
+STEP 10 CLUSTER SECURITY HARDENING & RBAC
+This provisions the actual cluster your Kubernetes manifests run on.
+--- 5.1 VPC module ---
+Save as: infra/terraform/modules/network/main.tf
+SOURCE CODE / MANIFEST
+module "vpc" {  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 5.0"
+  name = "${var.project}-vpc"
+  cidr = var.vpc_cidr
+  azs             = var.availability_zones
+  private_subnets = var.private_subnet_cidrs
+  public_subnets  = var.public_subnet_cidrs
+  enable_nat_gateway   = true
+  single_nat_gateway   = false           # One NAT per AZ for HA.
+  enable_dns_hostnames = true
+  public_subnet_tags = {
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                    = "1"  }
+  private_subnet_tags = {
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"           = "1"  }
+  tags = var.common_tags
+}
+💡  ARCHITECTURE REASONING
+Why subnet tags matter for EKS:
+The AWS Load Balancer Controller reads these tags to discover which subnets
+to place load balancers in. Missing tags means LB creation fails silently.
+--- 5.2 EKS cluster module ---
+Save as: infra/terraform/modules/kubernetes/main.tf
+SOURCE CODE / MANIFEST
+module "eks" {  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 20.0"
+  cluster_name    = var.cluster_name  cluster_version = "1.30"
+  vpc_id                   = var.vpc_id
+  subnet_ids               = var.private_subnet_ids
+  control_plane_subnet_ids = var.private_subnet_ids
+  cluster_endpoint_public_access = true
+  enable_irsa                    = true
+  eks_managed_node_groups = {
+    general = {
+      ami_type       = "AL2_x86_64"
+      instance_types = ["m6i.large"]      min_size       = 2
+      max_size       = 6
+      desired_size   = 3
+      labels = {
+        role = "general"      }
+    }
+  }
+  tags = var.common_tags
+}
+IRSA ROLE FOR EXTERNAL SECRETS
+OPERATOR.
+SOURCE CODE / MANIFEST
+module "eso_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 5.0"
+  role_name                      = "${var.cluster_name}-eso-role"  attach_external_secrets_policy = true
+  oidc_providers = {
+    main = {      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["external-secrets:external-secrets"]
+    }
+  }}
+--- 5.3 RDS PostgreSQL module ---
+Save as: infra/terraform/modules/postgres/main.tf
+SOURCE CODE / MANIFEST
+resource "aws_db_subnet_group" "main" {
+  name       = "${var.project}-db-subnet-group"  subnet_ids = var.private_subnet_ids
+  tags       = var.common_tags
+}
+resource "aws_security_group" "rds" {  name   = "${var.project}-rds-sg"
+  vpc_id = var.vpc_id
+  ingress {    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [var.eks_node_sg_id]  # Only EKS nodes can reach RDS.  }
+  egress {
+    from_port   = 0    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+resource "aws_db_instance" "main" {
+  identifier              = "${var.project}-postgres"
+  engine                  = "postgres"  engine_version          = "16"
+  instance_class          = "db.t4g.medium"
+  allocated_storage       = 50
+  max_allocated_storage   = 200  storage_type            = "gp3"
+  storage_encrypted       = true
+  db_name  = var.db_name
+  username = var.db_username  password = var.db_password
+  db_subnet_group_name   = aws_db_subnet_group.main.name
+  vpc_security_group_ids = [aws_security_group.rds.id]
+  multi_az            = true
+  publicly_accessible = false
+  backup_retention_period   = 7
+  backup_window             = "03:00-04:00"
+  maintenance_window        = "Mon:04:00-Mon:05:00"
+  deletion_protection       = true  skip_final_snapshot       = false
+  final_snapshot_identifier = "${var.project}-postgres-final"
+  performance_insights_enabled          = true
+  performance_insights_retention_period = 7
+  tags = var.common_tags
+}
+--- 5.4 ElastiCache Redis module ---
+Save as: infra/terraform/modules/redis/main.tf
+SOURCE CODE / MANIFEST
+resource "aws_elasticache_subnet_group" "main" {
+  name       = "${var.project}-redis-subnet"
+  subnet_ids = var.private_subnet_ids}
+resource "aws_security_group" "redis" {
+  name   = "${var.project}-redis-sg"  vpc_id = var.vpc_id
+  ingress {
+    from_port       = 6379    to_port         = 6379
+    protocol        = "tcp"
+    security_groups = [var.eks_node_sg_id]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+resource "aws_elasticache_replication_group" "main" {
+  replication_group_id = "${var.project}-redis"
+  description          = "Redis for ${var.project}"
+  node_type            = "cache.t4g.medium"
+  num_cache_clusters   = 2
+  engine_version       = "7.1"
+  port                 = 6379
+  subnet_group_name  = aws_elasticache_subnet_group.main.name
+  security_group_ids = [aws_security_group.redis.id]
+  at_rest_encryption_enabled = true
+  transit_encryption_enabled = true
+  automatic_failover_enabled = true
+  multi_az_enabled           = true
+  maintenance_window       = "tue:05:00-tue:06:00"
+  snapshot_retention_limit = 3
+  snapshot_window          = "04:00-05:00"
+  tags = var.common_tags
+}
+output "redis_endpoint" {
+🔱  ARCHITECTURE FLOWCHART
+  value = aws_elasticache_replication_group.main.primary_endpoint_address
+}
+--- 5.5 S3 bucket for media storage ---
+Save as: infra/terraform/modules/storage/main.tf
+SOURCE CODE / MANIFEST
+resource "aws_s3_bucket" "media" {
+  bucket = "${var.project}-media-${var.environment}"
+  tags   = var.common_tags}
+resource "aws_s3_bucket_versioning" "media" {
+  bucket = aws_s3_bucket.media.id
+  versioning_configuration {    status = "Enabled"
+  }
+}
+resource "aws_s3_bucket_server_side_encryption_configuration" "media" {
+  bucket = aws_s3_bucket.media.id
+  rule {
+    apply_server_side_encryption_by_default {      sse_algorithm = "aws:kms"
+    }
+  }
+}
+resource "aws_s3_bucket_public_access_block" "media" {
+  bucket                  = aws_s3_bucket.media.id
+  block_public_acls       = true
+  block_public_policy     = true  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+resource "aws_iam_policy" "backend_s3" {
+  name = "${var.project}-backend-s3-policy"
+  policy = jsonencode({
+    Version = "2012-10-17"    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject", "s3:ListBucket"]
+        Resource = [          aws_s3_bucket.media.arn,
+          "${aws_s3_bucket.media.arn}/*"
+        ]
+      }
+    ]
+})
+}
+PRODUCTION MANUAL: CONTINUED
+STEP
+11
+CONTINUOUS DELIVERY PIPELINES (GITHUB &
+JENKINS)
+Absolutely. Below is a production-style CI/CD  setup for your Django Docker app in both:
+Jenkins
+GitHub Actions
+Iʼll make them practical and explain them line by line.
+What these pipelines will do
+These examples assume your Django app already has:
+a production Dockerfile
+tests
+requirements.txt
+Docker image build support
+The pipelines will:
+check out code
+set up Python
+install dependencies
+run Django checks
+run tests
+build Docker image
+tag image
+push image to a registry
+1. Production Jenkins pipeline
+Save as Jenkinsfile.
+pipeline { -/  Start a declarative Jenkins pipeline.
+agent any -/  Run this pipeline on any available Jenkins agent.
+SOURCE CODE / MANIFEST
+    options {                                                               // Global pipeline options.
+        timestamps()                                                        // Prefix logs with timestamps.        disableConcurrentBuilds()                                           // Prevent overlapping builds for the sam
+        buildDiscarder(logRotator(numToKeepStr: '20'))                      // Keep only the last 20 builds to save s
+    }
+    environment {                                                           // Environment variables available to all        APP_NAME = "django-prod-app"                                        // Logical application name.
+        REGISTRY = "ghcr.io"                                                // Docker registry host.
+        IMAGE_REPO = "your-org/django-prod-app"                             // Image repository path. Replace this.
+        IMAGE_TAG = "${env.BUILD_NUMBER}"                                   // Use Jenkins build number as image tag.        IMAGE_FULL = "${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG}"               // Full image name with registry and tag.
+        IMAGE_LATEST = "${REGISTRY}/${IMAGE_REPO}:latest"                   // "latest" tag for convenience.
+        DJANGO_SETTINGS_MODULE = "config.settings"                          // Django settings module.
+        PYTHONUNBUFFERED = "1"                                              // Ensure Python logs are not buffered.    }
+    stages {                                                                // Pipeline stages begin here.
+        stage('Checkout') {                                                 // Fetch source code.
+            steps {
+                checkout scm                                                // Check out the repository configured in
+            }
+        }
+        stage('Set up Python') {                                            // Prepare Python environment for checks 
+            steps {
+                sh '''                    python3 -m venv .venv                                   # Create a virtual environment.
+                    . .venv/bin/activate                                    # Activate the virtual environment.
+                    pip install --upgrade pip                               # Upgrade pip to a recent version.
+                    pip install -r requirements.txt                         # Install project dependencies.                '''
+            }
+        }
+        stage('Django checks') {                                            // Run framework-level validation.            steps {
+                sh '''
+                    . .venv/bin/activate                                    # Activate the virtual environment.
+                    python manage.py check                                  # Run Django system checks.                '''
+            }
+        }
+        stage('Tests') {                                                    // Run automated test suite.
+            steps {
+                sh '''
+                    . .venv/bin/activate                                    # Activate the virtual environment.                    python manage.py test                                   # Run Django tests.
+                '''
+            }
+        }
+        stage('Build Docker image') {                                       // Build the production Docker image.
+            steps {
+                sh '''
+                    docker build -t ${IMAGE_FULL} -t ${IMAGE_LATEST} .      # Build image with versioned and latest t                '''
+            }
+        }
+        stage('Push Docker image') {                                        // Authenticate and push to registry.
+            steps {
+                withCredentials([string(credentialsId: 'ghcr-token', variable: 'GHCR_TOKEN')]) {   // Load registry t
+                    sh '''                        echo "${GHCR_TOKEN}" | docker login ${REGISTRY} -u your-gh-username --password-stdin   # Auth
+                        docker push ${IMAGE_FULL}                       # Push versioned image tag.
+                        docker push ${IMAGE_LATEST}                     # Push latest tag.
+                    '''
+                }            }
+        }
+    }
+    post {                                                                  // Post-build actions.
+        success {
+            echo "Pipeline completed successfully. Image pushed: ${IMAGE_FULL}"   // Log success message.
+        }        failure {
+            echo "Pipeline failed."                                         // Log failure message.
+        }
+        always {            sh '''
+                docker image prune -f || true                               # Clean up dangling images to save disk s
+                rm -rf .venv || true                                        # Remove local virtual environment create
+            '''
+        }    }
+}
+Jenkinsfile explained section by section
+pipeline
+Defines a declarative Jenkins pipeline.
+agent any
+Lets Jenkins run this job on any available worker.
+options
+These are useful production defaults:
+timestamps()
+Adds timestamps to logs.
+disableConcurrentBuilds()
+Avoids multiple builds running at the same time for the same job.
+buildDiscarder(...)
+Prevents Jenkins from storing too many old builds.
+environment
+Defines global variables.
+Important ones:
+REGISTRY
+Your image registry.
+IMAGE_REPO
+The repository path in the registry.
+IMAGE_TAG
+Uses the Jenkins build number for versioning.
+IMAGE_FULL
+Builds the full image reference.
+Example:
+ghcr.io/your-org/django-prod-app:52
+Checkout
+Pulls your repository code.
+Set up Python
+Creates a virtual environment and installs dependencies.
+This is separate from Docker build because you want fast feedback on:
+syntax
+Django config
+tests
+without waiting only for container build errors.
+Django checks
+Runs:
+pythonmanage.py check
+This catches many configuration issues early.
+Tests
+Runs your Django test suite.
+Build Docker image
+Builds the production image using your Dockerfile.
+Push Docker image
+Logs into the registry using Jenkins stored credentials and pushes:
+version tag
+latest tag
+post
+Handles cleanup and result logging.
+Production improvements for Jenkins
+A stronger real-world Jenkins pipeline often adds:
+separate lint stage
+separate security scan stage
+branch-based deployment rules
+build only on main
+image signing
+Slack/email  notifications
+deploy stage to Kubernetes/ECS/server
+2. Production GitHub Actions workflow
+Save as .github/workflows/django-ci.yml
+name: Django CI/CD  # Workflow name shown in GitHub Actions UI.
+on: # Events that trigger the workflow.
+SOURCE CODE / MANIFEST
+  push:                                                                     # Run on pushes.
+    branches: ["main"]                                                      # Only when code is pushed to main.
+  pull_request:                                                             # Also run on pull requests.
+    branches: ["main"]                                                      # PRs targeting main trigger the workflow
+env:                                                                        # Global environment variables for all jo
+  REGISTRY: ghcr.io                                                         # Docker registry host.
+  IMAGE_NAME: your-org/django-prod-app                                      # Repository path for Docker image. Repla
+  PYTHON_VERSION: "3.12"                                                    # Python version to use.  DJANGO_SETTINGS_MODULE: config.settings                                   # Django settings module.
+jobs: # List of jobs in this workflow.
+SOURCE CODE / MANIFEST
+  test-and-build:                                                           # Single job name.
+    runs-on: ubuntu-latest                                                  # Run on the latest Ubuntu GitHub-hosted 
+    permissions:                                                            # Explicit permissions for the job token.
+      contents: read                                                        # Allow reading repository contents.
+      packages: write                                                       # Allow publishing packages to GHCR.
+    steps:                                                                  # Ordered list of steps in the job.
+      - name: Check out repository                                          # Human-friendly step name.
+        uses: actions/checkout@v4                                           # Check out repository source code.
+      - name: Set up Python                                                 # Install requested Python version.
+        uses: actions/setup-python@v5                                       # Official Python setup action.
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}                         # Use Python version from env.
+      - name: Install dependencies                                          # Install app dependencies.
+        run: |
+          python -m pip install --upgrade pip                               # Upgrade pip.          pip install -r requirements.txt                                   # Install Python requirements.
+      - name: Run Django checks                                             # Validate Django project configuration.
+        run: |          python manage.py check                                            # Run Django checks.
+      - name: Run tests                                                     # Execute test suite.
+        run: |          python manage.py test                                             # Run Django tests.
+      - name: Log in to GHCR                                                # Authenticate to GitHub Container Regist
+        if: github.event_name == 'push'                                     # Only log in on push events, not PRs fro        uses: docker/login-action@v3                                        # Official Docker login action.
+        with:
+          registry: ${{ env.REGISTRY }}                                     # Registry host.
+          username: ${{ github.actor }}                                     # GitHub username that triggered workflow
+          password: ${{ secrets.GITHUB_TOKEN }}                             # GitHub-provided token.
+      - name: Extract Docker metadata                                       # Generate consistent image tags and labe
+        if: github.event_name == 'push'                                     # Only needed when publishing image.
+        id: meta                                                            # Step ID for later reference.        uses: docker/metadata-action@v5                                     # Official Docker metadata action.
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}                 # Full image repo name.
+          tags: |                                                           # Define image tags.            type=raw,value=latest                                           # Always publish latest on push to main.
+            type=sha                                                        # Also publish git SHA tag.
+      - name: Build and push Docker image                                   # Build image and push to registry.
+        if: github.event_name == 'push'                                     # Push only on direct pushes, not PR chec        uses: docker/build-push-action@v6                                   # Official Docker build/push action.
+        with:
+          context: .                                                        # Build context is repository root.
+          file: ./Dockerfile                                                # Dockerfile path.          push: true                                                        # Push built image to registry.
+          tags: ${{ steps.meta.outputs.tags }}                              # Use generated tags from metadata step.
+          labels: ${{ steps.meta.outputs.labels }}                          # Apply metadata labels to image.
+          cache-from: type=gha                                              # Restore build cache from GitHub Actions          cache-to: type=gha,mode=max                                       # Save build cache for future runs.
+GitHub Actions workflow explained
+name
+This is the label you see in GitHub Actions UI.
+on
+Defines triggers.
+This workflow runs on:
+pushes to main
+pull requests targeting main
+That is a sensible production default.
+env
+Shared environment variables.
+Important ones:
+REGISTRY
+Using GitHub Container Registry.
+IMAGE_NAME
+Where the image will be published.
+PYTHON_VERSION
+Python version for testing.
+jobs
+Defines workflow jobs.
+This example uses one job:
+test-and-build
+In bigger systems, you often split into:
+lint
+test
+build
+deploy
+permissions
+Keeps token access explicit.
+contents: read
+packages: write
+This is better than overly broad defaults.
+actions/checkout
+Checks out your repository.
+actions/setup-python
+Installs Python for the workflow runner.
+Install dependencies
+Installs your Python packages.
+Run Django checks
+Runs:
+pythonmanage.py check
+Run tests
+Runs your test suite.
+docker /login-action
+Logs in to GHCR.
+This only runs on push, because PRs often should not publish images.
+docker /metadata-action
+Generates tags automatically.
+This example creates tags like:
+latest
+commit SHA tag
+Example:
+ghcr.io/your-org/django-prod-app:latest
+ghcr.io/your-org/django-prod-app:sha-abc1234
+docker /build-push-action
+Builds and pushes the image.
+Also uses GitHub Actions cache to speed up builds.
+Better production GitHub Actions version
+A more advanced version would add:
+ruff / flake8
+black --check
+bandit
+pip-audit
+Trivy image scanning
+deploy only after test passes
+environment protection rules
+separate staging and production workflows
+3. Stronger production GitHub Actions example with lint and security
+Here is a more serious version.
+Save as .github/workflows/django-prod.yml
+name: Django Production Pipeline
+on:
+SOURCE CODE / MANIFEST
+  push:    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: your-org/django-prod-app
+  PYTHON_VERSION: "3.12"  DJANGO_SETTINGS_MODULE: config.settings
+jobs:
+SOURCE CODE / MANIFEST
+  quality:
+    runs-on: ubuntu-latest
+    steps:      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff bandit pip-audit
+      - name: Lint with Ruff
+        run: |
+          ruff check .
+      - name: Django checks
+        run: |
+          python manage.py check
+      - name: Run tests
+        run: |
+          python manage.py test
+      - name: Security scan Python dependencies
+        run: |
+          pip-audit
+      - name: Security scan source
+        run: |
+          bandit -r . -x tests
+  docker:
+    runs-on: ubuntu-latest
+    needs: quality
+    permissions:      contents: read
+      packages: write
+    steps:      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Log in to GHCR        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract Docker metadata
+        if: github.event_name == 'push'        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}          tags: |
+            type=raw,value=latest
+            type=sha
+      - name: Build and push image        if: github.event_name == 'push'
+        uses: docker/build-push-action@v6
+        with:
+          context: .          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}          cache-from: type=gha
+          cache-to: type=gha,mode=max
+4. What secrets you need
+For Jenkins
+In Jenkins credentials, store:
+ghcr-token
+This token must have permission to push packages.
+You also need to replace:
+your-gh-username
+with your actual GitHub username or machine account.
+For GitHub Actions
+For GHCR in the same repository owner scope, GITHUB_TOKEN  is often enough.
+If pushing somewhere else, you may need a Personal Access Token stored as a repo secret such as:
+GHCR_PAT
+Then replace:
+password: ${{ secrets.GITHUB_TOKEN  }}
+with:
+password: ${{ secrets.GHCR_PAT }}
+5. What to customize first
+Image repository
+Replace:
+your-org/django-prod-app
+with your actual org/user  and image name.
+Django settings module
+Replace:
+config.settings
+if your project is not named config.
+Tests
+If you use pytest, change:
+pythonmanage.py test
+to:
+pytest
+and install pytest in the pipeline.
+6. What makes these pipelines production-style
+They are stronger than basic CI examples because they include:
+deterministic stages
+test before image publish
+image tagging
+registry push
+credential handling
+non-overlapping Jenkins runs
+build retention
+branch-based behavior
+optional quality/security gates
+7. Real production next step: deploy stage
+The next layer after this is deployment.
+Typical deploy targets are:
+Docker server via SSH
+Kubernetes
+AWS ECS
+Azure Web App
+Google Cloud Run
+A production deployment stage often does one of these:
+For Docker server
+SOURCE CODE / MANIFEST
+docker pull ghcr.io/your-org/django-prod-app:latest
+docker compose up -d
+For Kubernetes
+SOURCE CODE / MANIFEST
+kubectl set image deployment/web web=ghcr.io/your-org/django-prod-app:latest
+For Helm
+SOURCE CODE / MANIFEST
+helm upgrade --install app ./helm-chart --set image.tag=<tag>
+8. Best practice recommendation
+If you are choosing between the two:
+Use GitHub Actions if:
+your code is already on GitHub
+you want simpler setup
+you do not need heavy internal Jenkins workflows
+Use Jenkins if:
+your company already has Jenkins
+you need complex custom pipelines
+you deploy into internal/private infrastructure heavily tied to Jenkins
+For most modern GitHub-hosted projects, GitHub Actions is usually the cleaner default.
+Next move
+I can write you the deployment stage too for either:
+Jenkins to EC2/VPS
+GitHub Actions to Docker server
+GitHub Actions to Kubernetes
+Jenkins to
+PRODUCTION MANUAL: CONTINUED
+STEP 12 ZERO-DOWNTIME DATABASE MIGRATIONS
+🔱  ARCHITECTURE FLOWCHART
+Real companies never have one environment. Every change goes: local -> dev ->
+staging -> prod. This step shows the exact Kustomize overlay pattern used at
+scale, plus how to wire it into GitHub Actions per-environment.
+--- 11.1 Why Kustomize over duplicated YAML ---
+Kustomize ships inside kubectl  (kubectl  apply -k). You write one base config
+and override only what differs per environment: replica count, image tag,
+SOURCE CODE / MANIFEST
+resource limits, domain name, secret references. No templating language, no
+helm install required for simple overrides.
+The alternative (copy-pasting YAML per environment) is how config drift happens.
+After 6 months you have 3 separate Deployment files that diverged silently.
+--- 11.2 Directory structure ---
+infra/kubernetes/
+base/
+namespace.yaml
+serviceaccount.yaml
+configmap.yaml
+backend-deployment.yaml
+frontend-deployment.yaml
+celery-worker-deployment.yaml
+celery-beat-deployment.yaml
+services.yaml
+ingress.yaml
+hpa.yaml
+pdb.yaml
+networkpolicy.yaml
+job-migrate.yaml
+kustomization.yaml <- base kustomization
+overlays/
+dev/
+kustomization.yaml
+configmap-patch.yaml
+backend-patch.yaml
+staging/
+kustomization.yaml
+configmap-patch.yaml
+backend-patch.yaml
+ingress-patch.yaml
+prod/
+kustomization.yaml
+configmap-patch.yaml
+backend-patch.yaml
+ingress-patch.yaml
+hpa-patch.yaml
+--- 11.3 base/kustomization.yaml  ---
+Save as: infra/kubernetes/base/kustomization.yaml
+SOURCE CODE / MANIFEST
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml  - configmap.yaml
+  - backend-deployment.yaml
+  - frontend-deployment.yaml
+  - celery-worker-deployment.yaml  - celery-beat-deployment.yaml
+  - services.yaml
+  - ingress.yaml
+  - hpa.yaml  - pdb.yaml
+  - networkpolicy.yaml
+--- 11.4 overlays/prod/kustomization.yaml  ---
+Save as: infra/kubernetes/overlays/prod/kustomization.yaml
+SOURCE CODE / MANIFEST
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: production-app               # Override namespace for prod.
+bases:
+  - ../../base                           # Point to shared base.
+images:  - name: ghcr.io/your-org/backend
+    newTag: "abc1234"                    # Image tag injected by CI at deploy time.
+  - name: ghcr.io/your-org/frontend
+    newTag: "abc1234"
+patchesStrategicMerge:
+  - backend-patch.yaml                  # Patch only what differs in prod.
+  - configmap-patch.yaml  - ingress-patch.yaml
+  - hpa-patch.yaml
+commonLabels:
+  environment: production               # Adds label to every resource.
+commonAnnotations:
+  deployment-environment: "production"
+--- 11.5 overlays/prod/backend-patch.yaml  ---
+Save as: infra/kubernetes/overlays/prod/backend-patch.yaml
+SOURCE CODE / MANIFEST
+apiVersion: apps/v1
+kind: Deployment
+metadata:  name: backend                         # Must match exact name in base.
+spec:
+  replicas: 3                           # Prod gets 3. Dev gets 1. Staging gets 2.
+  template:    spec:
+      containers:
+        - name: backend
+          resources:            requests:
+              cpu: "500m"               # Larger requests in prod vs dev.
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"              memory: "1Gi"
+--- 11.6 overlays/dev/backend-patch.yaml  ---
+Save as: infra/kubernetes/overlays/dev/backend-patch.yaml
+SOURCE CODE / MANIFEST
+apiVersion: apps/v1kind: Deployment
+metadata:
+  name: backend
+spec:  replicas: 1                           # Dev only needs 1 replica.
+  template:
+    spec:
+      containers:        - name: backend
+          resources:
+            requests:
+              cpu: "100m"               # Small requests in dev. Save cost.              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+--- 11.7 overlays/prod/ingress-patch.yaml  ---
+Save as: infra/kubernetes/overlays/prod/ingress-patch.yaml
+SOURCE CODE / MANIFEST
+apiVersion: networking.k8s.io/v1
+kind: Ingressmetadata:
+  name: main-ingress
+spec:
+  rules:
+    - host: yourdomain.com              # Prod domain.      http:
+        paths:
+          - path: /api/
+            pathType: Prefix            backend:
+              service:
+                name: backend
+                port:                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:              service:
+                name: frontend
+                port:
+                  number: 80
+  tls:    - hosts:
+        - yourdomain.com
+      secretName: prod-tls
+--- 11.8 overlays/dev/ingress-patch.yaml  ---
+Save as: infra/kubernetes/overlays/dev/ingress-patch.yaml
+SOURCE CODE / MANIFEST
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:  name: main-ingress
+spec:
+  rules:
+    - host: dev.internal.yourdomain.com  # Dev gets a separate subdomain.      http:
+        paths:
+          - path: /
+            pathType: Prefix            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+--- 11.9 Deploying per environment ---
+Apply to dev cluster:
+SOURCE CODE / MANIFEST
+  kubectl apply -k infra/kubernetes/overlays/dev
+Apply to staging cluster:
+SOURCE CODE / MANIFEST
+  kubectl apply -k infra/kubernetes/overlays/staging
+Apply to prod cluster:
+SOURCE CODE / MANIFEST
+  kubectl apply -k infra/kubernetes/overlays/prod
+With ArgoCD, each Application points to its overlay:
+SOURCE CODE / MANIFEST
+  source:
+    path: infra/kubernetes/overlays/prod   # Prod ArgoCD app.
+  source:
+    path: infra/kubernetes/overlays/staging  # Staging ArgoCD app.
+--- 11.10 Environment config differences table ---
+Setting dev staging prod
+replicas (backend) 1 2 3
+CPU request 100m 250m 500m
+Memory limit 256Mi 512Mi 1Gi
+HPA maxReplicas 2 6 12
+Domain dev.* staging.* yourdomain.com
+RDS instance t4g.micro t4g.small t4g.medium
+Redis nodes 1 1 2 (with failover)
+Deletion protection false false true
+Debug logging true false false
+Staff-level note:
+Staging must mirror prod as closely as possible. The #1 cause of "it worked
+in staging" failures is when staging uses smaller infra than prod. At minimum,
+staging should match prod's instance class, replica count, and network topology.
+Resource limits can differ, but topology must not.
+PRODUCTION MANUAL: CONTINUED
+STEP 13 OBSERVABILITY & STRUCTURED LOGGING
+cert-manager watches your Ingress objects and issues TLS certs from
+Let's Encrypt automatically. No manual cert rotation.
+--- 3.1 ClusterIssuer for Let's Encrypt ---
+Save as: infra/kubernetes/cluster-issuer.yaml
+SOURCE CODE / MANIFEST
+apiVersion: cert-manager.io/v1kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: ops@yourdomain.com
+    privateKeySecretRef:      name: letsencrypt-prod-key
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+Important note on Let's Encrypt rate limits:
+Let's Encrypt allows 50 cert issuances per domain per week. Use the staging
+issuer (acme-staging-v02.api.letsencrypt.org) first to test, then switch
+to prod. Hitting the limit locks you out for a week.
+STEP 14 INCIDENT RESPONSE & PRODUCTION RUNBOOKS
+This ties everything together: test, build, push, then deploy to Kubernetes.
+Save as: .github/workflows/deploy.yml
+name: Full Deploy Pipeline
+on:
+SOURCE CODE / MANIFEST
+  push:
+    branches: [main]
+env:  REGISTRY: ghcr.io
+  BACKEND_IMAGE: your-org/backend
+  FRONTEND_IMAGE: your-org/frontend
+jobs:
+SOURCE CODE / MANIFEST
+  test:    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5        with:
+          python-version: "3.12"
+      - name: Install and test
+        run: |
+          cd backend          pip install -r requirements.txt
+          python manage.py check
+          python manage.py test
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: read
+      packages: write
+    outputs:      image_tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Buildx        uses: docker/setup-buildx-action@v3
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5        with:
+          images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}
+          tags: |
+            type=sha,prefix=,format=short
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:          context: ./backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha          cache-to: type=gha,mode=max
+  deploy:
+    runs-on: ubuntu-latest    needs: build-and-push
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Update kubeconfig
+        run: |          aws eks update-kubeconfig --name your-cluster --region us-east-1
+      - name: Run migrations job
+        run: |          kubectl delete job backend-migrate -n production-app --ignore-not-found
+          kubectl apply -f infra/kubernetes/job-migrate.yaml
+          kubectl wait --for=condition=complete job/backend-migrate \
+            -n production-app --timeout=300s
+      - name: Deploy backend
+        run: |
+          kubectl set image deployment/backend \            backend=${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ needs.build-and-push.outputs.image_tag }} \
+            -n production-app
+          kubectl rollout status deployment/backend -n production-app --timeout=300s
+      - name: Restart workers        run: |
+          kubectl rollout restart deployment/celery-worker -n production-app
+          kubectl rollout restart deployment/celery-beat -n production-app
+          kubectl rollout status deployment/celery-worker -n production-app --timeout=180s
+💡  ARCHITECTURE REASONING
+Why use OIDC  instead of long-lived AWS keys:
+GitHub Actions OIDC  lets you assume an IAM role without storing AWS credentials
+as a secret. The token is short-lived (15 minutes) and scoped to the specific
+workflow. This is the mandatory baseline for cloud deployments from Actions.
+PRODUCTION MANUAL: CONTINUED
+STEP 15 PRODUCTION AUTOSCALING (HPA/VPA)
+For real-world teams, Helm is the standard way to package and release
+Kubernetes applications. Here is the structure and core files.
+--- 6.1 Chart.yaml ---
+Save as: infra/helm/backend/Chart.yaml
+SOURCE CODE / MANIFEST
+apiVersion: v2name: backend
+description: Django backend Helm chart for production-app
+type: application
+version: 0.1.0appVersion: "1.0.0"
+--- 6.2 values.yaml ---
+Save as: infra/helm/backend/values.yaml
+replicaCount: 3
+SOURCE CODE / MANIFEST
+image:
+  repository: ghcr.io/your-org/backend
+  tag: latest  pullPolicy: IfNotPresent
+service:
+SOURCE CODE / MANIFEST
+  type: ClusterIP
+  port: 8000
+ingress:
+SOURCE CODE / MANIFEST
+  enabled: true  className: nginx
+  host: yourdomain.com
+  tls:
+    secretName: main-tls
+resources:
+SOURCE CODE / MANIFEST
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:    cpu: 1000m
+    memory: 512Mi
+autoscaling:
+SOURCE CODE / MANIFEST
+  enabled: true
+  minReplicas: 3  maxReplicas: 12
+  targetCPUUtilizationPercentage: 65
+migration:
+SOURCE CODE / MANIFEST
+  enabled: true
+  ttlSecondsAfterFinished: 600
+celeryWorker:
+SOURCE CODE / MANIFEST
+  replicaCount: 2
+  concurrency: 4
+celeryBeat:
+SOURCE CODE / MANIFEST
+  enabled: true
+externalSecrets:
+SOURCE CODE / MANIFEST
+  enabled: true  secretStore: aws-ssm-store
+  refreshInterval: 1h
+  parameters:
+    DATABASE_URL: /production-app/DATABASE_URL    DJANGO_SECRET_KEY: /production-app/DJANGO_SECRET_KEY
+    REDIS_URL: /production-app/REDIS_URL
+--- 6.3 Deploying with Helm ---
+First deploy:
+SOURCE CODE / MANIFEST
+  helm upgrade --install backend ./infra/helm/backend \
+    --namespace production-app \
+    --create-namespace \
+    --values infra/helm/backend/values.yaml \    --set image.tag=$IMAGE_TAG
+Rollback if something breaks:
+SOURCE CODE / MANIFEST
+  helm rollback backend 1 --namespace production-app
+Check what is deployed:
+SOURCE CODE / MANIFEST
+  helm list --namespace production-app
+  helm history backend --namespace production-app
+PRODUCTION MANUAL: CONTINUED
+STEP 16 COST OPTIMIZATION (SPOT & KARPENTER)
+Running "pythonmanage.py migrate" on deploy sounds simple. In production it
+causes table locks, breaks running pods, and can corrupt data if the migration
+is not designed carefully. This step explains the safe pattern: expand/contract.
+--- 12.1 The problem with naive migration ---
+Assume you have version V1 of your app running with 3 pods. You deploy V2 which
+renames a column from "user_name" to "username".
+What happens during rolling update:
+SOURCE CODE / MANIFEST
+  - V2 pod starts. Django migrate renames the column.
+  - V1 pods are still running and querying "user_name" which no longer exists.
+  - V1 pods start throwing 500 errors for every DB query.  - Rolling update takes 60-120 seconds. That is 60-120 seconds of production errors.
+This is why naive migration is not zero-downtime.
+--- 12.2 The expand/contract  pattern ---
+The expand/contract  pattern splits any breaking migration into three safe phases:
+Phase 1 - Expand (deploy with old + new column both working):
+SOURCE CODE / MANIFEST
+  - Add the new column as nullable. Do not drop the old one.  - Write application code that writes to BOTH columns.
+  - Read from the old column.
+  - Deploy. Zero downtime. Old and new app versions work.
+Phase 2 - Migrate data:
+SOURCE CODE / MANIFEST
+  - Run a data migration to copy data from old column to new column.  - Do this as a background job or a separate management command, not inline.
+  - Verify data parity in both columns.
+Phase 3 - Contract (remove the old column):
+SOURCE CODE / MANIFEST
+  - Update app code to read from new column only.
+  - Remove writes to old column.  - Deploy and verify.
+  - Then run a migration to drop the old column.
+This means every breaking database change takes 3 deployments.
+That is the correct cost of zero-downtime production operations.
+--- 12.3 Django expand/contract  example ---
+Phase 1 migration - expand:
+SOURCE CODE / MANIFEST
+  class Migration(migrations.Migration):      dependencies = [('users', '0012_previous')]
+      operations = [
+          migrations.AddField(
+              model_name='user',              field=models.CharField(
+                  db_column='username',
+                  max_length=150,
+                  null=True,     # Nullable. No lock on existing rows.                  blank=True,
+              ),
+          ),
+      ]
+Phase 1 model code - write to both:
+SOURCE CODE / MANIFEST
+  class User(models.Model):
+      user_name = models.CharField(max_length=150)    # Old column. Keep for now.
+      username = models.CharField(max_length=150, null=True, blank=True)
+      def save(self, *args, **kwargs):          self.username = self.user_name   # Dual-write during transition.
+          super().save(*args, **kwargs)
+Phase 2 - data migration management command:
+SOURCE CODE / MANIFEST
+  from django.core.management.base import BaseCommand
+  from users.models import User
+  class Command(BaseCommand):
+      help = 'Backfill username from user_name'
+      def handle(self, *args, **kwargs):
+          batch_size = 1000
+          qs = User.objects.filter(username__isnull=True)
+          total = qs.count()          updated = 0
+          while True:
+              batch = list(qs[:batch_size])
+              if not batch:                  break
+              for user in batch:
+                  user.username = user.user_name
+              User.objects.bulk_update(batch, ['username'])
+              updated += len(batch)              self.stdout.write(f'Updated {updated}/{total}')
+Run as a Kubernetes Job:
+SOURCE CODE / MANIFEST
+  kubectl create job backfill-username \
+    --image=ghcr.io/your-org/backend:latest \
+    -- python manage.py backfill_username
+Phase 3 migration - contract (after all pods on V3):
+SOURCE CODE / MANIFEST
+  class Migration(migrations.Migration):
+      operations = [
+          migrations.RemoveField(model_name='user', name='user_name'),
+      ]
+--- 12.4 Table locking reference by migration type ---
+Migration type Lock type Safe in prod?
+AddField (nullable) No table lock Yes - safe to run online
+AddField (non-nullable) Full table lock No - use expand/contract
+RemoveField No table lock Yes - after code is removed
+RenameField Full table lock No - use expand/contract
+AlterField (add index) Full table lock No - use CREATE INDEX CONCURRENTLY
+AlterField (change type) Full table lock No - use expand/contract
+AddIndex (regular) Full table lock No - use RunSQL with CONCURRENTLY
+--- 12.5 Creating indexes without locking ---
+A regular CREATEINDEX locks the table for reads and writes.
+CREATEINDEXCONCURRENTLY  does not, but Django's default AddIndex uses the
+locking version. Override it with RunSQL:
+SOURCE CODE / MANIFEST
+  class Migration(migrations.Migration):
+      atomic = False   # Required for CONCURRENTLY.
+      operations = [
+          migrations.RunSQL(              sql="CREATE INDEX CONCURRENTLY IF NOT EXISTS "
+                  "users_user_email_idx ON users_user (email)",
+              reverse_sql="DROP INDEX IF EXISTS users_user_email_idx",
+          ),
+      ]
+💡  ARCHITECTURE REASONING
+Why atomic = False:
+CONCURRENTLY  cannot run inside a transaction. Django wraps migrations in
+SOURCE CODE / MANIFEST
+  transactions by default. Setting atomic = False disables that for this
+  migration only.
+--- 12.6 Migration job in the deploy pipeline ---
+Correct order for every production deploy:
+SOURCE CODE / MANIFEST
+  Step 1: Run migration Job.
+  Step 2: Wait for Job to complete successfully.  Step 3: Roll out new Deployment.
+Never rollout before migration. Never run migration inline in pod startup
+when you have multiple replicas. Migration Job runs once. Rolling update
+starts after.
+In GitHub Actions:
+SOURCE CODE / MANIFEST
+  - name: Run migration    run: |
+      kubectl delete job backend-migrate -n production-app --ignore-not-found
+      kubectl apply -f infra/kubernetes/job-migrate.yaml
+      kubectl wait --for=condition=complete job/backend-migrate \        -n production-app --timeout=600s
+  - name: Roll out backend
+    run: |      kubectl set image deployment/backend backend=ghcr.io/your-org/backend:$TAG \
+        -n production-app
+      kubectl rollout status deployment/backend -n production-app --timeout=300s
+--- 12.7 What to do when a migration fails in prod ---
+SOURCE CODE / MANIFEST
+  Step 1: Immediately stop the rollout.    kubectl rollout undo deployment/backend -n production-app
+  Step 2: Check migration status.
+    kubectl logs job/backend-migrate -n production-app
+  Step 3: Determine if migration partially applied.
+    Check django_migrations table:
+      SELECT * FROM django_migrations ORDER BY applied DESC LIMIT 10;
+  Step 4: If safe to revert, run the reverse migration manually:
+    kubectl run revert --image=ghcr.io/your-org/backend:PREVIOUS_TAG \
+      --restart=Never -- python manage.py migrate users 0012_previous
+  Step 5: Verify app is functional on old code.
+  Step 6: Fix migration and redeploy.
+Key rule: Never write irreversible migrations (like dropping a column with data)
+without a tested restore plan and database snapshot taken before deploy.
+PRODUCTION MANUAL: CONTINUED
+STEP 17 KUBERNETES SCALING LIMITS (ETCD & DNS)
+DORA (DevOps Research and Assessment) metrics are the four measures that
+correlate most strongly with high-performing engineering teams. Staff engineers
+are expected to know these, measure them, and improve them.
+--- 14.1 The four DORA metrics ---
+Metric Definition Elite benchmark
+Deployment Frequency How often you deploy to prod Multiple/day
+Lead Time for Changes Commit to prod elapsed time < 1 hour
+Change Failure Rate % of deployments causing prod incident < 5%
+Mean Time to Recovery How fast you restore service after incident < 1 hour
+Where your stack sits today:
+SOURCE CODE / MANIFEST
+  Deployment Frequency: Limited by the deploy workflow running on main push.
+    Elite: Deploy on every merged PR to main. Feature flags gate user impact.  Lead Time: Currently test + build + deploy = ~8-12 minutes. Good.
+  Change Failure Rate: With migration gating + rollout status check, low.
+  MTTR: With helm rollback + runbook = < 10 minutes if trained. Good.
+--- 14.2 Tracking deployment frequency in GitHub Actions ---
+Add a step that posts deployment events to a metrics endpoint:
+SOURCE CODE / MANIFEST
+  - name: Record deployment
+    if: success()
+    run: |
+      curl -X POST https://metrics.yourdomain.com/deployments \        -H "Content-Type: application/json" \
+        -d '{
+          "service": "backend",
+          "environment": "production",          "sha": "${{ github.sha }}",
+          "deployed_at": "${{ github.event.head_commit.timestamp }}",
+          "actor": "${{ github.actor }}"
+        }'
+Or use Datadog deployment tracking, PagerDuty change events,
+or a simple Postgres insert via a management command.
+--- 14.3 Measuring lead time with GitHub Actions ---
+SOURCE CODE / MANIFEST
+  - name: Compute lead time
+    run: |
+      COMMIT_TIME=$(git log -1 --format=%ct ${{ github.sha }})
+      DEPLOY_TIME=$(date +%s)
+      LEAD_SECONDS=$((DEPLOY_TIME - COMMIT_TIME))      LEAD_MINUTES=$((LEAD_SECONDS / 60))
+      echo "Lead time: ${LEAD_MINUTES} minutes"
+      echo "LEAD_TIME_MINUTES=${LEAD_MINUTES}" >> $GITHUB_ENV
+--- 14.4 Reducing lead time ---
+Current pipeline bottlenecks and how to cut them:
+Bottleneck Fix
+pip install on every run Cache deps: actions/cache on requirements hash
+Docker build cold cache-from: type=gha (already in our pipeline)
+Test suite slow Parallelize with pytest-xdist or split tests
+migration wait Set --timeout accurately. Don't wait 300s if 30s is max
+image push slow Use multi-arch builds only if needed. Single arch is faster
+kubectl rollout status blocks This is correct. Do not remove it.
+--- 14.5 Change failure rate and feature flags ---
+A high change failure rate means you are deploying changes that break prod.
+Solutions beyond better testing:
+Feature flags let you deploy code without activating it for users.
+Deploy the code to 100% of pods. Activate for 1% of users first.
+If no errors, ramp to 10%, 50%, 100%. If errors, turn off the flag in seconds.
+Simple Django feature flag implementation:
+SOURCE CODE / MANIFEST
+  import os
+  FEATURE_FLAGS = {
+      'new_checkout_flow': os.getenv('FF_NEW_CHECKOUT_FLOW', 'false') == 'true',      'ai_recommendations': os.getenv('FF_AI_RECOMMENDATIONS', 'false') == 'true',
+  }
+  def is_enabled(flag: str) -> bool:
+      return FEATURE_FLAGS.get(flag, False)
+In Kubernetes ConfigMap per environment:
+SOURCE CODE / MANIFEST
+  data:
+    FF_NEW_CHECKOUT_FLOW: "false"      # Off in prod until ready.
+    FF_AI_RECOMMENDATIONS: "true"     # On in prod.
+Production-grade: use LaunchDarkly, Unleash, or Flagsmith for user-percentage
+rollouts, A/B testing, and instant kill switches without a redeploy.
+--- 14.6 MTTR improvement: on-call readiness ---
+MTTR drops when the on-call engineer does not have to figure out what happened.
+Pre-built runbooks (Step 9) cut MTTR by 50%.
+What else cuts MTTR:
+SOURCE CODE / MANIFEST
+  - Prometheus alerts fire before users notice (proactive vs reactive).
+  - Grafana dashboards show the affected service in under 10 seconds.
+  - kubectl top pods and kubectl logs work without special access.  - Rollback procedure is a single command that anyone on the team knows.
+  - ChatOps: Slack bot that runs kubectl rollout undo on slash command.
+Grafana dashboard minimum for this stack:
+SOURCE CODE / MANIFEST
+  Panel 1: HTTP request rate by status code (200/4xx/5xx) over time.
+  Panel 2: p50/p95/p99 response latency.  Panel 3: Active Celery tasks and queue depth.
+  Panel 4: Pod CPU and memory vs limits per Deployment.
+  Panel 5: Database active connections and query latency.
+  Panel 6: Redis memory usage and hit/miss ratio.
+  Panel 7: HPA current vs desired replica count.  Panel 8: PodDisruptionBudget current disruptions.
+================================================================================
+STEP 18: DORA METRICS & PERFORMANCE AUDIT
+================================================================================
+Staff engineers own infra cost. If you cannot answer "how much does this
+cluster cost per month and why", you are not ready for a staff review.
+--- 13.1 Baseline AWS cost for this stack (us-east-1) ---
+Resource Spec Est. monthly cost
+EKS cluster control plane Managed $73
+EKS nodes (3x m6i.large) 2 vCPU 8 GB each $207
+RDS PostgreSQL db.t4g.medium multi-AZ $100
+ElastiCache Redis cache.t4g.medium 2 nodes $90
+NAT Gateways (2) 1 per AZ $65 + data
+S3 (media) 100 GB $3
+Load Balancer (ALB) Per hour + LCUs $25
+Route 53 1 hosted zone $1
+Data transfer Estimate 100 GB/mo $9
+ECR (container registry) 10 GB storage $1
+Total estimate ~$575/month
+At 50% reserved instance discount (1-year commit on RDS + nodes): ~$400/month.
+--- 13.2 Cost reduction techniques ---
+Technique 1: Use Spot instances for non-critical workloads.
+Celery workers are stateless and restartable. They are perfect Spot candidates.
+Spot saves 60-70% vs On-Demand on the same instance class.
+SOURCE CODE / MANIFEST
+  eks_managed_node_groups = {
+    spot-workers = {
+      capacity_type  = "SPOT"
+      instance_types = ["m6i.large", "m5.large", "m5a.large"]  # Multiple types = more Spot availability.      min_size       = 1
+      max_size       = 8
+      desired_size   = 2
+      taints = [{        key    = "workload"
+        value  = "spot"
+        effect = "NO_SCHEDULE"
+      }]
+    }
+  }
+  On the Celery Deployment, tolerate the taint:
+  tolerations:
+    - key: "workload"
+      operator: "Equal"      value: "spot"
+      effect: "NoSchedule"
+Technique 2: Single NAT Gateway for non-prod.
+SOURCE CODE / MANIFEST
+  Two NAT Gateways cost ~$65/month. In dev/staging, use single_nat_gateway = true.
+  Only prod needs HA NAT.
+Technique 3: RDS on single-AZ for staging.
+SOURCE CODE / MANIFEST
+  multi_az = false in staging saves ~$50/month per DB.
+Technique 4: Use t4g (ARM Graviton) instances everywhere possible.
+t4g instances are 20% cheaper and often faster than t3 for the same price.
+EKS supports AL2_ARM_64 AMI for Graviton nodes.
+Technique 5: Set resource requests accurately.
+Over-provisioned requests waste paid capacity. Under-provisioned requests
+cause OOMKills and CPU throttling.
+Use kubectl  top pods after a week of traffic to measure actual usage.
+Set requests at p50 usage. Set limits at p99 usage with headroom.
+Technique 6: Implement cluster autoscaler or Karpenter.
+Without autoscaler, you pay for idle node capacity at night and weekends.
+With Karpenter, nodes are provisioned in ~30 seconds and deprovisioned within
+minutes of pods leaving. For a startup this can cut node costs by 40%.
+SOURCE CODE / MANIFEST
+  Install Karpenter:
+    helm repo add karpenter https://charts.karpenter.sh
+    helm upgrade --install karpenter oci://public.ecr.aws/karpenter/karpenter \      --namespace karpenter --create-namespace \
+      --set settings.clusterName=your-cluster \
+      --set settings.interruptionQueue=your-queue
+--- 13.3 Cost visibility tooling ---
+Tool purpose Recommended tool
+Cloud cost reports AWS Cost Explorer tags by Project and Environment
+K8s cost per ns Kubecost (open source) or OpenCost
+Spot interruption AWS Spot Instance Advisor + instance diversification
+RI coverage AWS Cost Explorer RI recommendations
+Unused resources AWS Trusted Advisor + Infracost in CI (flags cost changes in PRs)
+Add to GitHub Actions (Infracost):
+SOURCE CODE / MANIFEST
+  - name: Infracost estimate    uses: infracost/actions/setup@v3
+    with:
+      api-key: ${{ secrets.INFRACOST_API_KEY }}
+  - name: Show cost diff    run: |
+      infracost diff --path infra/terraform \
+        --compare-to main \
+        --format=table
+This shows cost delta on every PR that touches Terraform.
+--- 13.4 Cost tagging strategy ---
+All AWS resources must have tags:
+SOURCE CODE / MANIFEST
+  locals {
+    common_tags = {
+      Project     = var.project_name
+      Environment = var.environment          # dev, staging, prod      Team        = "platform"
+      CostCenter  = "engineering"
+      ManagedBy   = "terraform"
+    }
+  }
+Without consistent tags, AWS Cost Explorer cannot break down spend per service
+or per environment. Tagging hygiene is a staff-level responsibility.
+PRODUCTION MANUAL: CONTINUED
+STEP 19 STAFF SYSTEM DESIGN REVIEW
+Everything in this guide works fine at 10 pods and 1000 requests/minute.
+This step documents what breaks at 100 pods and 100,000 requests/minute —
+which is exactly what gets asked at staff-level system design interviews.
+--- 15.1 etcd pressure ---
+etcd is the key-value store behind Kubernetes. Every object (Pod, Service,
+ConfigMap, Secret, Event) is stored in etcd. At scale:
+SOURCE CODE / MANIFEST
+  Problem: Kubernetes Events are stored in etcd and expire after 1 hour.
+  At high deploy frequency, Events accumulate faster than they are pruned.  etcd memory grows. At 2 GB etcd can become unstable.
+  Problem: HPA checks metrics every 15 seconds and writes back decisions.
+  With 50 HPAs all polling and writing, etcd write throughput becomes a
+  bottleneck. Watch the apiserver_etcd_db_total_size_in_bytes metric.
+  Fix: Limit Event retention.
+    --event-ttl=30m on kube-apiserver (default is 1 hour).
+  Fix: Use a separate etcd cluster for Events in large deployments.
+  Fix: Reduce unnecessary kubectl apply calls in CI. Use Server-Side Apply
+  (kubectl apply --server-side) which reduces write amplification.
+--- 15.2 Image pull storms ---
+Problem: You deploy a new image tag to 100 pods simultaneously. All 100 pods
+try to pull the same 1 GB image from GHCR at the same second.
+Each node pulls the image independently. If you have 20 nodes, 20 concurrent
+pulls. Your image registry rate limits you or your network saturates.
+Result: Pods stay in ContainerCreating for 5-10 minutes. Traffic drops.
+Fixes:
+SOURCE CODE / MANIFEST
+  Fix 1: Use imagePullPolicy: IfNotPresent.    If the node already has the image (from a previous deploy), it will not pull.
+    This means rolling updates only pull on nodes getting the image for the first
+    time, not on every restart.
+  Fix 2: Pre-pull images with a DaemonSet.
+    Deploy a DaemonSet that pulls your image on every node before the rollout.
+    kubectl set image ds/image-prepuller image=ghcr.io/your-org/backend:NEW_TAG
+    Wait until all nodes have the image, then roll the Deployment.
+  Fix 3: Use a local registry mirror on each node.
+    Configure containerd to use a pull-through registry cache running on your
+    NAT instance or a dedicated EC2. Nodes pull from local cache first.
+  Fix 4: Reduce image size.
+    Multi-stage builds already help. Also: use --mount=type=cache in Dockerfile,
+    separate dependencies layer from code layer so only code layer changes on
+    most deploys.
+  Fix 5: Limit maxSurge to 1 or 2 during rollout.
+    maxSurge: 1 means only 1 new pod is created at a time. Pulls happen serially
+    instead of in parallel. Rollout is slower but stable.
+--- 15.3 DNS throttling at scale ---
+Problem: CoreDNS in Kubernetes handles all service discovery and external DNS.
+At 100 pods, every pod makes constant DNS lookups: your-service.namespace.svc.cluster.local.
+AWS limits DNS queries to 1024 per second per VPC. At 100 pods each making
+10 DNS requests/second, you exceed this limit. Pods start seeing DNS timeouts.
+This looks like intermittent connection errors to Postgres, Redis, and external APIs.
+Fixes:
+SOURCE CODE / MANIFEST
+  Fix 1: Enable ndots:5 workaround.    By default Kubernetes resolves A.B.C.D by trying multiple search domains
+    (A.B.C.D.namespace.svc.cluster.local, then A.B.C.D.svc.cluster.local, etc).
+    This multiplies DNS queries by 5-6x for each lookup.
+    Set ndots: 2 in Pod dnsConfig to reduce search attempts:
+    spec:
+      dnsConfig:
+        options:
+          - name: ndots            value: "2"
+          - name: single-request-reopen
+            value: ""
+  Fix 2: Scale CoreDNS.
+    CoreDNS defaults to 2 replicas. At scale, increase to 4-6.
+    kubectl scale deployment coredns --replicas=6 -n kube-system
+  Fix 3: Use fully qualified domain names in your app config.
+    Instead of: redis
+    Use: redis.production-app.svc.cluster.local
+    This skips the search domain expansion entirely.
+  Fix 4: Enable NodeLocal DNSCache.
+    Run a DNS cache DaemonSet on every node. Pods query the node-local cache
+    (169.254.20.10) instead of CoreDNS pods. Cache hit rate is 80-90%.
+    This is the single highest-impact DNS fix at scale.    https://kubernetes.io/docs/tasks/administer-cluster/nodelocaldns/
+--- 15.4 Control plane rate limiting ---
+Problem: kubectl , CI pipelines, ArgoCD, HPA, and every controller all talk
+to the Kubernetes API server. At scale they can exhaust the API server's
+request quota (--max-requests-inflight default 400).
+Symptoms: kubectl  get pods takes 10+ seconds. ArgoCD sync is slow.
+HPA decisions are delayed.
+Fixes:
+SOURCE CODE / MANIFEST
+  Fix 1: Use watch instead of polling.
+    kubectl get pods --watch is much cheaper than running kubectl get pods
+    in a loop. CI pipelines that poll every 5 seconds are anti-patterns.
+  Fix 2: Limit ArgoCD sync frequency.
+    Set app.kubernetes.io/managed-by and timeout.reconciliation: 3m
+    to reduce unnecessary ArgoCD API calls.
+  Fix 3: Use Server-Side Apply.
+    kubectl apply --server-side reduces the diff computation load on the
+    client and applies patches more efficiently on the server.
+--- 15.5 Noisy neighbor pods ---
+Problem: A single pod with a memory leak or CPU spike can starve other pods
+on the same node. This is the "noisy neighbor" problem.
+Fixes:
+SOURCE CODE / MANIFEST
+  Fix 1: Set accurate resource requests AND limits on every container.
+    Without limits, one misbehaving pod can consume 100% of node CPU and
+    cause CPU throttling for all other pods on the node.
+  Fix 2: Use LimitRange to enforce defaults in the namespace.
+    apiVersion: v1
+    kind: LimitRange    metadata:
+      name: default-limits
+      namespace: production-app
+    spec:
+      limits:        - type: Container
+          default:
+            cpu: 500m
+            memory: 256Mi          defaultRequest:
+            cpu: 100m
+            memory: 128Mi
+          max:            cpu: "4"
+            memory: 4Gi
+  Fix 3: Use ResourceQuota to cap total namespace resource usage.
+    apiVersion: v1
+    kind: ResourceQuota
+    metadata:      name: namespace-quota
+      namespace: production-app
+    spec:
+      hard:        requests.cpu: "16"
+        requests.memory: 16Gi
+        limits.cpu: "32"
+        limits.memory: 32Gi
+        pods: "50"
+  Fix 4: Use Pod QoS classes intentionally.
+    Guaranteed QoS: requests == limits. Never evicted first. Use for backend.
+    Burstable QoS: requests < limits. Medium eviction priority. Use for workers.    BestEffort QoS: no requests or limits. Evicted first. Never use in prod.
+--- 15.6 Long GC pauses in JVM (Java/Kotlin/Scala services) ---
+This does not apply to Django, but staff engineers often oversee multi-language
+stacks. JVM services under load hit stop-the-world GC pauses.
+Liveness probe failures during GC pauses cause Kubernetes to restart the pod
+(thinking it is unhealthy). This makes GC pauses compound into pod restarts.
+Fix: Use startupProbe with a long failureThreshold to allow the JVM to warm up.
+Fix: Use G1GC or ZGC with tuned max pause targets (-XX:MaxGCPauseMillis=50).
+Fix: Increase initialDelaySeconds on livenessProbe for JVM services to 60+.
+PRODUCTION MANUAL: CONTINUED
+STEP 20 FINAL PRODUCTION READINESS CHECKLIST
+As the system scales, the Nginx Ingress alone is not sufficient. You need an
+API Gateway in front of it for: authentication, rate limiting, API versioning,
+request transformation, and developer-facing API management.
+--- 16.1 Where an API Gateway fits in the architecture ---
+CDN (CloudFront or Cloudflare)
+API Gateway (Kong / AWS API Gateway / Traefik)
+🔱  ARCHITECTURE FLOWCHART
+  |
+  +--------> /api/v1/  ---------> Kubernetes Ingress --> Django backend
+  |
+  +--------> /api/v2/  ---------> Kubernetes Ingress --> Django backend v2
+  |
+  +--------> /         ---------> Kubernetes Ingress --> React frontend
+  |
+  +--------> /webhooks/ --------> Dedicated webhook service
+  |
+  +--------> /legacy/   --------> Old service (proxied for backwards compat)
+--- 16.2 What the API Gateway handles (not the app) ---
+Authentication: Verify JWT or API key before request reaches Django.
+Django does not need to re-verify on every endpoint.
+Rate Limiting: Limit each API key or IP to 1000 req/min.
+Without this, one customer can DDoS your entire backend.
+Request Routing: /api/v1/  goes to old pods. /api/v2/  to new pods.
+Zero-code A/B routing or versioned API rollouts.
+Request Logging: Log every request with trace ID at the gateway level.
+Uniform audit log across all services.
+Request Transformation: Add Correlation-ID header to every request.
+Strip internal headers before they reach clients.
+Throttling and quotas: Per-plan limits for SaaS billing models.
+SSL Termination: Terminate TLS at the gateway. Backend pods get plain HTTP .
+--- 16.3 Kong on Kubernetes ---
+Kong is the most common open-source API Gateway for Kubernetes.
+It runs as a pod and integrates via CRDs.
+Install:
+SOURCE CODE / MANIFEST
+  helm repo add kong https://charts.konghq.com
+  helm upgrade --install kong kong/ingress \
+    --namespace kong --create-namespace \
+    --set controller.ingressClass=kong
+Rate limiting plugin:
+SOURCE CODE / MANIFEST
+  apiVersion: configuration.konghq.com/v1
+  kind: KongPlugin
+  metadata:
+    name: rate-limit-backend    namespace: production-app
+  config:
+    minute: 1000               # 1000 requests per minute per consumer.
+    policy: redis              # Use Redis for distributed counting.
+    redis_host: redis.production-app.svc.cluster.local    redis_port: 6379
+  plugin: rate-limiting
+Apply plugin to the Ingress:
+SOURCE CODE / MANIFEST
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: backend-ingress    annotations:
+      konghq.com/plugins: rate-limit-backend
+      kubernetes.io/ingress.class: kong
+JWT authentication plugin:
+SOURCE CODE / MANIFEST
+  apiVersion: configuration.konghq.com/v1  kind: KongPlugin
+  metadata:
+    name: jwt-auth
+    namespace: production-app
+  plugin: jwt
+Apply to the API routes:
+SOURCE CODE / MANIFEST
+  metadata:
+    annotations:
+      konghq.com/plugins: jwt-auth,rate-limit-backend
+--- 16.4 AWS API Gateway (alternative) ---
+Use AWS API Gateway v2 (HTTP  API) instead of Kong when:
+SOURCE CODE / MANIFEST
+  - You are fully AWS-native and want serverless routing.
+  - You need AWS WAF integration.
+  - You want per-endpoint throttling without running another pod.
+Terraform for AWS HTTP  API Gateway:
+SOURCE CODE / MANIFEST
+  resource "aws_apigatewayv2_api" "main" {
+    name          = "${var.project}-http-api"
+    protocol_type = "HTTP"
+    cors_configuration {      allow_origins = ["https://yourdomain.com"]
+      allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      allow_headers = ["Authorization", "Content-Type"]
+    }  }
+  resource "aws_apigatewayv2_integration" "backend" {
+    api_id             = aws_apigatewayv2_api.main.id    integration_type   = "HTTP_PROXY"
+    integration_uri    = "https://yourdomain.com/api/{proxy}"
+    integration_method = "ANY"
+  }
+  resource "aws_apigatewayv2_route" "api" {
+    api_id    = aws_apigatewayv2_api.main.id
+    route_key = "ANY /api/{proxy+}"
+    target    = "integrations/${aws_apigatewayv2_integration.backend.id}"  }
+--- 16.5 Decision: Kong vs AWS API Gateway vs Ingress-only ---
+Option Best for Drawback
+Nginx Ingress only Simple apps, < 10 services No rate limiting, no auth layer
+Kong on K8s K8s-native, multi-service, OSS Another pod to operate
+AWS API Gateway AWS-native, serverless routing Vendor lock-in, cost per call
+Traefik Docker/K8s, simple config Less feature-rich than Kong
+Cloudflare Workers Edge routing, global CDN Complex for stateful backends
+For a Django backend at Zomato-scale: Kong + Redis rate limiting is the
+standard production choice. AWS API Gateway is correct if you are routing to
+Lambda or AWS services primarily.

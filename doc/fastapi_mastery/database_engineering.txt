@@ -1,0 +1,827 @@
+================================================================================
+STAFF-LEVEL DATABASE ENGINEERING MASTERY: THE QUERY-FIRST ENCYCLOPEDIA
+================================================================================
+Author: Antigravity AI
+Version: 1.0.0
+Pedagogical Project: Zomato-Data-Fortress (High-Scale Persistence)
+================================================================================ -- MODULE 01: THE BUFFER POOL & SHARED BUFFERS
+Topic: Memory Caching, Hit Ratios, and OS Page Cache
+Project: Zomato-Global Cache Audit -- 1. PROD-GRADE LOGIC (PSQL) -- Check your Buffer Cache Hit Ratio (Should be > 99%)
+-- If this is low, your 'shared_buffers' is insufficient for your warm data set.
+SELECT 
+ sum(heap_blks_read) as disk_read,
+ sum(heap_blks_hit) as buffer_hit,
+ round(sum(heap_blks_hit) / (sum(heap_blks_hit) + sum(heap_blks_read) + 0.0001) * 100, 2) as hit_ratio_percentage
+FROM pg_statio_user_tables;
+
+-- Inspect which tables are eating up your Shared Buffers
+-- Requires: CREATE EXTENSION pg_buffercache;
+SELECT 
+ c.relname, 
+ count(*) AS buffers
+FROM pg_buffercache b
+INNER JOIN pg_class c ON b.relfilenode = pg_relation_filenode(c.oid)
+AND b.reldatabase IN (0, (SELECT oid FROM pg_database WHERE datname = current_database()))
+GROUP BY c.relname
+ORDER BY buffers DESC
+LIMIT 10;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, DB speed ka raaz RAM mein hai. 
+
+- **Shared Buffers**: Ye wo memory hai jahan Postgres "Data Pages" ko cache karta hai.
+- **Hit Ratio**: Agar ye 99% hai, matlab 100 mein se 99 baar data RAM se mil gaya. Agar ye kam hai, toh Postgres ko disk (slow) par jana pad raha hai.
+- **Staff Value**: Hamesha `shared_buffers` ko Total RAM ka 25% set karein. Baaki RAM OS ke "Page Cache" ke liye chhodein, kyunki Postgres OS cache par bhi depend karta hai (Double Buffering). -- MODULE 02: B-TREE AUDIT & BLOAT DETECTION
+Topic: Index Fragmentation, Leaf page splits, and Reindexing
+Project: Zomato-Global Index Health -- 1. PROD-GRADE LOGIC (PSQL) -- Find the most fragmented indexes that need a vacuum or reindex
+-- Requires: CREATE EXTENSION pgstattuple;
+SELECT 
+ indexrelid::regclass as index_name,
+ now() - last_vacuum as last_vacuum_age,
+ avg_leaf_density, -- If < 70%, index is fragmented
+ leaf_pages,
+ empty_pages
+FROM pg_stat_user_indexes i
+JOIN pgstattuple(i.indexrelid::regclass::text) ON true
+WHERE avg_leaf_density < 80
+ORDER BY avg_leaf_density ASC;
+
+-- The Fix: Zero-Downtime Reindexing
+-- REINDEX INDEX CONCURRENTLY idx_users_email;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Indexes "Bloat" ho jate hain jab hum bohot saare UPDATE aur DELETE operations karte hain.
+
+- **Leaf Density**: B-Tree ke nodes kitne "Full" hain. Agar density kam hai, toh DB ko ek value dhundhne ke liye zyada pages scan karne padte hain.
+- **Staff Tip**: Hamesha `CONCURRENTLY` keyword use karein production par index rebuild karte waqt, warna table lock ho jayegi aur pure system ka downtime ho jayega. -- MODULE 03: PARTIAL & EXPRESSION INDEXES
+Topic: Lowering Index Size, Optimizing Case-Insensitive Search
+Project: Zomato-Global Sparse Search -- 1. PROD-GRADE LOGIC (PSQL) -- 1. Expression Index for Case-Insensitive Search
+CREATE INDEX idx_users_lower_email ON users (LOWER(email));
+
+-- 2. Partial Index for "Active" orders only (Saves Disk Space)
+CREATE INDEX idx_active_orders ON orders (created_at) 
+WHERE status = 'ACTIVE';
+
+-- 3. Explain the plan to verify usage
+EXPLAIN ANALYZE 
+SELECT * FROM users WHERE LOWER(email) = 'test@zomato.com';
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, har column par index lagana mawaali dev ka kaam hai. Senior engineer "Selective" hota hai.
+
+- **Expression Index**: Agar aap `WHERE LOWER(email)` likhte hain, toh normal index kaam nahi karega. Aapko function use karke index banana hoga.
+- **Partial Index**: Agar aapke paas 1 billion orders hain par sirf 1 million "Active" hain, toh poori table par index kyu banana? Sirf `WHERE status = 'ACTIVE'` par index banao. Size 90% chota hoga! -- MODULE 04: MVCC & TRANSACTION ID WRAPAROUND
+Topic: XID, Dead Tuples, and Frozen XIDs
+Project: Zomato-Global Safety Check -- 1. PROD-GRADE LOGIC (PSQL) -- Check how close you are to a "Transaction ID Wraparound" (DB Shutdown risk!)
+SELECT 
+ datname, 
+ age(datfrozenxid) as xid_age, 
+ 2000000000 - age(datfrozenxid) as safe_xids_remaining
+FROM pg_database
+ORDER BY xid_age DESC;
+
+-- Identify tables with the most "Dead Tuples" (Bloat)
+SELECT 
+ relname, 
+ n_dead_tup, 
+ n_live_tup, 
+ round(n_dead_tup::float / (n_live_tup + n_dead_tup + 0.0001) * 100, 2) as bloat_percentage
+FROM pg_stat_user_tables
+WHERE n_dead_tup > 0
+ORDER BY n_dead_tup DESC;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Postgres mein `DELETE` matlab data turant delete nahi hota. Wo "Dead Tuple" ban jata hai.
+
+- **XID (Transaction ID)**: Postgres limit hai (~2 Billion). Agar age 2 billion touch kar gayi, toh DB safety ke liye "Read-only" mode mein chala jayega (Downtime!).
+- **Vacuum**: Ye dead tuples ko saaf karta hai aur IDs ko "Freeze" karta hai taaki wraparound na ho. -- MODULE 05: AUTOVACUUM TUNING FOR HIGH-WRITE TABLES
+Topic: scale_factor, cost_limit, and maintenance_work_mem
+Project: Zomato-Global Background Optimization -- 1. PROD-GRADE LOGIC (PSQL) -- Tune autovacuum for a specific high-traffic table (e.g., 'orders')
+ALTER TABLE orders SET (
+ autovacuum_vacuum_scale_factor = 0.01, -- Vacuum after 1% data change (default is 20%)
+ autovacuum_vacuum_cost_limit = 1000 -- Give it more CPU/IO budget
+);
+
+-- Check current active autovacuum workers
+SELECT * FROM pg_stat_progress_vacuum;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Default autovacuum bohot "Gentle" hota hai. Badi tables par wo kabhi finish hi nahi hota.
+
+- **Scale Factor**: Default 20% hai. Agar table mein 100M rows hain, toh 20M rows delete hone tak vacuum nahi chalega! Isse table "Bloat" ho jayegi.
+- **Staff Choice**: Badi tables ke liye ise 1% ya 0.5% par set karein. -- MODULE 06: WAL & CHECKPOINT ANALYSIS
+Topic: Write Ahead Log, Checkpoint timeout, max_wal_size
+Project: Zomato-Global Persistence Audit -- 1. PROD-GRADE LOGIC (PSQL) -- Check 'pg_stat_bgwriter' to see if checkpoints are happening too fast
+SELECT 
+ checkpoints_timed, -- Good (planned)
+ checkpoints_req, -- Bad (happening because WAL is full)
+ buffers_checkpoint
+FROM pg_stat_bgwriter;
+
+-- Target Ratio: checkpoints_timed should be MUCH higher than checkpoints_req.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, DB down hone par data recover karne ke liye WAL files zaruri hain.
+
+- **Checkpoint**: Wo time jab DB memory se data disk par "Flush" karta hai.
+- **Tuning**: Agar `checkpoints_req` zyada hai, matlab aapki `max_wal_size` bohot choti hai. Isse Disk I/O spikes aayenge aur system slow hoga. -- MODULE 07: LOCK CONTENTION & DEADLOCK PARSING
+Topic: pg_locks, AccessExclusiveLock, and RowLock
+Project: Zomato-Global Transaction Safety -- 1. PROD-GRADE LOGIC (PSQL) -- Find queries that are currently blocked by other queries
+SELECT
+ blocked_locks.pid AS blocked_pid,
+ blocking_locks.pid AS blocking_pid,
+ blocked_activity.query AS blocked_statement,
+ blocking_activity.query AS blocking_statement
+FROM pg_catalog.pg_locks blocked_locks
+JOIN pg_catalog.pg_stat_activity blocked_activity ON blocked_locks.pid = blocked_activity.pid
+JOIN pg_catalog.pg_locks blocking_locks 
+ ON blocking_locks.locktype = blocked_locks.locktype
+ AND blocking_locks.DATABASE IS NOT DISTINCT FROM blocked_locks.DATABASE
+ AND blocking_locks.relation IS NOT DISTINCT FROM blocked_locks.relation
+ AND blocking_locks.page IS NOT DISTINCT FROM blocked_locks.page
+ AND blocking_locks.tuple IS NOT DISTINCT FROM blocked_locks.tuple
+ AND blocking_locks.virtualxid IS NOT DISTINCT FROM blocked_locks.virtualxid
+ AND blocking_locks.transactionid IS NOT DISTINCT FROM blocked_locks.transactionid
+ AND blocking_locks.classid IS NOT DISTINCT FROM blocked_locks.classid
+ AND blocking_locks.objid IS NOT DISTINCT FROM blocked_locks.objid
+ AND blocking_locks.objsubid IS NOT DISTINCT FROM blocked_locks.objsubid
+ AND blocking_locks.pid != blocked_locks.pid
+ JOIN pg_catalog.pg_stat_activity blocking_activity ON blocking_activity.pid = blocking_locks.pid
+ WHERE NOT blocked_locks.GRANTED;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, "Locks" distributed systems ka sachaayi hain par excessive locks "Deadlock" ya latency badhate hain.
+
+- **Staff Strategy**: Transactions ko hamesha Chota (Small) rakhein. Request ke beech mein "User Input" ka wait kabhi na karein (Hold locks). -- MODULE 08: GIN & GIST INDEX PERFORMANCE
+Topic: JSONB Search, Trigram Indexing, and Array searches
+Project: Zomato-Global Metadata Search -- 1. PROD-GRADE LOGIC (PSQL) -- Create a GIN index for fast searching inside JSONB columns
+CREATE INDEX idx_orders_details ON orders USING GIN (details jsonb_path_ops);
+
+-- Search query that uses the index
+EXPLAIN ANALYZE
+SELECT * FROM orders WHERE details @> '{"cuisine": "Biryani"}';
+
+-- Trigram index for 'LIKE' search optimization
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX idx_res_name_trgm ON restaurants USING GIST (name gist_trgm_ops);
+
+SELECT * FROM restaurants WHERE name ILIKE '%biryani%';
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, normal indexes (B-Tree) JSON ke andar kaam nahi karte. 
+
+- **GIN (Generalized Inverted Index)**: Ye JSON key-values ko "Invert" kar deta hai search ke liye. 
+- **Staff Value**: Postgres ko as a Document Store (Like MongoDB) use karne ke liye GIN mandatory hai. -- MODULE 09: PARALLEL QUERY EXECUTION
+Topic: Gather nodes, Max Parallel Workers
+Project: Zomato-Global Aggregation -- 1. PROD-GRADE LOGIC (PSQL) -- Check if PG is using multiple CPU cores for a heavy query
+SET max_parallel_workers_per_gather = 4;
+EXPLAIN ANALYZE 
+SELECT count(*), avg(amount) FROM orders;
+
+-- Look for "Parallel Seq Scan" and "Gather" in the plan.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, agar aapke paas 32-core server hai aur DB sirf 1 core use kar raha hai aggregation ke liye, toh ye paap hai.
+
+- **Gather**: DB alag-alag workers se data collect karke main process ko deta hai.
+- **Tuning**: `min_parallel_table_scan_size` set karein taaki bahut choti tables par parallel overhead na ho. -- MODULE 10: CONNECTION POOLING (PGBOUNCER)
+Topic: Session vs Transaction Pooling, Server side pooling
+Project: Zomato-Global Scale Gateway -- 1. PROD-GRADE LOGIC (PGBOUNCER CONFIG) -- # /etc/pgbouncer/pgbouncer.ini
+[databases]
+zomato_db = host=127.0.0.1 port=5432 dbname=zomato_db
+
+[pgbouncer]
+pool_mode = transaction # The most efficient mode for high concurrency
+max_client_conn = 10000 # Allow 10k frontend connections
+default_pool_size = 20 # Keep only 20 actual connections to the DB
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Postgres har connection ke liye naya OS process banata hai (~10MB RAM). 1000 connections matlab 10GB RAM waste.
+
+- **PgBouncer**: Ye ek middleman hai jo app ke liye connection khula rakhta hai par DB se connections share (reuse) karta hai.
+- **Transaction Mode**: Sabse best hai. Transaction khatam hote hi connection doosre user ko mil jata hai.
+
+7. STAFF-LEVEL PRO TIPS (BATCH 1) -- - **Monitoring**: Hamesha `pg_stat_statements` extension enable rakhein. Isse pata chalta hai "Kaunsi query pure mahine mein sabse zyada CPU kha rahi hai".
+- **Safety**: `statement_timeout` hamesha set karein (e.g., 30s) taaki koi rogue query poora DB choke na karde.
+
+================================================================================
+CONGRATULATIONS! YOU HAVE COMPLETED PART 9 (REVISED BATCH 1).
+Moving to Modules 11-20 (Scaling, Partitioning, and CDC)...
+================================================================================ -- MODULE 11: DECLARATIVE TABLE PARTITIONING
+Topic: Range vs List, Partition Pruning, and Sub-partitioning
+Project: Zomato-Global Time-Series Logs -- 1. PROD-GRADE LOGIC (PSQL) -- Create a parent table with RANGE partitioning
+CREATE TABLE order_logs (
+ order_id bigint,
+ user_id int,
+ order_date date NOT NULL,
+ amount decimal
+) PARTITION BY RANGE (order_date);
+
+-- Create specific child partitions
+CREATE TABLE order_logs_2024_q1 PARTITION OF order_logs
+ FOR VALUES FROM ('2024-01-01') TO ('2024-04-01');
+
+-- Verify Partition Pruning in the plan
+SET enable_partition_pruning = on;
+EXPLAIN ANALYZE 
+SELECT * FROM order_logs WHERE order_date = '2024-02-15';
+
+-- Observe: The plan only scans 'order_logs_2024_q1', not the whole history.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, 100GB ki single table "Query Performance" aur "Maintenance" dono ke liye ganda idea hai.
+
+- **Partition Pruning**: DB itna smart hai ki wo sirf wahi "Choti table" scan karega jahan data hone ki umeed hai.
+- **Maintenance**: Purana data delete karne ke liye `DELETE` mat chalao (Bloat!), seedha `DROP TABLE child_partition_q1` kardo. 0ms downtime! -- MODULE 12: LOGICAL REPLICATION & THE 'REPLICA IDENTITY'
+Topic: Publication, Subscription, and Row-level streaming
+Project: Zomato-Global Data Sync -- 1. PROD-GRADE LOGIC (PSQL) -- On Primary (Source)
+CREATE PUBLICATION p_order_updates FOR TABLE orders;
+
+-- Important: Table must have a primary key or 'REPLICA IDENTITY FULL'
+ALTER TABLE orders REPLICA IDENTITY FULL; 
+
+-- On Secondary (Destination)
+CREATE SUBSCRIPTION s_order_sync 
+CONNECTION 'host=primary_ip port=5432 user=rep_user dbname=zomato_db'
+PUBLICATION p_order_updates;
+
+-- Check sync status
+SELECT * FROM pg_stat_subscription;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Logical Replication aapko allow karta hai ki aap ek specific table ya row ko doosre server par bhej skein.
+
+- **Replica Identity**: UPDATE aur DELETE ke waqt Postgres ko ye pata hona chahiye ki purani row kaunsi thi. PK (Primary Key) is best, warna pura row comparison (FULL) karna padta hai jo slow hai.
+- **Staff Value**: Isse aap Analytics DB ko Production se alag kar sakte hain bina poora server replicate kiye. -- MODULE 13: PHYSICAL REPLICATION & STANDBY LAG
+Topic: Streaming WAL, Recovery status, and Lag monitoring
+Project: Zomato-Global High Availability -- 1. PROD-GRADE LOGIC (PSQL) -- Monitor Replication Lag on Primary
+SELECT 
+ application_name, 
+ client_addr, 
+ state, 
+ pg_wal_lsn_diff(pg_current_wal_lsn(), sent_lsn) AS sent_lag,
+ pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) AS replay_lag
+FROM pg_stat_replication;
+
+-- Replay lag is the most important: actual time behind primary.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Physical Replication "Exact Copy" (Binary Level) hota hai.
+
+- **Streaming WAL**: Leader files bhejta rehta hai aur replica use replay karta hai.
+- **Standby Lag**: Agar replica busy hai complex reports run karne mein, toh wo Leader ke sync se "Peeche" (Lag) ho sakta hai. 1 minute se bada lag matlab data loss risk in case of failover. -- MODULE 14: REPLICATION SLOTS & DISK SAFETY
+Topic: max_slot_wal_keep_size, Slot status
+Project: Zomato-Global Storage Protection -- 1. PROD-GRADE LOGIC (PSQL) -- Check active slots
+SELECT slot_name, active, restart_lsn, confirmed_flush_lsn 
+FROM pg_replication_slots;
+
+-- Check WAL files count (If high, slots are likely disconnected)
+SELECT count(*) FROM pg_ls_dir('pg_wal');
+
+-- Critical Config: Prevent disk fill if replica dies
+-- SET max_slot_wal_keep_size = '10GB'; # postgresql.conf
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, replication slot ek "Marker" hai. Ye Leader ko bolta hai: "Bhai ye data mat delete karna, replica ne abhi read nahi kiya."
+
+- **The Danger**: Agar replica 2 din ke liye down ho gaya, Leader sari WAL files save karega. Disk 100% bhar jayegi aur Leader DB crash ho jayega (The Irony!).
+- **Staff Guard**: Hamesha `max_slot_wal_keep_size` set karein. Limit hit hone par replica drop ho jaye, par Leader zinda rehna chahiye. -- MODULE 15: SHARDING LOGIC & THE SHARD KEY
+Topic: Horizontal Sharding, Distribution Key Selection
+Project: Zomato-Global Distributed DB -- 1. PROD-GRADE LOGIC (DESIGN) -- Sharding by user_id (HASH)
+-- SQL Logic for Application Side or Citus
+CREATE TABLE users_shard_1 (primary key(id)) 
+CHECK (abs_hash(id) % 4 = 0); 
+
+-- Staff Logic for Shard Key Selection:
+-- 1. High Cardinality (Uniform distribution).
+-- 2. Frequently filtered (Avoid cross-shard scatter/gather).
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, jab partitioning se kaam nahi chalta, hum "Sharding" karte hain (Multi-server split).
+
+- **Shard Key**: Sabse important decision. Agar aapne `country` ko shard key banaya aur 90% orders India se hain, toh 'India Shard' explode ho jayega aur baki khali rahenge.
+- **Staff Rule**: Hamesha `user_id` ya `uuid` jaisa unique random key choose karein distribution ke liye. -- MODULE 16: ZERO-DOWNTIME SCHEMA CHANGES
+Topic: Expand and Contract pattern, Default values
+Project: Zomato-Global Safe Migration -- 1. PROD-GRADE LOGIC (PSQL) -- Phase 1 (EXPAND): Add new column as NULLable first
+ALTER TABLE orders ADD COLUMN delivery_rating integer; 
+
+-- Phase 2: Start writing to both columns in app code.
+-- Phase 3: Backfill old data slowly in batches to avoid lock contention
+-- REPEAT: UPDATE orders SET delivery_rating = old_rating WHERE id BETWEEN x AND y;
+
+-- Phase 4 (CONTRACT): Finalize index and drop old column (after testing)
+ALTER TABLE orders DROP COLUMN old_rating;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Billion rows table par `ALTER TABLE ... RENAME` chalana maut ko dawat dena hai.
+
+- **Lock Contention**: Column rename karte waqt Postgres table lock leta hai. 
+- **Staff Pattern**: Hamesha "Add Column" -> "Dual Write" -> "Backfill" -> "Flip" follow karein. -- MODULE 17: ONLINE INDEXING & 'INVALID' RECOVERIES
+Topic: CREATE INDEX CONCURRENTLY pitfalls
+Project: Zomato-Global Live Tuning -- 1. PROD-GRADE LOGIC (PSQL) -- Start long running index without locking web traffic
+CREATE INDEX CONCURRENTLY idx_huge_orders_date ON orders(created_at);
+
+-- Check if it failed into an "INVALID" state
+SELECT relname, indisvalid 
+FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid 
+WHERE indisvalid = false;
+
+-- Recovery: DROP INDEX CONCURRENTLY if invalid and try again.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, `CONCURRENTLY` index ko backend mein banata hai bina reads/writes block kiye.
+
+- **The Catch**: Ye "Invalid" state mein phans sakta hai agar migration ke waqt koi transaction timeout ho jaye. 
+- **Staff Value**: Hamesha index create karne ke baad `indisvalid` check karein, warna query planner use kabhi use nahi karega aur aapko lagega performance slow hai! -- MODULE 18: PROXYSQL & HA-PROXY FOR READ SCALE
+Topic: Query Routing, Primary vs Standby splitting
+Project: Zomato-Global Scale Gateway -- 1. PROD-GRADE LOGIC (HAPROXY CONFIG) -- # HAProxy routing to split reads and writes
+frontend pg_frontend
+ bind *:5432
+ default_backend pg_primary
+
+backend pg_primary
+ option httpchk GET /primary # Patroni status check
+ server db1 10.0.0.1:5432 check
+
+backend pg_standby
+ option httpchk GET /replica # Patroni status check
+ server db2 10.0.0.2:5432 check
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, application code mein do connection strings (Write/Read) manage karna thoda ganda kaam hai.
+
+- **Routing Proxy**: Ek smart proxy (like HAProxy with Patroni checks) ye decide karta hai ki request Leader ko jayegi ya Replica ko based on health status. -- MODULE 19: CDC (CHANGE DATA CAPTURE) INTERNALS
+Topic: Debezium, LSN, and Message payloads
+Project: Zomato-Global Event Bus -- 1. PROD-GRADE LOGIC (KAFKA MESSAGE SCHEMA) -- {
+ "before": {"id": 1, "status": "PENDING"},
+ "after": {"id": 1, "status": "DELIVERED"},
+ "source": {"table": "orders", "lsn": 102345},
+ "op": "u" # update
+}
+
+-- Internally Debezium reads the 'Logical Replication Slot' 
+-- and emits this JSON.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, agar aapko orders change hone par Real-time Analytics dikhani hai, toh "Polling" mat karo.
+
+- **CDC**: Database ke delta (Changes) ko Kafka stream mein dalna. 
+- **Staff Tip**: CDC use karne se aap analytics servers ko real database load se 100% bacha sakte hain. -- MODULE 20: DATABASE BENCHMARKING (PGBENCH)
+Topic: TPS, Latency, and Load Profiling
+Project: Zomato-Global Burn Test -- 1. PROD-GRADE LOGIC (SHELL) -- # Initialize test data (100x scale factor)
+pgbench -i -s 100 zomato_db
+
+# Run read-only test for 30 seconds with 10 concurrent clients
+pgbench -n -T 30 -c 10 -S zomato_db
+
+-- Results focus on:
+-- TPS (Transactions Per Second)
+-- Latency average
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Config change karne se pehle aur baad mein benchmark karna zaruri hai.
+
+- **pgbench**: Ye Postgres ka official load tester hai.
+- **Staff Action**: Production scale par jane se pehle hamesha `pgbench` run karein to find the "Saturation Point" of your DB.
+
+7. STAFF-LEVEL PRO TIPS (BATCH 2) -- - **Kill Idle Transactions**: Agar koi transaction `IDLE in transaction` mein phansi hai, toh wo vacuum ko rok rahi hai. Kill it!
+- **Disk Latency**: DB performance ka asli bottleneck CPU nahi, disk I/O latency hota hai. Hamesha IOPS track karein.
+
+================================================================================
+CONGRATULATIONS! YOU HAVE COMPLETED PART 9 (REVISED BATCH 2).
+Moving to Modules 21-30 (Advanced Performance, Window Functions & CTE Internals)...
+================================================================================ -- MODULE 21: WINDOW FUNCTIONS RE-VISITED
+Topic: Row_Number, Rank, and Dense_Rank (Internal Sorting Costs)
+Project: Zomato-Global Ranking System -- 1. PROD-GRADE LOGIC (PSQL) -- Analyzing costs of different ranking functions
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT 
+ user_id, 
+ order_id,
+ amount,
+ ROW_NUMBER() OVER(PARTITION BY user_id ORDER BY amount DESC) as row_num,
+ RANK() OVER(PARTITION BY user_id ORDER BY amount DESC) as rank_val
+FROM orders;
+
+-- Staff Logic: Window functions require a "WindowAgg" node in the plan.
+-- This usually involves a SORT. Optimization focus: Use an index that 
+-- matches the PARTITION BY / ORDER BY clause to avoid physical sorting.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Window functions UI features (Leaderboards, Prev/Next row) ke liye best hain.
+
+- **ROW_NUMBER()**: Unique number dega (1, 2, 3, 4).
+- **RANK()**: Agar ties hain, toh gap chhodege (1, 2, 2, 4).
+- **DENSE_RANK()**: No gaps (1, 2, 2, 3).
+- **Staff Value**: "Sort" step ko eliminate karne ke liye `(user_id, amount DESC)` ka composite index lagayein. -- MODULE 22: ADVANCED AGGREGATIONS - FILTER CLAUSE
+Topic: Aggregate filtering vs CASE statements
+Project: Zomato-Global Stats Reporter -- 1. PROD-GRADE LOGIC (PSQL) -- The old (Slow) way:
+SELECT 
+ count(CASE WHEN status = 'DELIVERED' THEN 1 END) as delivered,
+ count(CASE WHEN status = 'CANCELLED' THEN 1 END) as cancelled
+FROM orders;
+
+-- The Staff (Fast) way using FILTER:
+SELECT 
+ count(*) FILTER (WHERE status = 'DELIVERED') as delivered,
+ count(*) FILTER (WHERE status = 'CANCELLED') as cancelled
+FROM orders;
+
+-- Explain: Filter is more descriptive to the optimizer and can be faster.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, `FILTER` clause Postgres ka ek hidden gem hai. 
+
+- **Concept**: Ye aggregate function ke andar hi "Where" clause lagane jaisa hai. 
+- **Staff Logic**: CASE statements readability aur performance dono mein piche rehte hain agar multiple aggregates ek hi query mein ho. -- MODULE 23: RECURSIVE CTEs & HIERARCHIES
+Topic: WITH RECURSIVE, Organization Charts, and Infinite Loops
+Project: Zomato-Global Referral Chain -- 1. PROD-GRADE LOGIC (PSQL) -- Find all users referred by User A (Recursive)
+WITH RECURSIVE referral_tree AS (
+ -- Anchor member
+ SELECT id, referrer_id, name, 1 as level 
+ FROM users WHERE id = 1
+ 
+ UNION ALL
+ 
+ -- Recursive member
+ SELECT u.id, u.referrer_id, u.name, rt.level + 1
+ FROM users u
+ JOIN referral_tree rt ON u.referrer_id = rt.id
+ WHERE rt.level < 10 -- Safety check to prevent infinite loops
+)
+SELECT * FROM referral_tree;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Distributed systems mein "Hierarchical data" (e.g., Comments, Referrals) handle karna mushkil hai.
+
+- **Recursive CTE**: Ye tab tak chalta hai jab tak join condition match hoti rahe.
+- **Safety**: Hamesha ek "Level" counter ya logic rakhein taaki infinite loop pura DB crash na karde. -- MODULE 24: LATERAL JOINS - SQL'S FOR-EACH
+Topic: Per-row iteration, Lateral subqueries
+Project: Zomato-Global Top-N Per User -- 1. PROD-GRADE LOGIC (PSQL) -- Find the 2 latest orders for EACH user efficiently
+SELECT u.name, o.order_id, o.amount
+FROM users u
+CROSS JOIN LATERAL (
+ SELECT order_id, amount 
+ FROM orders 
+ WHERE user_id = u.id 
+ ORDER BY created_at DESC 
+ LIMIT 2
+) o;
+
+-- Optimization: This is much faster than running a subquery for every user.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, `LATERAL` join ko aisa samjho ki ye har row ke liye ek loop chala raha hai.
+
+- **Use Case**: Jab aapko left side ki table ki value use karke right side ki query modify karni ho. 
+- **Staff Value**: `GROUP BY` aur window functions ke comparison mein `LATERAL` often much faster results deta hai specific "Top-N" problems ke liye. -- MODULE 25: FOREIGN DATA WRAPPERS (FDW)
+Topic: Cross-Server Querying, Postgres-to-Postgres
+Project: Zomato-Global Unified Reporting -- 1. PROD-GRADE LOGIC (PSQL) -- Connecting to a remote Analytics server from App server
+CREATE EXTENSION postgres_fdw;
+
+CREATE SERVER analytics_service 
+FOREIGN DATA WRAPPER postgres_fdw 
+OPTIONS (host '10.0.0.5', dbname 'analytics_db');
+
+CREATE USER MAPPING FOR current_user 
+SERVER analytics_service 
+OPTIONS (user 'rep_user', password 'pass');
+
+-- Importing tables
+IMPORT FOREIGN SCHEMA public FROM SERVER analytics_service INTO remote_schema;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Postgres sirf local data query karne ke liye nahi hai. 
+
+- **FDW**: Aap doosre servers ki tables ko local ki tarah query kar sakte hain.
+- **Staff Logic**: Reporting ke liye best hai. Main production DB par pressure nahi padta kyunki heavy aggregation remote server par push ho jati hai (Remote Pushdown). -- MODULE 26: STATISTICS COLLECTOR & HISTOGRAMS
+Topic: pg_statistic, MCV (Most Common Values), and Histogram logic
+Project: Zomato-Global Query Optimizer Analysis -- 1. PROD-GRADE LOGIC (PSQL) -- Inspecting how Postgres "sees" your data distribution
+SELECT 
+ attname, 
+ inherited, 
+ null_frac, 
+ n_distinct, 
+ most_common_vals, 
+ most_common_freqs 
+FROM pg_stats 
+WHERE tablename = 'orders' AND attname = 'status';
+
+-- Concept: If n_distinct is -1, it means unique. 
+-- MCV: Top values that appear most frequently.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Query Planner "Blind" nahi hota. Wo `pg_stats` se sachaai pata karta hai.
+
+- **Histograms**: Data ki distribution ki ek snapshot.
+- **Staff Action**: Agar planner wrong estimations de raha hai, toh `ANALYZE table_name` run karein aur `default_statistics_target` badhayein (e.g., from 100 to 1000). -- MODULE 27: INDEX-ONLY SCANS & THE VISIBILITY MAP
+Topic: Heap Fetches, VM files, and Index-only scan logic
+Project: Zomato-Global Turbo Reads -- 1. PROD-GRADE LOGIC (PSQL) -- Verifying if Index-Only scan is actually avoiding Heap (Table)
+EXPLAIN (ANALYZE, BUFFERS) 
+SELECT email FROM users WHERE email = 'test@zomato.com';
+
+-- Look for: "Index Only Scan" and "Heap Fetches: 0"
+-- If Heap Fetches > 0, Visibility Map is out of date.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Index-Only scan fastest hota hai kyunki DB ko Table (Heap) touch nahi karni padti.
+
+- **Visibility Map**: Ye batata hai ki page ka saara data "Visible" hai ya dead rows hain.
+- **Problem**: Agar table bohot frequently update hoti hai, toh VM purana ho jata hai aur Index-Only scan slow ho jata hai (Heap touch karna padta hai). -- MODULE 28: SEARCH OPTIMIZATION - TRIGRAM vs FTS
+Topic: pg_trgm, ILIKE vs tsvector
+Project: Zomato-Global Fuzzy Restaurant Search -- 1. PROD-GRADE LOGIC (PSQL) -- 1. Full Text Search (FTS) - Best for large blocks of text
+CREATE INDEX idx_content_fts ON blog_posts USING GIN (to_tsvector('english', content));
+
+-- 2. Trigram Index - Best for ILIKE '%biryani%'
+CREATE EXTENSION pg_trgm;
+CREATE INDEX idx_res_name_trgm ON restaurants USING GIST (name gist_trgm_ops);
+
+-- Benchmark:
+EXPLAIN ANALYZE SELECT * FROM restaurants WHERE name ILIKE '%birya%';
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, string matching distributed systems mein sabse mahangi cheez hai.
+
+- **Trigram**: String ko chote-chote 3-char maps mein todta hai. Ye `%abc%` queries ko fast karta hai.
+- **FTS**: Poore words ko index karta hai. Ye natural language queries ke liye best hai. -- MODULE 29: ADVANCED JSONB LOGIC
+Topic: jsonb_path_query, GIN performance
+Project: Zomato-Global Schema-less Logic -- 1. PROD-GRADE LOGIC (PSQL) -- Advanced path matching (Postgres 12+)
+SELECT jsonb_path_query(details, '$.address ? (@.city == "Mumbai")')
+FROM stores;
+
+-- Comparing performance:
+EXPLAIN ANALYZE 
+SELECT * FROM stores WHERE details->'address'->>'city' = 'Mumbai';
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, JSONB use karna maza hai par data fetch karna complex.
+
+- **jsonb_path_query**: Ye SQL mein JSONPath (Like XPath) support karta hai. 
+- **Staff Tip**: Hamesha `jsonb_path_ops` wala GIN index use karein agar aap sirf `@>` operator use kar rahe hain, kyunki ye small aur fast hota hai default GIN se. -- MODULE 30: TRACKING REPLICA CONFLICTS
+Topic: pg_stat_database_conflicts, Standby crashes
+Project: Zomato-Global Replica Observability -- 1. PROD-GRADE LOGIC (PSQL) -- Check why your Read-only queries are failing on Standby
+SELECT 
+ confl_tablespace, 
+ confl_lock, 
+ confl_snapshot, 
+ confl_bufferpin, 
+ confl_deadlock 
+FROM pg_stat_database_conflicts 
+WHERE datname = 'zomato_db';
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Read-Replicas par queries kabhi-kabhi apne aap crash ho jati hain.
+
+- **The Reason**: Leader ne data clean kiya par replica par query use read kar rahi thi. 
+- **Observability**: Is view se pata chalta hai ki conflicts badh rahe hain ya nahi. Agar badh rahe hain, toh `max_standby_streaming_delay` badhayein.
+
+7. STAFF-LEVEL PRO TIPS (BATCH 3) -- - **Kill Long Transactions**: Lambi transactions vacuum block karti hain or `pg_stat_activity` mein hamesha visible honi chahiye.
+- **Temp Files Monitoring**: Agar `work_mem` kam hai, toh DB disk par temporary files banata hai. Iska log alert lagayein (`log_temp_files = 0`).
+
+================================================================================
+CONGRATULATIONS! YOU HAVE COMPLETED PART 9 (REVISED BATCH 3).
+Moving to Modules 31-40 (Performance Tuning, Parameter Sizing & Benchmarking)...
+================================================================================ -- MODULE 31: PARAMETER TUNING - THE BIG THREE
+Topic: shared_buffers, work_mem, maintenance_work_mem
+Project: Zomato-Global Memory Allocation -- 1. PROD-GRADE LOGIC (PSQL) -- Check your current runtime settings
+SHOW shared_buffers;
+SHOW work_mem;
+SHOW maintenance_work_mem;
+
+-- Check how many "Temp Files" were created (Sign of low work_mem)
+SELECT 
+ datname, 
+ temp_files, 
+ temp_bytes / (1024*1024) as temp_mb 
+FROM pg_stat_database;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, default Postgres settings "Playground" ke liye hain. Production ke liye aapko ye badalna padega.
+
+- **shared_buffers**: Postgres kitni RAM use karega caching ke liye. (Set it to 25% of Total RAM).
+- **work_mem**: Ek individual SORT ya JOIN operation kitni RAM le sakta hai. (Careful: If 100 connections use 100MB each = 10GB!).
+- **maintenance_work_mem**: `VACUUM` aur `CREATE INDEX` ke liye RAM. (Isse bada rakhein taaki maintenance fast ho). -- MODULE 32: CHECKPOINT TUNING & BGWRITER
+Topic: checkpoint_timeout, max_wal_size, and write spikes
+Project: Zomato-Global Write Consistency -- 1. PROD-GRADE LOGIC (PSQL) -- Analyzing bgwriter efficiency
+SELECT 
+ checkpoints_timed, 
+ checkpoints_req, 
+ round(100 * checkpoints_req / (checkpoints_timed + checkpoints_req), 2) as req_checkpoint_percentage
+FROM pg_stat_bgwriter;
+
+-- Staff Target: 'req_checkpoint_percentage' should be < 5%. 
+-- If higher, increase max_wal_size.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Checkpoint wo time hota hai jab DB memory se data disk par "Flush" karta hai.
+
+- **The Problem**: Agar checkpoints bohot jaldi ho rahe hain, toh Disk I/O spike hoga aur performance drop hogi.
+- **Tuning**: `checkpoint_timeout` ko 15min se 30min ke beech rakhein aur `max_wal_size` ko bada (e.g., 5GB - 20GB) rakhein. -- MODULE 33: TUNING FOR SSDs (COST PARAMETERS)
+Topic: random_page_cost vs seq_page_cost
+Project: Zomato-Global Hardware Optimization -- 1. PROD-GRADE LOGIC (PSQL) -- On older HDD systems, random_page_cost = 4.0
+-- On modern Cloud SSDs (AWS gp3, etc.), it should be lower
+ALTER SYSTEM SET random_page_cost = 1.1;
+SELECT pg_reload_conf();
+
+-- Verify if this changes a query plan from Seq Scan to Index Scan
+EXPLAIN SELECT * FROM orders WHERE amount > 500;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Postgres planner "Costs" par chalta hai. 
+
+- **random_page_cost**: Postgres ko lagta hai ki random disk access mahanga hai. 
+- **Staff Value**: Aaj kal ke SSDs mein random access fast hota hai. Agar aap `random_page_cost` kam nahi karenge, toh Postgres index hone ke baad bhi `Seq Scan` choose karega kyunki use lagega index scan mahanga hai. -- MODULE 34: IDENTIFYING & REMOVING UNUSED INDEXES
+Topic: pg_stat_user_indexes, index_scan count
+Project: Zomato-Global Index Cleanup -- 1. PROD-GRADE LOGIC (PSQL) -- Find indexes that have never been used in scans
+SELECT 
+ relname AS table_name, 
+ indexrelname AS index_name, 
+ idx_scan, 
+ pg_size_pretty(pg_relation_size(indexrelid)) AS index_size
+FROM pg_stat_user_indexes 
+WHERE idx_scan = 0 
+AND NOT indisunique -- Don't drop primary keys or unique constraints!
+ORDER BY pg_relation_size(indexrelid) DESC;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, har extra index aapke `INSERT/UPDATE` ko slow karta hai. 
+
+- **Staff Logic**: Agar koi index mahino se use nahi hua (idx_scan = 0), toh use drop kar dena chahiye taaki writes fast ho skein aur disk space bache. -- MODULE 35: QUERY PROFILING WITH PG_STAT_STATEMENTS
+Topic: Identifying the Top 10 heavy queries
+Project: Zomato-Global Resource Audit -- 1. PROD-GRADE LOGIC (PSQL) -- Requires: shared_preload_libraries = 'pg_stat_statements' in postgresql.conf
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
+-- Find top 5 queries by total execution time
+SELECT 
+ query, 
+ calls, 
+ total_exec_time / 1000 as total_seconds, 
+ mean_exec_time as avg_ms
+FROM pg_stat_statements
+ORDER BY total_exec_time DESC
+LIMIT 5;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, bina `pg_stat_statements` ke aap andhere mein teer chala rahe hain. 
+
+- **Staff Tool**: Ye extension har query ki history track karta hai. Isse aapko turant pata chal jayega ki "Kaun sa feature DB par sabse zyada load daal raha hai". -- MODULE 36: BUFFER CACHING ANALYSIS
+Topic: pg_buffercache, Buffer usage
+Project: Zomato-Global Memory Distribution -- 1. PROD-GRADE LOGIC (PSQL) -- Find which table is earing up most of your RAM right now
+-- Requires: CREATE EXTENSION pg_buffercache;
+SELECT 
+ c.relname, 
+ count(*) * 8 / 1024 AS MB_used
+FROM pg_buffercache b
+INNER JOIN pg_class c ON b.relfilenode = pg_relation_filenode(c.oid)
+GROUP BY 1 
+ORDER BY 2 DESC 
+LIMIT 10;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, agar aapka DB slow hai toh ho sakta hai ki koi massive table bina index ke scan ho rahi hai aur aapka buffer cache kha rahi hai.
+
+- **Staff Value**: Is query se aapko "Hot Data" vs "Cold Data" ka ratio pata chalta hai. -- MODULE 37: TRANSACTION ID WRAPAROUND - THE DEEP DIVE
+Topic: age(datfrozenxid), prevent_wraparound query
+Project: Zomato-Global Critical Health -- 1. PROD-GRADE LOGIC (PSQL) -- Find how many transactions are left before the DB shuts down
+SELECT 
+ datname, 
+ 2147483648 - age(datfrozenxid) as xid_to_emergency_autovacuum
+FROM pg_database;
+
+-- Staff Threshold: If this number drops below 50 million, start worrying. 
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, TRANSACTION ID WRAPAROUND Postgres ka "Nuclear Option" hai. 
+
+- **Concept**: IDs 2 billion par khatam ho jate hain. 
+- **Staff Control**: Hamesha monitoring mein alert lagayein agar XID age 1 billion cross kare. Iska solution sirf manual `VACUUM FREEZE` hai. -- MODULE 38: TEMP FILE MONITORING
+Topic: log_temp_files, work_mem spill
+Project: Zomato-Global Disk Load -- 1. PROD-GRADE LOGIC (POSTGRESQL.CONF) -- Enable logging of all temporary files larger than 0KB
+log_temp_files = 0
+
+-- In logs, look for:
+-- "temporary file: path "base/pgsql_tmp/...", size 104857600"
+-- This means a query spilled 100MB to slow disk because work_mem was too small.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, agar `work_mem` chota hai, toh DB queries disk par temporary files banati hain.
+
+- **Effect**: Jo query 10ms mein honi chahiye, wo 200ms legi kyunki SSD/HDD speed RAM se 1000x slow hai. -- MODULE 39: PGBENCH CUSTOM SCRIPTS
+Topic: Latency vs Throughput (TPS)
+Project: Zomato-Global Stress Test -- 1. PROD-GRADE LOGIC (SHELL / SQL SCRIPT) -- Save this as test_heavy.sql
+BEGIN;
+ UPDATE accounts SET abalance = abalance + 100 WHERE aid = 1;
+ SELECT abalance FROM accounts WHERE aid = 1;
+END;
+
+-- Run Benchmark for 60s with 50 concurrent clients
+pgbench -f test_heavy.sql -c 50 -T 60 -n zomato_db
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Standard `pgbench` sirf basic queries chalaata hai. Real-world benchmarking ke liye aapko custom SQL scripts use karni chahiye jo aapki actual business logic replicate karein. -- MODULE 40: ZERO-DOWNTIME HA - PATRONI LEADER QUERY
+Topic: Automatic Failover, The Leader Race
+Project: Zomato-Global 99.99% Uptime -- 1. PROD-GRADE LOGIC (CURL / HTTP) -- # Check who is the current leader via Patroni REST API
+curl -s localhost:8008/leader | jq .
+
+# This query is used by HAProxy to route traffic only to the writable node.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Patroni + Etcd ek strong couple hai. 
+
+- **Mechanism**: Patroni constant heartbeat bhejta hai Etcd ko. Agar heartbeat miss hui, toh Etcd leader key delete kar deta hai aur naya "Leader Election" shuru hota hai.
+
+7. STAFF-LEVEL PRO TIPS (BATCH 4) -- - **Kill Idle Transactions**: Transactions jo "idle in transaction" hain, wo row locks hold karti hain aur vacuum block karti hain.
+- **Connection Limits**: Hamesha `max_connections` ko small rakhein (e.g., 200) aur baaki ko PgBouncer handle karne dein.
+
+================================================================================
+CONGRATULATIONS! YOU HAVE COMPLETED PART 9 (REVISED BATCH 4).
+Moving to the Final 10 Modules (Security, Disaster Recovery, and Future Data)...
+================================================================================ -- MODULE 41: ROW LEVEL SECURITY (RLS) & TENANT ISOLATION
+Topic: CREATE POLICY, current_user, and force row level security
+Project: Zomato-Global Multi-Tenant Privacy -- 1. PROD-GRADE LOGIC (PSQL) -- Step 1: Enable RLS on the table
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+
+-- Step 2: Create a policy so users only see their own orders
+CREATE POLICY user_orders_policy ON orders
+ USING (user_id = current_setting('app.current_user_id')::integer);
+
+-- Step 3: Test isolation in a session
+SET app.current_user_id = '101';
+SELECT * FROM orders; -- Returns only orders for user 101
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, "Tenant Leak" (Ek user ka data doosre ko dikhna) production ka sabse bada nightmare hai.
+
+- **RLS**: Ye Database engine ke andar hi ek "Filter" laga deta hai jo app code bypass nahi kar sakta.
+- **Staff Logic**: Hamesha `FORCE ROW LEVEL SECURITY` use karein taaki table owner (mismatch) bhi accidentally data leak na kare. -- MODULE 42: COLUMN LEVEL ENCRYPTION (PGCRYPTO)
+Topic: PGP_SYM_ENCRYPT, Secure Storage for PII
+Project: Zomato-Global Secure Vault -- 1. PROD-GRADE LOGIC (PSQL) -- Requires: CREATE EXTENSION pgcrypto;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Encrypt sensitive 'phone_number'
+INSERT INTO customers (name, phone_encrypted)
+VALUES ('Rahul', pgp_sym_encrypt('9876543210', 'my_secret_key'));
+
+-- Decrypt only when authorized
+SELECT pgp_sym_decrypt(phone_encrypted, 'my_secret_key') FROM customers;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Database hack hone par data save karne ka raaz Encryption hai.
+
+- **pgcrypto**: Ye Postgres ko cryptographic functions deta hai. 
+- **Staff Tip**: Symetric encryption keys ko kabhi DB mein store na karein. Use "Secret Manager" (AWS/Vault) se session start hote waqt fetch karein. -- MODULE 43: BACKUP STRATEGIES - DUMP vs BASEBACKUP
+Topic: Logical vs Physical backups
+Project: Zomato-Global Disaster Recovery -- 1. PROD-GRADE LOGIC (SHELL) -- # Logical Backup (SQL text) - Best for small DBs / migrations
+pg_dump -U postgres -d zomato_db > backup.sql
+
+# Physical Backup (Binary copy) - Best for 1TB+ databases
+pg_basebackup -h 10.0.0.1 -D /var/lib/postgresql/data_backup -P -v
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, logic simple hai: `pg_dump` slow hai par flexible hai. `pg_basebackup` lightning fast hai par isse physical copies banti hain.
+
+- **Staff Choice**: 100GB+ datasets ke liye hamesha Physical Backup use karein. Logical backup restore karne mein sadiyan lag jayengi. -- MODULE 44: POINT-IN-TIME RECOVERY (PITR)
+Topic: WAL Archiving, recovery_target_time
+Project: Zomato-Global Time Machine -- 1. PROD-GRADE LOGIC (RECOVERY.CONF / POSTGRESQL.CONF) -- In case of data corruption at 2024-04-01 10:00:00 AM
+-- Config to restore just before the crash:
+restore_command = 'cp /mnt/server/archived_wal/%f %p'
+recovery_target_time = '2024-04-01 09:59:59'
+
+-- This will replay WAL logs until that exact second and stop.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, agar kisi dev ne `DELETE FROM orders` bina WHERE clause ke chala diya, toh aapka backup bhi delete ho jayega!
+
+- **PITR**: Ye aapko past mein kisi bhi second par "Jump" karne ki power deta hai using WAL logs. -- MODULE 45: UPGRADING POSTGRES - PG_UPGRADE --LINK
+Topic: Major version upgrades (15 to 16)
+Project: Zomato-Global Modernization -- 1. PROD-GRADE LOGIC (SHELL) -- # The fastest way to upgrade 10TB of data
+/usr/lib/postgresql/16/bin/pg_upgrade \
+ --old-datadir /var/lib/postgresql/15/data \
+ --new-datadir /var/lib/postgresql/16/data \
+ --link # <--- THE MAGIC: Hard links Instead of copying
+
+# Upgrade takes 1 minute regardless of data size!
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, upgraded data copy karne mein hours lagte hain.
+
+- **--link**: Ye purana data delete nahi karta, bas naye version ke sath connect kar deta hai. Downtime negligible hai! -- MODULE 46: MONITORING IOPS (PG_STAT_IO)
+Topic: Postgres 16 IO stats, Backend vs Vacuum IO
+Project: Zomato-Global Storage Insight -- 1. PROD-GRADE LOGIC (PSQL) -- See which backend type is causing the most disk writes
+SELECT 
+ backend_type, 
+ context, 
+ reads, 
+ writes, 
+ extends 
+FROM pg_stat_io;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, pehle humein OS level par (iostat) dekhna padta tha. Ab PG 16 ke andar hi pata chal jayega: "Kaunsa Vacuum worker disk choke kar raha hai". -- MODULE 47: JIT (JUST-IN-TIME) COMPILATION
+Topic: jit_above_cost, Query optimization
+Project: Zomato-Global CPU Efficiency -- 1. PROD-GRADE LOGIC (PSQL) -- Identify if JIT is helping or hurting
+SET jit = on;
+EXPLAIN ANALYZE SELECT sum(amount) FROM massive_order_table;
+
+-- Look for "JIT: Functions: 5, Options: Inlining true, Optimization true"
+-- If JIT generation time > Execution time, TURN IT OFF.
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, JIT queries ko machine code mein compile kar deta hai. 
+
+- **The Catch**: Short queries ke liye compiling time execution time se zyada hota hai.
+- **Staff Value**: JIT sirf DW (Data Warehouse) ya massive analytic queries ke liye on rakhein. -- MODULE 48: TOAST COMPRESSION (LZ4 vs PGLZ)
+Topic: Performance of large JSONB storage
+Project: Zomato-Global Compression Tuning -- 1. PROD-GRADE LOGIC (PSQL) -- Use LZ4 for faster results on Large Text/JSON (requires PG 14+)
+ALTER TABLE large_responses 
+ALTER COLUMN payload SET STORAGE EXTERNAL; -- Force TOAST
+
+ALTER TABLE large_responses 
+ALTER COLUMN payload SET COMPRESSION lz4;
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, LZ4 compression PGLZ se 5x fast hai CPU usage mein. 
+
+- **Value**: Agar aapka server high latency dikha raha hai large JSONB rows read karte waqt, LZ4 switch karein. -- MODULE 49: POSTGRES ON KUBERNETES (ZALANDO vs CNPG)
+Topic: Operators, PVC Management, and Replication
+Project: Zomato-Global CloudNative Persistence -- 1. PROD-GRADE LOGIC (K8S YAML) -- apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+ name: zomato-db-cluster
+spec:
+ instances: 3
+ storage:
+ size: 100Gi
+ monitoring:
+ enablePodMonitor: true
+
+2. CONCEPT EXPLANATION (Hinglish) -- Dosto, Postgres ko K8s par run karna "Stateful" challenge hai. 
+
+- **Operators**: Ye "DBA in a Box" hote hain jo automatic scaling, backups, aur failover handle karte hain.
+- **Staff Choice**: CloudNativePG (CNPG) filhaal industry standard hai for modern K8s setups. -- MODULE 50: THE GRAND STRATEGY - ZOMATO-DATA-FORTRESS
+Topic: Multi-region, High-Availability, and Observability Summary
+Project: Final Architectural Blueprint -- 1. THE BLUPRINT (FINAL SUMMARY) -- Zomato-Data-Fortress must ensure:
+1. **HA**: Patroni + Etcd for 99.99% uptime.
+2. **Performance**: PgBouncer + Properly tuned `work_mem` and `shared_buffers`.
+3. **Observability**: `pg_stat_statements` + Prometheus Exporter.
+4. **Reliability**: PITR enabled with WAL archiving to S3.
+5. **Scale**: Declarative Partitioning for time-series and Sharding for users.
+
+Congratulations! You are now a Staff-Level Database Engineer.
+
+================================================================================
+CONGRATULATIONS! YOU HAVE COMPLETED THE DATABASE ENGINEERING ENCYCLOPEDIA (PART 9).
+Authoring PART 10 (SRE & PLATFORM MASTERY) next...
+================================================================================
+

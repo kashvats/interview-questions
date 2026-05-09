@@ -1,0 +1,126 @@
+[
+  {
+    "id": 1,
+    "question": "What is a 'Qubit'? Explain 'Superposition' and 'Entanglement' in simple terms.",
+    "answer": "1. **Qubit**: The basic unit of quantum information. Unlike a classical bit (0 or 1), a qubit can exist in both states simultaneously. \n2. **Superposition**: The ability of a qubit to be in a combination of 0 and 1 at the same time until it is measured. \n3. **Entanglement**: A phenomenon where two qubits become linked such that the state of one instantly determines the state of the other, no matter the distance between them. This 'connectedness' allows quantum computers to process information in ways classical computers never could.",
+    "analogy": "A classical bit is like **A Coin lying flat on a table** \u2014 it's either Heads or Tails. A Qubit is like **A Spinning Coin** \u2014 while it's spinning, it is both Heads and Tails at the same time (Superposition). **Entanglement** is like having two magic spinning coins: if you stop one and it's Heads, the other one instantly stops and shows Heads too, even if it's on the other side of the galaxy.",
+    "code": "```python\n# Conceptual Qubit state representation\n# |psi> = alpha|0> + beta|1>\n# (where alpha and beta are complex numbers representing probability amplitudes)\n```",
+    "counterQuestion": "What happens when you 'Measure' a qubit?",
+    "counterQuestionAnswer": "Measurement causes the qubit's 'Wavefunction' to collapse. It stops being in superposition and 'chooses' a single state (0 or 1) based on its probability amplitudes. Once measured, the quantum information is lost, and the qubit behaves like a classical bit.",
+    "category": "quantum",
+    "topic": "fundamentals",
+    "difficulty": "medium",
+    "tags": [
+      "quantum",
+      "qubit",
+      "superposition",
+      "entanglement"
+    ]
+  },
+  {
+    "id": 2,
+    "question": "What is 'Shor's Algorithm' and why is it a threat to modern Cybersecurity?",
+    "answer": "Shor's Algorithm is a quantum algorithm for **Integer Factorization**. It can find the prime factors of a large number exponentially faster than the best-known classical algorithms. **The Threat**: Modern encryption (like RSA) relies on the fact that factoring large numbers is nearly impossible for classical computers. A sufficiently powerful quantum computer running Shor's Algorithm could 'break' RSA and ECC (Elliptic Curve Cryptography) in minutes, effectively decrypting most of the world's secure communications.",
+    "analogy": "RSA encryption is like **A Giant Padlock** that takes a classical computer a billion years to pick. Shor's Algorithm is like **A Skeleton Key** that quantum computers can use to open that same lock almost instantly. It doesn't just 'pick' the lock; it understands the internal geometry of the lock perfectly.",
+    "code": "```text\nComplexity Comparison:\nClassical (GNFS): Exp(O(n^1/3))\nQuantum (Shor's): O(n^3)\n(The jump from Exponential to Polynomial is what breaks the encryption)\n```",
+    "counterQuestion": "What is 'Post-Quantum Cryptography' (PQC)?",
+    "counterQuestionAnswer": "PQC refers to cryptographic algorithms (usually based on **Lattice-based cryptography**) that are designed to be secure against both classical and quantum computers. Standards like **NIST's Kyber** are currently being implemented to replace RSA before large-scale quantum computers become a reality.",
+    "category": "quantum",
+    "topic": "cryptography",
+    "difficulty": "hard",
+    "tags": [
+      "shors_algorithm",
+      "cryptography",
+      "rsa",
+      "security",
+      "#highly_asked"
+    ]
+  },
+  {
+    "id": 3,
+    "question": "Explain 'Quantum Gates' (Hadamard, CNOT). How do they compare to classical logic gates?",
+    "answer": "Classical computers use gates like AND, OR, and NOT to manipulate bits. Quantum computers use **Quantum Gates** (represented as Matrices) to manipulate the probability amplitudes of qubits. \n1. **Hadamard (H) Gate**: Puts a qubit into a 50/50 superposition of 0 and 1. \n2. **CNOT (Controlled-NOT) Gate**: Flips the second qubit (target) ONLY if the first qubit (control) is 1. This is the primary gate used to create **Entanglement**. Unlike classical gates, all quantum gates (except measurement) are **Reversible**.",
+    "analogy": "A classical gate is like **A Light Switch**: it's either ON or OFF. A Quantum Gate is like **A Precision Dial** on a safe. You can turn the dial to any angle (changing probabilities), and you can always turn it back to exactly where it was (Reversibility).",
+    "code": "```python\n# Creating Entanglement with Qiskit (Python)\nqc.h(0)          # Apply Hadamard to Qubit 0 (Superposition)\nqc.cx(0, 1)      # Apply CNOT with 0 as control, 1 as target (Entanglement)\n# Result: A Bell State (correlated qubits)\n```",
+    "counterQuestion": "Why must quantum gates be 'Reversible'?",
+    "counterQuestionAnswer": "Quantum mechanics is governed by 'Unitary Evolution', which is mathematically reversible. If quantum gates were not reversible, they would lose information and generate heat (entropy), causing 'Decoherence' and destroying the fragile quantum state needed for calculation.",
+    "category": "quantum",
+    "topic": "gates",
+    "difficulty": "hard",
+    "tags": [
+      "quantum_gates",
+      "qiskit",
+      "hadamard",
+      "cnot"
+    ]
+  },
+  {
+    "id": 4,
+    "question": "What is 'Quantum Decoherence' and why is it the biggest challenge in building Quantum Computers?",
+    "answer": "Decoherence is the loss of quantum behavior (superposition/entanglement) caused by the qubit interacting with its environment (heat, radiation, magnetic fields). Even a tiny bit of noise can cause the qubit to 'collapse' into a classical state, ruining the calculation. **The Solution**: Quantum computers must be kept at temperatures near absolute zero (-273\u00b0C) and use **Quantum Error Correction** (using many physical qubits to represent one 'logical' qubit) to stay stable.",
+    "analogy": "Building a quantum computer is like **Building a House of Cards in a Windstorm**. A qubit is a card perfectly balanced on its edge (Superposition). The tiniest breeze (Decoherence) will knock the card flat (Classical State). To succeed, you have to build a vacuum-sealed, perfectly still room to protect the cards.",
+    "code": "```text\nKey Metric: 'T1' and 'T2' relaxation times.\nT1: Time it takes for a qubit to lose its energy.\nT2: Time it takes for a qubit to lose its phase (superposition).\n```",
+    "counterQuestion": "What is a 'Cryostat'?",
+    "counterQuestionAnswer": "A cryostat (or dilution refrigerator) is the giant 'refrigerator' that keeps the quantum processor at temperatures colder than outer space to minimize the thermal noise that causes decoherence.",
+    "category": "quantum",
+    "topic": "hardware",
+    "difficulty": "medium",
+    "tags": [
+      "decoherence",
+      "hardware",
+      "quantum_stability"
+    ]
+  },
+  {
+    "id": 5,
+    "question": "What is 'Grover's Algorithm' and how does it optimize searching?",
+    "answer": "Grover's Algorithm is a quantum search algorithm that provides a **Quadratic Speedup** for searching unsorted databases. While a classical computer takes `O(N)` time to find an item in a list of N items (checking each one), Grover's takes only `O(sqrt(N))`. For a list of 1 million items, a classical computer might need 1,000,000 checks, while Grover's needs only 1,000. It works by 'Amplifying the Amplitude' of the correct answer while suppressing the incorrect ones.",
+    "analogy": "Imagine searching for a specific key in a giant pile. A classical computer picks up every key one by one. Grover's Algorithm is like **A Magic Magnet** that slowly makes the right key 'glow' brighter and brighter while making the wrong keys fade away, until the right one is the only thing you can see.",
+    "code": "```text\nComplexity Comparison:\nClassical Search: O(N)\nQuantum (Grover): O(\u221aN)\n(Not as dramatic as Shor's, but universally applicable to any search problem)\n```",
+    "counterQuestion": "Does Grover's Algorithm break Symmetric Encryption (like AES)?",
+    "counterQuestionAnswer": "It effectively **halves the security level**. For example, Grover's can find an AES-128 key in `sqrt(2^128) = 2^64` operations. This is why the migration to **AES-256** is recommended for 'quantum-resistant' symmetric encryption, as its security level would drop to a still-unbreakable 2^128.",
+    "category": "quantum",
+    "topic": "algorithms",
+    "difficulty": "hard",
+    "tags": [
+      "grovers_algorithm",
+      "search",
+      "complexity"
+    ]
+  },
+  {
+    "id": 6,
+    "question": "What is 'Post-Quantum Cryptography' (PQC)? Discuss NIST standards like Kyber and Dilithium.",
+    "answer": "PQC refers to cryptographic algorithms designed to be secure against attacks by both classical and quantum computers. Unlike RSA, which is based on factoring, PQC algorithms use **Lattice-based cryptography** or other math problems that are 'Quantum-Hard'. **NIST Standards**: 1. **Kyber**: Used for key encapsulation (securely sharing a key). 2. **Dilithium**: Used for digital signatures. These are currently being integrated into Chrome, Cloudflare, and VPNs to ensure 'Forward Secrecy' against future quantum computers.",
+    "analogy": "RSA is like a **Complex Puzzle** that humans are bad at but a specialized 'Quantum Robot' can solve instantly. PQC is like **A massive, 1,000-dimensional Maze**. Even with a Quantum Robot, the maze is so complex and has so many dimensions that there's no shortcut to the exit.",
+    "code": "```text\nStandard: ML-KEM (formerly Kyber)\nAlgorithm: Module-Learning with Errors (M-LWE)\nGoal: Replace RSA/ECDH for key exchange.\n```",
+    "counterQuestion": "What is 'Harvest Now, Decrypt Later'?",
+    "counterQuestionAnswer": "This is a major security threat where attackers capture and store encrypted data *today*, waiting for the day a powerful enough quantum computer exists to decrypt it. This is why implementing PQC *now* is critical, even if full-scale quantum computers are years away.",
+    "category": "quantum",
+    "topic": "cryptography",
+    "difficulty": "hard",
+    "tags": [
+      "pqc",
+      "kyber",
+      "nist",
+      "security"
+    ]
+  },
+  {
+    "id": 7,
+    "question": "What is 'Quantum Teleportation'? Does it allow faster-than-light communication?",
+    "answer": "Quantum Teleportation is a process by which the **State** of a qubit is transferred from one location to another using **Entanglement** and **Classical Communication**. **No, it does NOT allow faster-than-light communication**. To complete the teleportation, you must send 2 bits of classical information (via a standard wire or radio) to the receiver. The 'information' still travels at the speed of light, but the 'quantum state' is perfectly reconstructed at the destination.",
+    "analogy": "Teleportation is like **Sending a Fax of a Qubit**. You don't send the original paper (the qubit); you scan it, destroy the original, and send the 'instructions' (the classical bits) to a magic printer (the entangled partner) that reconstructs the exact same paper on the other side.",
+    "code": "```text\nFlow:\n1. Entangle Qubits A and B.\n2. Alice performs measurement on A and her target qubit.\n3. Alice sends results to Bob (2 classical bits).\n4. Bob applies gates to B based on results.\n5. State of target qubit now exists in B.\n```",
+    "counterQuestion": "What is the 'No-Cloning Theorem'?",
+    "counterQuestionAnswer": "The No-Cloning Theorem states that it is impossible to create an identical copy of an arbitrary unknown quantum state. This is why teleportation **must** destroy the original state as it transfers it to the new location. This property also makes quantum communication inherently secure, as any attempt to 'copy' the data can be detected.",
+    "category": "quantum",
+    "topic": "communication",
+    "difficulty": "hard",
+    "tags": [
+      "teleportation",
+      "no_cloning",
+      "physics"
+    ]
+  }
+]

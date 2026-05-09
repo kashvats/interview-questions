@@ -1,0 +1,827 @@
+[
+  {
+    "id": 1,
+    "question": "Explain 'Big O Notation'. What is the difference between O(1), O(n), O(log n), and O(n^2)?",
+    "answer": "Big O notation describes the **Upper Bound** of an algorithm's time or space complexity as the input size (n) grows. \n1. **O(1)**: Constant time (e.g., array lookup by index). \n2. **O(log n)**: Logarithmic time (e.g., binary search). \n3. **O(n)**: Linear time (e.g., single loop through a list). \n4. **O(n^2)**: Quadratic time (e.g., nested loops, bubble sort). Understanding Big O helps engineers choose the right algorithm for scaling and avoid performance bottlenecks in large systems.",
+    "counterQuestion": "What is 'Space Complexity'?",
+    "counterQuestionAnswer": "Space complexity measures the amount of additional memory an algorithm needs relative to the input size. For example, an algorithm that creates a new list of the same size as the input has O(n) space complexity, while an algorithm that sorts an array 'in-place' has O(1) space complexity.",
+    "category": "dsa",
+    "topic": "complexity",
+    "difficulty": "easy",
+    "tags": [
+      "big_o",
+      "complexity",
+      "algorithms",
+      "#highly_asked"
+    ],
+    "analogy": "Big O is like a 'Worst-case Travel Time'. O(1) is like having a teleporter (same time regardless of distance). O(n) is like walking (time increases directly with distance). O(n^2) is like walking every street in a square grid to find a house.",
+    "code": "# O(1) - Constant Time\ndef get_first(arr):\n    return arr[0] if arr else None\n\n# O(n) - Linear Time\ndef find_val(arr, val):\n    for item in arr:\n        if item == val: return True\n    return False\n\n# O(n^2) - Quadratic Time\ndef bubble_sort(arr):\n    for i in range(len(arr)):\n        for j in range(len(arr)-1):\n            if arr[j] > arr[j+1]:\n                arr[j], arr[j+1] = arr[j+1], arr[j]"
+  },
+  {
+    "id": 2,
+    "question": "Compare 'Array' (List) vs. 'Linked List' in terms of insertion and lookup performance.",
+    "answer": "1. **Array**: O(1) lookup by index, but O(n) insertion/deletion (shifting elements). \n2. **Linked List**: O(n) lookup (must traverse), but O(1) insertion/deletion at the head or tail (if you have a pointer). Arrays have better cache locality due to contiguous memory, while Linked Lists are more flexible for dynamic resizing without reallocating large blocks of memory.",
+    "counterQuestion": "What is a 'Doubly Linked List'?",
+    "counterQuestionAnswer": "A doubly linked list is a type of linked list where each node contains a pointer to both the next node and the previous node. This allows for easier traversal in both directions and simplifies certain operations like deleting a node if you already have a reference to it.",
+    "category": "dsa",
+    "topic": "data_structures",
+    "difficulty": "easy",
+    "tags": [
+      "array",
+      "linked_list",
+      "data_structures",
+      "#highly_asked"
+    ],
+    "analogy": "An Array is like a 'Book' where pages are numbered; you can flip to page 50 instantly. A Linked List is like a 'Scavenger Hunt'; you have to find the first clue, which tells you where the second clue is, and so on.",
+    "code": "class Node:\n    def __init__(self, val):\n        self.val = val\n        self.next = None\n\n# Array access: O(1)\nval = my_list[50]\n\n# Linked List access: O(n)\ncurr = head\nfor _ in range(50):\n    curr = curr.next"
+  },
+  {
+    "id": 3,
+    "question": "How does a 'Hash Map' (Dictionary) work internally? What is a 'Collision'?",
+    "answer": "A hash map uses a **Hash Function** to map keys to specific indices in an underlying array (buckets). **Collision**: Occurs when two different keys hash to the same index. **Resolution**: \n1. **Chaining**: Each bucket contains a linked list of entries that hash to that index. \n2. **Open Addressing**: Finding the next available slot in the array. Hash maps provide O(1) average-case performance for lookups, insertions, and deletions.",
+    "counterQuestion": "What is 'Load Factor' in a Hash Map?",
+    "counterQuestionAnswer": "Load factor is the ratio of the number of entries to the total number of buckets. When the load factor exceeds a certain threshold (e.g., 0.75), the hash map 'rehashes' by creating a larger array and moving all existing entries to new positions. This ensures that the number of collisions remains low and performance stays close to O(1).",
+    "category": "dsa",
+    "topic": "data_structures",
+    "difficulty": "medium",
+    "tags": [
+      "hash_map",
+      "dictionary",
+      "collisions",
+      "#highly_asked"
+    ],
+    "analogy": "A Hash Map is like a 'Post Office Box' system. You take your name (Key), run it through a machine (Hash Function) that gives you a Box Number (Index). If two people are assigned the same box (Collision), you just put both their letters in the same box (Chaining).",
+    "code": "# Python dictionaries are high-performance hash maps\nmy_dict = {\"name\": \"Alice\", \"age\": 30}\n\n# Average O(1) lookup\nprint(my_dict[\"name\"])\n\n# Collision handling is managed internally by CPython\n# using open addressing and a robust hash function."
+  },
+  {
+    "id": 4,
+    "question": "Explain the 'Stack' vs 'Queue' data structures (LIFO vs FIFO).",
+    "answer": "1. **Stack**: LIFO (Last-In, First-Out). Elements are added and removed from the same end (top). Common use: Undo functionality, function call stack. \n2. **Queue**: FIFO (First-In, First-Out). Elements are added at the back and removed from the front. Common use: Task scheduling, message queues. Both provide O(1) time complexity for their primary operations (Push/Pop for Stacks, Enqueue/Dequeue for Queues).",
+    "counterQuestion": "How can you implement a Queue using two Stacks?",
+    "counterQuestionAnswer": "You can use one stack for enqueuing and another for dequeuing. To enqueue, push onto stack \n1. To dequeue, if stack 2 is empty, pop all elements from stack 1 and push them onto stack 2 (reversing their order), then pop from stack \n2. This results in an amortized O(1) time complexity for both operations.",
+    "category": "dsa",
+    "topic": "data_structures",
+    "difficulty": "medium",
+    "tags": [
+      "stack",
+      "queue",
+      "data_structures",
+      "#highly_asked"
+    ],
+    "analogy": "A Stack is like a 'Pile of Plates'; you always take the top one first (LIFO). A Queue is like a 'Line at the Movies'; the first person who gets in line is the first one to buy a ticket (FIFO).",
+    "code": "# Stack (using list)\nstack = []\nstack.append(1) # Push\nstack.pop()      # Pop\n\n# Queue (using collections.deque for O(1) popleft)\nfrom collections import deque\nqueue = deque([])\nqueue.append(1) # Enqueue\nqueue.popleft()  # Dequeue"
+  },
+  {
+    "id": 5,
+    "question": "What is a 'Binary Search Tree' (BST)? What is the time complexity for search?",
+    "answer": "A BST is a tree structure where each node has at most two children. For any node, the left child's value is smaller, and the right child's value is larger. **Search Complexity**: Average case is **O(log n)** because you discard half the tree at each step. Worst case is **O(n)** if the tree is 'unbalanced' (e.g., a straight line). This is why self-balancing trees like AVL or Red-Black trees are often used in practice.",
+    "counterQuestion": "What is an 'In-order Traversal' of a BST?",
+    "counterQuestionAnswer": "An in-order traversal (Left, Root, Right) of a BST visits the nodes in **ascending sorted order**. This is a very useful property for tasks that require processing tree data in its natural sequence.",
+    "category": "dsa",
+    "topic": "data_structures",
+    "difficulty": "medium",
+    "tags": [
+      "bst",
+      "binary_tree",
+      "complexity",
+      "#highly_asked"
+    ],
+    "analogy": "A BST is like a 'Binary Search' in physical form. Every time you stand at a node, you ask 'Is my target smaller?' (Go Left) or 'Is it larger?' (Go Right). If the tree is balanced, you cut the remaining work in half at every step.",
+    "code": "def search_bst(root, target):\n    if not root or root.val == target:\n        return root\n    \n    if target < root.val:\n        return search_bst(root.left, target)\n    return search_bst(root.right, target)"
+  },
+  {
+    "id": 6,
+    "question": "Explain 'Recursion'. What is a 'Base Case' and 'Stack Overflow'?",
+    "answer": "Recursion is when a function calls itself to solve smaller instances of the same problem. **Base Case**: The condition that stops the recursion; without it, the function would call itself forever. **Stack Overflow**: Each recursive call adds a frame to the call stack. If the recursion is too deep (or missing a base case), the stack memory is exhausted, and the program crashes. Recursion is often cleaner than loops for problems with a tree-like structure.",
+    "counterQuestion": "What is 'Tail Call Optimization' (TCO)?",
+    "counterQuestionAnswer": "TCO is a compiler optimization where if the last action of a function is a recursive call, the current stack frame is reused instead of creating a new one. This allows for deep or infinite recursion without causing a stack overflow. Python does **not** support TCO, while some functional languages (like Haskell or Elixir) rely on it heavily.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "recursion",
+      "stack_overflow",
+      "algorithms",
+      "#highly_asked"
+    ],
+    "analogy": "Recursion is like 'Matryoshka Dolls' (Russian nesting dolls). You open one doll to find a smaller version inside. You keep opening until you find a tiny doll that doesn't open (Base Case), then you put them all back together.",
+    "code": "def factorial(n):\n    # Base Case\n    if n <= 1: return 1\n    # Recursive Step\n    return n * factorial(n - 1)\n\n# Danger: factorial(2000) causes RecursionError (Stack Overflow)"
+  },
+  {
+    "id": 7,
+    "question": "What is 'Sorting'? Compare 'Quick Sort' and 'Merge Sort'.",
+    "answer": "1. **Quick Sort**: Uses a 'Divide and Conquer' strategy with a pivot. Average case O(n log n), but worst case O(n^2) if the pivot is poor. It's an in-place sort (efficient memory). \n2. **Merge Sort**: Also Divide and Conquer, but always O(n log n). However, it requires O(n) extra space for merging. Merge Sort is a 'stable' sort, meaning it preserves the relative order of equal elements, which is important for certain applications.",
+    "counterQuestion": "What is the 'Time Complexity' of Timsort?",
+    "counterQuestionAnswer": "Timsort is a hybrid sorting algorithm derived from merge sort and insertion sort. It has an O(n log n) average and worst-case time complexity, but an O(n) best-case complexity (on already sorted data). It is the default sorting algorithm used in Python (`list.sort()` and `sorted()`).",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "sorting",
+      "quick_sort",
+      "merge_sort"
+    ],
+    "analogy": "Merge Sort is like 'Group Project' management: you split the work into tiny pieces, everyone does their part, and then you carefully merge them back together. Quick Sort is like 'Choosing a Leader' (Pivot) and putting everyone 'Shorter than the leader' on the left and 'Taller' on the right.",
+    "code": "def quick_sort(arr):\n    if len(arr) <= 1: return arr\n    pivot = arr[len(arr) // 2]\n    left = [x for x in arr if x < pivot]\n    middle = [x for x in arr if x == pivot]\n    right = [x for x in arr if x > pivot]\n    return quick_sort(left) + middle + quick_sort(right)"
+  },
+  {
+    "id": 8,
+    "question": "Explain 'Graph' data structures (Adjacency List vs Matrix).",
+    "answer": "1. **Adjacency List**: An array of lists where each index represents a node and the list contains its neighbors. More space-efficient for 'sparse' graphs. \n2. **Adjacency Matrix**: A 2D array where `matrix[i][j] = 1` if an edge exists. O(1) time to check if an edge exists, but O(V^2) space. Matrices are better for 'dense' graphs where almost every node is connected to every other node.",
+    "counterQuestion": "What is a 'Directed' vs 'Undirected' graph?",
+    "counterQuestionAnswer": "In an undirected graph, edges have no direction (if A is connected to B, B is also connected to A). In a directed graph (digraph), edges have a direction (A might point to B, but B doesn't necessarily point back to A). This is critical for modeling things like Twitter followers or dependency graphs.",
+    "category": "dsa",
+    "topic": "data_structures",
+    "difficulty": "medium",
+    "tags": [
+      "graphs",
+      "adjacency_list",
+      "adjacency_matrix"
+    ],
+    "analogy": "An Adjacency List is like a 'Contacts List' on your phone (you only store the people you actually know). An Adjacency Matrix is like a 'Seating Chart' for a wedding of 100 people, where you draw a line between every pair of seats even if they don't know each other.",
+    "code": "# Adjacency List (Dict of Sets)\ngraph = {\n    'A': {'B', 'C'},\n    'B': {'A', 'D'},\n    'C': {'A'},\n    'D': {'B'}\n}\n\n# Check if connected: O(1) on average\nif 'B' in graph['A']: print(\"Connected\")"
+  },
+  {
+    "id": 9,
+    "question": "What is 'Dynamic Programming'? Give a simple example (e.g., Fibonacci).",
+    "answer": "DP is an optimization technique used for problems with **overlapping subproblems** and **optimal substructure**. Instead of recalculating the same subproblems, you store the results (Memoization or Tabulation). **Example**: Calculating Fibonacci numbers. The naive recursive approach is O(2^n), but with DP (storing previous results in an array), it becomes O(n). It's essentially 'Recursion + Caching'.",
+    "counterQuestion": "What is the difference between 'Top-down' and 'Bottom-up' DP?",
+    "counterQuestionAnswer": "Top-down (Memoization) starts with the big problem and recursively breaks it down, storing results. Bottom-up (Tabulation) starts with the smallest subproblems and builds up to the final result using a loop and a table. Bottom-up is often slightly faster and avoids stack overflow issues.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "hard",
+    "tags": [
+      "dynamic_programming",
+      "memoization",
+      "algorithms"
+    ],
+    "analogy": "Dynamic Programming is like 'Writing down the answers to a hard test'. The first time you solve a problem, you write the result in a notebook. Next time you see the same problem, you just look at your notebook instead of solving it again.",
+    "code": "# Memoization (Top-down)\ndef fib(n, memo={}):\n    if n in memo: return memo[n]\n    if n <= 1: return n\n    memo[n] = fib(n-1, memo) + fib(n-2, memo)\n    return memo[n]\n\n# Tabulation (Bottom-up)\ndef fib_tab(n):\n    if n <= 1: return n\n    table = [0] * (n + 1)\n    table[1] = 1\n    for i in range(2, n + 1):\n        table[i] = table[i-1] + table[i-2]\n    return table[n]"
+  },
+  {
+    "id": 10,
+    "question": "Explain 'Race Conditions' and 'Deadlocks' in concurrent programming.",
+    "answer": "1. **Race Condition**: Occurs when two or more threads access shared data and try to change it at the same time. The final result depends on the timing of the threads. \n2. **Deadlock**: Occurs when two or more threads are blocked forever, each waiting for the other to release a resource (e.g., Thread A holds Lock 1 and waits for Lock 2; Thread B holds Lock 2 and waits for Lock 1). **Prevention**: Use locks/mutexes for race conditions, and always acquire locks in a consistent order to prevent deadlocks.",
+    "counterQuestion": "What is 'Lock Contention'?",
+    "counterQuestionAnswer": "Lock contention occurs when multiple threads try to acquire the same lock simultaneously. This causes some threads to wait, reducing the overall performance and throughput of the system. High lock contention is a common bottleneck in multi-threaded applications.",
+    "category": "dsa",
+    "topic": "concurrency",
+    "difficulty": "hard",
+    "tags": [
+      "concurrency",
+      "race_conditions",
+      "deadlocks"
+    ],
+    "analogy": "A Race Condition is two people trying to 'Update a whiteboard' at the same time; the final message is garbled. A Deadlock is two people in a hallway who 'Both step to the same side' to let the other pass, and keep doing it until they're both stuck forever.",
+    "code": "import threading\n\nlock = threading.Lock()\ncounter = 0\n\ndef safe_increment():\n    global counter\n    with lock: # Mutex prevents race conditions\n        counter += 1"
+  },
+  {
+    "id": 11,
+    "question": "What is a 'Heap' (Priority Queue)? Explain the time complexity for push/pop.",
+    "answer": "A Heap is a specialized tree-based data structure that satisfies the **Heap Property**: in a Max-Heap, every parent node is larger than its children. It's usually implemented as a complete binary tree in an array. **Complexity**: \n1. **Push**: O(log n) (adding to end and 'bubbling up'). \n2. **Pop (extract-max)**: O(log n) (removing root and 'bubbling down'). Heaps are the most efficient way to implement a Priority Queue.",
+    "counterQuestion": "What is the time complexity of 'Building' a heap from an unsorted array?",
+    "counterQuestionAnswer": "Surprisingly, building a heap from an unsorted array takes **O(n)** time, not O(n log n). This is because the amount of work decreases as you move down the tree (most nodes are at the bottom and only need to bubble down a few levels).",
+    "category": "dsa",
+    "topic": "data_structures",
+    "difficulty": "hard",
+    "tags": [
+      "heap",
+      "priority_queue",
+      "complexity"
+    ],
+    "analogy": "A Min-Heap is like a 'Hospital Triage'. The patient with the most urgent need (smallest value/highest priority) is always moved to the front. No matter how many people arrive, the 'Emergency Room' (Root) always holds the next most important task.",
+    "code": "import heapq\n\n# Python's heapq is a min-heap by default\nheap = [3, 1, 4, 1, 5, 9]\nheapq.heapify(heap)\n\n# Push: O(log n)\nheapq.heappush(heap, 2)\n\n# Pop: O(log n) - always returns the smallest element\nsmallest = heapq.heappop(heap)"
+  },
+  {
+    "id": 12,
+    "question": "Explain the 'Trie' (Prefix Tree) data structure. When is it more efficient than a Hash Map?",
+    "answer": "A Trie is a tree structure used for storing strings where each node represents a character. **Efficiency**: While a Hash Map provides O(1) lookup on average, a Trie provides **O(L)** lookup where L is the length of the string. A Trie is more efficient for **Prefix-based searches** (like autocomplete or spell checkers) and can be more space-efficient when many strings share common prefixes, as it doesn't store duplicate prefix characters.",
+    "counterQuestion": "What is a 'Compressed Trie' (Radix Tree)?",
+    "counterQuestionAnswer": "A compressed trie is an optimized version where nodes with only one child are merged with their child. This reduces the number of nodes and the depth of the tree, saving memory and improving lookup performance for strings with long shared substrings.",
+    "category": "dsa",
+    "topic": "data_structures",
+    "difficulty": "hard",
+    "tags": [
+      "trie",
+      "prefix_tree",
+      "algorithms"
+    ],
+    "analogy": "A Trie is like an 'Autocomplete' dictionary. Instead of looking up 'apple' by checking every word in the book, you follow the 'a' branch, then the 'p' branch, then the 'p' branch again. Every step narrows down the possibilities until you find the exact word.",
+    "code": "class TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.is_end = False\n\nclass Trie:\n    def insert(self, word):\n        node = self.root\n        for char in word:\n            if char not in node.children:\n                node.children[char] = TrieNode()\n            node = node.children[char]\n        node.is_end = True"
+  },
+  {
+    "id": 13,
+    "question": "What are 'Segment Trees' or 'Fenwick Trees'? When would you use them for range queries?",
+    "answer": "These are data structures used for efficient **Range Queries** (e.g., sum, min, max) and **Point Updates** in an array. \n1. **Segment Tree**: O(log n) for both range queries and updates. Very flexible (can handle almost any associative operation). \n2. **Fenwick Tree (Binary Indexed Tree)**: More space-efficient and easier to implement, but mainly used for prefix sums. They are essential for competitive programming and systems that require real-time analytics over streaming data.",
+    "counterQuestion": "What is 'Lazy Propagation' in a Segment Tree?",
+    "counterQuestionAnswer": "Lazy propagation is an optimization that allows for O(log n) **Range Updates** (e.g., add X to all elements from index i to j). Instead of updating every leaf immediately, you store the update in a 'lazy' node and only propagate it down when that specific range is actually queried, significantly improving performance for heavy-update workloads.",
+    "category": "dsa",
+    "topic": "data_structures",
+    "difficulty": "hard",
+    "tags": [
+      "segment_tree",
+      "fenwick_tree",
+      "range_queries"
+    ],
+    "analogy": "A Segment Tree is like a 'Management Hierarchy' for a bank. If you want to know the total cash in the whole bank, you don't count every drawer; you ask the Manager, who has already summed up the totals from each Branch, who summed up the Tellers.",
+    "code": "# Conceptual Segment Tree for Range Sum\ndef update(node, idx, val):\n    if node.start == node.end:\n        node.sum = val\n        return\n    mid = (node.start + node.end) // 2\n    if idx <= mid: update(node.left, idx, val)\n    else: update(node.right, idx, val)\n    node.sum = node.left.sum + node.right.sum"
+  },
+  {
+    "id": 14,
+    "question": "Explain 'Union-Find' (Disjoint Set Union) and its applications in graph algorithms.",
+    "answer": "Union-Find is a data structure that keeps track of elements partitioned into several disjoint sets. It supports two operations: **Find** (determine which set an element belongs to) and **Union** (merge two sets). **Applications**: \n1. Detecting cycles in an undirected graph. \n2. Kruskal's algorithm for finding the Minimum Spanning Tree (MST). \n3. Grouping related items in social networks or image processing.",
+    "counterQuestion": "What are 'Path Compression' and 'Union by Rank'?",
+    "counterQuestionAnswer": "These are the two primary optimizations for Union-Find. **Path Compression** makes every node in a path point directly to the root during a 'Find' operation. **Union by Rank** always attaches the smaller tree under the root of the larger tree. Together, they make the time complexity per operation effectively constant (O(\u03b1(n)), the inverse Ackermann function).",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "hard",
+    "tags": [
+      "union_find",
+      "graphs",
+      "algorithms"
+    ],
+    "analogy": "Union-Find is like 'Tracking Families'. When two people get married (Union), their entire families become related. If you want to know if two people are cousins (Find), you just check if they share the same 'Oldest Living Relative' (Root).",
+    "code": "class UnionFind:\n    def __init__(self, n):\n        self.parent = list(range(n))\n\n    def find(self, i):\n        if self.parent[i] == i: return i\n        # Path Compression: make future finds O(1)\n        self.parent[i] = self.find(self.parent[i])\n        return self.parent[i]\n\n    def union(self, i, j):\n        root_i, root_j = self.find(i), self.find(j)\n        if root_i != root_j: self.parent[root_i] = root_j"
+  },
+  {
+    "id": 15,
+    "question": "Discuss 'Backtracking' algorithms (e.g., N-Queens, Sudoku Solver).",
+    "answer": "Backtracking is a general algorithm for finding all (or some) solutions to computational problems by building candidates incrementally and abandoning a candidate ('backtracking') as soon as it determines that it cannot possibly lead to a valid solution. It's essentially a Depth-First Search (DFS) over a state-space tree. It is commonly used for constraint satisfaction problems where the search space is too large to explore exhaustively.",
+    "counterQuestion": "What is 'Pruning' in backtracking?",
+    "counterQuestionAnswer": "Pruning involves identifying branches of the search tree that cannot possibly contain a solution and skipping them entirely. For example, in Sudoku, if placing a '5' in a cell violates a row constraint, you immediately 'prune' that branch and try a different number, rather than continuing to fill the rest of the board. This drastically reduces the number of states you need to visit.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "hard",
+    "tags": [
+      "backtracking",
+      "dfs",
+      "algorithms"
+    ],
+    "analogy": "Backtracking is like 'Solving a Maze'. You walk down a path until you hit a wall (Invalid state). Then, you take a step back (Backtrack) to the last intersection and try a different path, repeating until you find the exit.",
+    "code": "def solve_n_queens(n):\n    def backtrack(row, cols, diags, anti_diags):\n        if row == n: return 1\n        count = 0\n        for col in range(n):\n            if col in cols or (row-col) in diags or (row+col) in anti_diags:\n                continue\n            # Choose\n            cols.add(col); diags.add(row-col); anti_diags.add(row+col)\n            # Explore\n            count += backtrack(row + 1, cols, diags, anti_diags)\n            # Un-choose (Backtrack)\n            cols.remove(col); diags.remove(row-col); anti_diags.remove(row+col)\n        return count"
+  },
+  {
+    "id": 16,
+    "question": "Search in Rotated Sorted Array: How do you find an element in O(log n) time?",
+    "answer": "Since the array is sorted but rotated, we can still use **Binary Search**. In each step, one half (left or right) of the array must be sorted. \n1. If `nums[mid] == target`, return `mid`. \n2. If the left half is sorted (`nums[left] <= nums[mid]`): check if the target is within the left range; if so, move `right = mid - 1`, otherwise `left = mid + 1`. \n3. If the right half is sorted: check if the target is within the right range; if so, move `left = mid + 1`, otherwise `right = mid - 1`. This allows us to maintain the logarithmic time complexity by discarding half the search space in each iteration.",
+    "counterQuestion": "What happens if the array contains duplicate elements?",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "hard",
+    "tags": [
+      "binary_search",
+      "arrays",
+      "leetcode"
+    ],
+    "analogy": "Searching in a rotated array is like looking for a word in a dictionary that was 'Cut and Re-taped'. Even if it's out of order, one half of the book is always perfectly sorted. You find the sorted half, see if your word is in it, and if not, you look in the other half.",
+    "code": "def search_rotated(nums, target):\n    l, r = 0, len(nums) - 1\n    while l <= r:\n        mid = (l + r) // 2\n        if nums[mid] == target: return mid\n        \n        if nums[l] <= nums[mid]: # Left sorted\n            if nums[l] <= target < nums[mid]: r = mid - 1\n            else: l = mid + 1\n        else: # Right sorted\n            if nums[mid] < target <= nums[r]: l = mid + 1\n            else: r = mid - 1\n    return -1"
+  },
+  {
+    "id": 17,
+    "question": "Word Search: Given a 2D board and a word, how do you determine if the word exists in the grid?",
+    "answer": "This is solved using **Backtracking** with **DFS**. \n1. Iterate through every cell in the grid. \n2. If a cell matches the first letter, start a DFS. \n3. In the DFS, mark the current cell as 'visited' (to avoid using it twice in the same word) and recursively check its 4 neighbors for the next letter. \n4. If a neighbor matches, continue; if not, 'unmark' the cell (backtrack) and return false. \n5. If you reach the end of the word, return true.",
+    "counterQuestion": "What is the time complexity of this approach?",
+    "counterQuestionAnswer": "The time complexity is **O(N * M * 4^L)**, where N and M are the grid dimensions and L is the length of the word. At each step, we have 4 possible directions to explore, and we do this for every starting cell in the grid.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "hard",
+    "tags": [
+      "backtracking",
+      "dfs",
+      "grid"
+    ],
+    "analogy": "Word Search is like playing 'Boggle'. You find the first letter of the word on the board, then look at all neighbors for the second letter. If you go down a path and can't finish the word, you 'forget' that path and try a different neighbor of the last correct letter.",
+    "code": "def exist(board, word):\n    def dfs(r, c, k):\n        if k == len(word): return True\n        if not (0 <= r < R and 0 <= c < C) or board[r][c] != word[k]:\n            return False\n        temp, board[r][c] = board[r][c], '#'\n        res = any(dfs(r+dr, c+dc, k+1) for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)])\n        board[r][c] = temp\n        return res"
+  },
+  {
+    "id": 18,
+    "question": "Pacific Atlantic Water Flow: How do you find cells that can reach both oceans?",
+    "answer": "Instead of checking every cell (which would be slow), we work backwards from the oceans. \n1. Perform a **DFS or BFS** starting from all cells adjacent to the Pacific Ocean to find all reachable cells. \n2. Do the same for the Atlantic Ocean. \n3. The answer is the intersection of these two sets of reachable cells. This 'reverse' approach ensures we only visit each cell a constant number of times.",
+    "counterQuestion": "Could you use a 'Union-Find' approach here?",
+    "counterQuestionAnswer": "Technically yes, but it would be significantly more complex to implement and manage the water-flow height constraints. BFS/DFS is much more natural for this problem because it directly models the traversal based on the adjacent height values.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "hard",
+    "tags": [
+      "graphs",
+      "dfs",
+      "bfs"
+    ],
+    "analogy": "Water flow is like 'Flooding a field'. Instead of checking every square to see where the water goes, you turn on the hoses at the edges (Oceans) and watch where the water spreads. Where the two floods meet is where water can reach both oceans.",
+    "code": "# BFS from Pacific and Atlantic edges\npac_reachable = set()\natl_reachable = set()\ndef bfs(starts, reachable):\n    q = deque(starts)\n    while q:\n        r, c = q.popleft()\n        for nr, nc in neighbors(r, c):\n            if height[nr][nc] >= height[r][c]:\n                reachable.add((nr, nc))\n                q.append((nr, nc))"
+  },
+  {
+    "id": 19,
+    "question": "Longest Consecutive Sequence: How do you find the length of the longest consecutive elements sequence in O(n) time?",
+    "answer": "1. Put all numbers into a **Hash Set** for O(1) lookups. \n2. Iterate through the numbers. \n3. For each number, check if it's the 'start' of a sequence (i.e., `num - 1` is NOT in the set). \n4. If it is a start, keep incrementing the number and checking the set until the sequence ends. \n5. Track the maximum length found. This is O(n) because each number is only processed as part of a sequence at most twice (once for the check and once for the increment).",
+    "counterQuestion": "Why is a Hash Set better than sorting here?",
+    "counterQuestionAnswer": "Sorting would take **O(n log n)** time. The Hash Set allows us to achieve **O(n)** time complexity, which is the theoretical lower bound for this problem since we must at least visit every element once.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "hash_set",
+      "arrays",
+      "leetcode"
+    ],
+    "analogy": "Consecutive sequence is like finding 'Runaway Train Cars'. You put all car numbers in a pile. For each car, you check if it's the 'First Car' (no car behind it). If it is, you count how many cars are attached in front of it.",
+    "code": "def longestConsecutive(nums):\n    num_set = set(nums)\n    max_len = 0\n    for n in num_set:\n        if (n - 1) not in num_set:\n            curr_n, curr_len = n, 1\n            while (curr_n + 1) in num_set:\n                curr_n += 1; curr_len += 1\n            max_len = max(max_len, curr_len)\n    return max_len"
+  },
+  {
+    "id": 20,
+    "question": "Serialize and Deserialize Binary Tree: How do you convert a tree to a string and back?",
+    "answer": "1. **Serialization**: Use **Level Order Traversal (BFS)** or **Pre-order Traversal (DFS)**. Represent null nodes with a special character (like '#'). Join node values with a delimiter (like ','). \n2. **Deserialization**: Split the string by the delimiter. If using DFS, use a pointer or queue to reconstruct the tree recursively (root -> left -> right). If using BFS, use a queue to track parent nodes and attach the next two values from the string as its children.",
+    "counterQuestion": "What are the trade-offs between BFS and DFS for serialization?",
+    "counterQuestionAnswer": "DFS (Pre-order) is often easier to implement recursively and results in a slightly more compact string. BFS (Level Order) is more intuitive for visualizing the tree level-by-level but requires managing a queue during both serialization and deserialization.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "hard",
+    "tags": [
+      "trees",
+      "serialization",
+      "dfs",
+      "bfs"
+    ],
+    "analogy": "Serialization is like 'Packing a tent'. You take a 3D structure (the Tree), flatten it into a single line of instructions (the String), and put it in a bag. Deserialization is taking those instructions and rebuilding the tent exactly as it was.",
+    "code": "def serialize(root):\n    res = []\n    def dfs(node):\n        if not node:\n            res.append(\"N\"); return\n        res.append(str(node.val))\n        dfs(node.left); dfs(node.right)\n    dfs(root)\n    return \",\".join(res)\n\n# Deserialization uses a pointer/iterator to consume the list\ndef deserialize(data):\n    vals = iter(data.split(\",\"))\n    def build():\n        v = next(vals)\n        if v == \"N\": return None\n        node = TreeNode(int(v))\n        node.left = build(); node.right = build()\n        return node\n    return build()"
+  },
+  {
+    "id": 21,
+    "question": "Clone Graph: How do you make a deep copy of an undirected graph?",
+    "answer": "Use **DFS or BFS** combined with a **Hash Map**. \n1. The Hash Map stores the mapping from the `original node` to its `cloned node`. \n2. Start from the given node. \n3. If the node is already in the map, return its clone. \n4. If not, create a clone, add it to the map, and recursively clone all its neighbors. This ensures that each node is created only once and that all edges (connections) are correctly reproduced in the deep copy.",
+    "counterQuestion": "What is the time and space complexity of this algorithm?",
+    "counterQuestionAnswer": "Both time and space complexity are **O(V + E)**, where V is the number of vertices and E is the number of edges. We visit each node and each edge once, and the hash map stores a clone for every vertex.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "hard",
+    "tags": [
+      "graphs",
+      "dfs",
+      "bfs",
+      "cloning"
+    ],
+    "analogy": "Cloning a graph is like 'Building a Mirror House'. You walk through the original house (Graph). Every time you enter a new room (Node), you build an exact replica in the mirror world. If you see a door to a room you've already mirrored, you just connect the doors in the mirror world.",
+    "code": "def cloneGraph(node):\n    if not node: return None\n    old_to_new = {}\n\n    def dfs(curr):\n        if curr in old_to_new: return old_to_new[curr]\n        copy = Node(curr.val)\n        old_to_new[curr] = copy\n        for neighbor in curr.neighbors:\n            copy.neighbors.append(dfs(neighbor))\n        return copy\n\n    return dfs(node)"
+  },
+  {
+    "id": 22,
+    "question": "Trie (Prefix Tree) Implementation: How do you implement insert, search, and startsWith?",
+    "answer": "A Trie node contains a map or array of children (26 for lowercase a-z) and a boolean `isEndOfWord`. \n1. **Insert**: Iterate through characters, creating nodes as needed, and mark the last node as `isEndOfWord`. \n2. **Search**: Iterate through characters; if any character doesn't exist, return false. Otherwise, return the `isEndOfWord` value of the last node. \n3. **StartsWith**: Same as search, but always return true if you reach the end of the prefix.",
+    "counterQuestion": "What is the space complexity of a Trie?",
+    "counterQuestionAnswer": "In the worst case, the space complexity is **O(N * L * \u03a3)**, where N is the number of words, L is the average length, and \u03a3 is the alphabet size (e.g., 26). However, in practice, it's often much less because many words share the same prefixes, which is the primary benefit of the structure.",
+    "category": "dsa",
+    "topic": "data_structures",
+    "difficulty": "medium",
+    "tags": [
+      "trie",
+      "prefix_tree",
+      "strings"
+    ],
+    "analogy": "Implementing a Trie is like building a 'Decision Tree' for spelling. At each node, you have 26 possible paths. If you follow the path 'C' -> 'A' -> 'T', you arrive at a node marked 'End of Word', confirming 'CAT' exists in your dictionary.",
+    "code": "class TrieNode:\n    def __init__(self):\n        self.children = {} # Maps char to TrieNode\n        self.is_end = False\n\nclass Trie:\n    def __init__(self):\n        self.root = TrieNode()\n\n    def insert(self, word: str):\n        curr = self.root\n        for c in word:\n            if c not in curr.children: curr.children[c] = TrieNode()\n            curr = curr.children[c]\n        curr.is_end = True"
+  },
+  {
+    "id": 23,
+    "question": "Non-overlapping Intervals: How do you find the minimum number of intervals to remove to make the rest non-overlapping?",
+    "answer": "This is a **Greedy** problem. \n1. Sort intervals by their **end times**. \n2. Keep track of the end time of the last added non-overlapping interval. \n3. Iterate through the intervals; if the current interval starts before the last one ends, it must be removed. Otherwise, update the last end time to the current interval's end. Sorting by end time is optimal because it leaves as much room as possible for subsequent intervals.",
+    "counterQuestion": "Why do we sort by 'End Time' instead of 'Start Time'?",
+    "counterQuestionAnswer": "Sorting by end time is the key to the greedy choice. By picking the interval that ends the earliest, you maximize the remaining time available for other intervals. Sorting by start time doesn't work because a very long interval that starts early could block many shorter ones that start later.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "hard",
+    "tags": [
+      "greedy",
+      "intervals",
+      "sorting"
+    ],
+    "analogy": "Managing non-overlapping intervals is like 'Booking a Stage'. If you want to fit the most bands in one day, you always pick the band that finishes earliest. This leaves the maximum amount of time for the next band to start.",
+    "code": "def eraseOverlapIntervals(intervals):\n    intervals.sort(key=lambda x: x[1]) # Sort by end time\n    res, prev_end = 0, float('-inf')\n    for start, end in intervals:\n        if start < prev_end:\n            res += 1\n        else:\n            prev_end = end\n    return res"
+  },
+  {
+    "id": 24,
+    "question": "Meeting Rooms II: How do you find the minimum number of conference rooms required?",
+    "answer": "1. Split the intervals into two arrays: **start times** and **end times**. \n2. Sort both arrays. \n3. Use two pointers (startPtr and endPtr). \n4. If a meeting starts before the earliest meeting ends (`start[startPtr] < end[endPtr]`), you need a new room (increment `usedRooms`). \n5. If not, a room has been freed (`endPtr++`). \n6. Move `startPtr++` and repeat until all meetings are processed. The answer is the maximum number of `usedRooms` at any point.",
+    "counterQuestion": "Can you solve this using a Min-Heap?",
+    "counterQuestionAnswer": "Yes. Sort intervals by start time. Use a **Min-Heap** to store the end times of meetings currently in progress. For each new meeting, if its start time is >= the heap's minimum (root), the room is free (pop the root). Then push the current meeting's end time. The size of the heap at the end is the number of rooms required.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "hard",
+    "tags": [
+      "intervals",
+      "heap",
+      "greedy"
+    ],
+    "analogy": "Meeting Rooms is like 'Valet Parking'. When a car arrives (Meeting starts), you check if any parked car has left (Meeting ended). If a spot is free, you use it; if not, you have to build a new parking space.",
+    "code": "import heapq\n\ndef minMeetingRooms(intervals):\n    intervals.sort(key=lambda x: x[0])\n    rooms = [] # Min-heap of end times\n    for start, end in intervals:\n        if rooms and rooms[0] <= start:\n            heapq.heappop(rooms)\n        heapq.heappush(rooms, end)\n    return len(rooms)"
+  },
+  {
+    "id": 25,
+    "question": "Merge Intervals: How do you merge all overlapping intervals?",
+    "answer": "1. Sort intervals by their **start times**. \n2. Initialize an empty list `merged`. \n3. Iterate through intervals. If `merged` is empty or the current interval doesn't overlap with the last one in `merged` (`current.start > last.end`), add it. \n4. If it does overlap, merge them by updating the end of the last interval in `merged` to `max(last.end, current.end)`.",
+    "counterQuestion": "What is the time complexity if the intervals are already sorted?",
+    "counterQuestionAnswer": "If the intervals are already sorted by start time, the algorithm takes **O(n)** time as we only need to iterate through the list once. Otherwise, the sorting step dominates, making it **O(n log n)**.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "intervals",
+      "sorting",
+      "arrays"
+    ],
+    "analogy": "Merging intervals is like 'Combining overlapping shifts'. If one person works 9am-12pm and another works 11am-2pm, they collectively covered the single continuous block from 9am to 2pm.",
+    "code": "def merge(intervals):\n    intervals.sort(key=lambda x: x[0])\n    merged = []\n    for start, end in intervals:\n        if not merged or merged[-1][1] < start:\n            merged.append([start, end])\n        else:\n            merged[-1][1] = max(merged[-1][1], end)\n    return merged"
+  },
+  {
+    "id": 26,
+    "question": "Longest Repeating Character Replacement: How do you find the longest substring containing the same letter after at most k replacements?",
+    "answer": "Use a **Sliding Window** and a frequency map. \n1. Maintain a window `[left, right]` and the count of the most frequent character in that window (`maxFreq`). \n2. The number of replacements needed is `(windowSize - maxFreq)`. \n3. If `(right - left + 1) - maxFreq > k`, the window is invalid; shrink it from the left. \n4. Track the maximum `(right - left + 1)` found. This is O(n) because each pointer only moves forward.",
+    "counterQuestion": "Does 'maxFreq' need to be updated when shrinking the window?",
+    "counterQuestionAnswer": "Surprisingly, no. Even if the actual max frequency in the current smaller window decreases, `maxFreq` can stay at its historical maximum for the purpose of the comparison. This is because we are only looking for a window *larger* than the current maximum, and a window with a smaller `maxFreq` could never be larger than our current best anyway.",
+    "tags": [
+      "sliding_window",
+      "strings",
+      "hash_map"
+    ],
+    "analogy": "Character replacement is like 'Correcting a sentence' within a fixed length. You keep a window open. Inside that window, you find the most common letter. If the 'Wrong' letters (total length - common count) exceed your budget (K), you shrink the window.",
+    "code": "def characterReplacement(s, k):\n    count = {}\n    res, l, max_f = 0, 0, 0\n    for r in range(len(s)):\n        count[s[r]] = 1 + count.get(s[r], 0)\n        max_f = max(max_f, count[s[r]])\n        while (r - l + 1) - max_f > k:\n            count[s[l]] -= 1\n            l += 1\n        res = max(res, r - l + 1)\n    return res"
+  },
+  {
+    "id": 27,
+    "question": "Find Minimum in Rotated Sorted Array: How do you find the pivot in O(log n) time?",
+    "answer": "Use **Binary Search**. \n1. If `nums[left] <= nums[right]`, the array isn't rotated (or you've found a sorted segment), return `nums[left]`. \n2. Compare `nums[mid]` with `nums[left]`. \n3. If `nums[mid] >= nums[left]`, the pivot is in the right half, so `left = mid + 1`. \n4. Otherwise, the pivot is in the left half, so `right = mid`. This effectively searches for the 'inflection point' where the value drops.",
+    "counterQuestion": "What if the array has duplicates?",
+    "counterQuestionAnswer": "Similar to 'Search in Rotated Sorted Array', duplicates can make it impossible to know which half to discard if `nums[left] == nums[mid] == nums[right]`. In that case, you must simply decrement `right` by one (`right--`) until the values differ, leading to O(n) worst-case complexity.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "binary_search",
+      "arrays"
+    ],
+    "analogy": "Finding the minimum in a rotated array is like finding the 'Drop-off' in a cliff side. Usually, the ground goes up, but at one point there's a sharp drop (the rotation point). You use Binary Search to find exactly where that drop happens.",
+    "code": "def findMin(nums):\n    l, r = 0, len(nums) - 1\n    while l < r:\n        mid = (l + r) // 2\n        if nums[mid] > nums[r]: # Pivot is to the right\n            l = mid + 1\n        else: # Pivot is at mid or to the left\n            r = mid\n    return nums[l]"
+  },
+  {
+    "id": 28,
+    "question": "Rotate Image: How do you rotate an n x n matrix 90 degrees clockwise in-place?",
+    "answer": "1. **Transpose** the matrix (swap `matrix[i][j]` with `matrix[j][i]`). \n2. **Reverse** each row. This two-step process effectively rotates the matrix 90 degrees clockwise without requiring extra space (O(1) space complexity).",
+    "counterQuestion": "How would you rotate it counter-clockwise?",
+    "counterQuestionAnswer": "To rotate 90 degrees counter-clockwise: \n1. **Reverse** each row first. \n2. Then **Transpose** the matrix. Alternatively, you can Transpose and then reverse each **column**.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "arrays",
+      "matrix",
+      "math"
+    ],
+    "analogy": "Rotating a matrix is like 'Flipping a pancake' and then 'Swapping the sides'. You flip it along the diagonal (Transpose) so the top-left becomes bottom-right, then you reverse each row to get the final 90-degree turn.",
+    "code": "def rotate(matrix):\n    # 1. Transpose: Swap matrix[i][j] with matrix[j][i]\n    for i in range(len(matrix)):\n        for j in range(i + 1, len(matrix)):\n            matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j]\n    \n    # 2. Reverse each row\n    for row in matrix:\n        row.reverse()"
+  },
+  {
+    "id": 29,
+    "question": "House Robber: How do you find the maximum amount of money you can rob without alerting the police (no two adjacent houses)?",
+    "answer": "This is a classic **Dynamic Programming** problem. \n1. `dp[i]` represents the max money at house `i`. \n2. `dp[i] = max(dp[i-1], nums[i] + dp[i-2])`. You either skip the current house (taking the max from the previous) or rob it (adding its value to the max from two houses ago). \n3. You only need the last two values, so you can optimize space to **O(1)**.",
+    "counterQuestion": "What if the houses are in a circle (House Robber II)?",
+    "counterQuestionAnswer": "If the houses are in a circle, house 1 and house N are neighbors. You solve it by running the standard House Robber algorithm twice: once for houses `[0 to N-2]` and once for houses `[1 to N-1]`. The answer is the maximum of the two results.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "dynamic_programming",
+      "arrays"
+    ],
+    "analogy": "The House Robber is like 'Planning a heist' with a simple rule: 'Don't rob neighbors'. For each house, you ask: 'Is it better to rob this house + whatever I got from 2 houses ago, or just skip this house and take whatever I got from the previous house?'",
+    "code": "def rob(nums):\n    rob1, rob2 = 0, 0\n    # [rob1, rob2, n, n+1, ...]\n    for n in nums:\n        temp = max(n + rob1, rob2)\n        rob1 = rob2\n        rob2 = temp\n    return rob2"
+  },
+  {
+    "id": 30,
+    "question": "Jump Game: How do you determine if you can reach the last index?",
+    "answer": "Use a **Greedy** approach. \n1. Keep track of the `furthest` index you can reach (initially 0). \n2. Iterate through the array; if your current index `i` is greater than `furthest`, you're stuck, return false. \n3. Update `furthest = max(furthest, i + nums[i])`. \n4. If `furthest >= lastIndex`, return true.",
+    "counterQuestion": "Can this be solved with Dynamic Programming?",
+    "counterQuestionAnswer": "Yes, but it's less efficient. You could use a `reachable[i]` boolean array where `reachable[i]` is true if any previous index `j` can reach `i`. This would be **O(n^2)**, whereas the greedy approach is **O(n)**.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "greedy",
+      "arrays"
+    ],
+    "analogy": "Jump Game is like 'Checking if you have enough gas'. Each spot gives you a certain amount of gas (Jump distance). As you drive forward, you always swap your current tank for the largest gas can you find. If you run out of gas before the finish line, you lose.",
+    "code": "def canJump(nums):\n    goal = len(nums) - 1\n    for i in range(len(nums) - 1, -1, -1):\n        if i + nums[i] >= goal:\n            goal = i\n    return goal == 0"
+  },
+  {
+    "id": 31,
+    "question": "Course Schedule: How do you detect if it's possible to finish all courses given their prerequisites?",
+    "answer": "This is a **Cycle Detection** problem in a **Directed Graph**. \n1. Build an adjacency list of courses. \n2. Use **DFS** with a `visited` set (all-time) and a `visiting` set (current path). \n3. If you encounter a node already in `visiting`, there is a cycle (return false). \n4. Alternatively, use **Kahn's Algorithm (BFS)**: track the `in-degree` of each node; repeatedly remove nodes with 0 in-degree. If you can't remove all nodes, there's a cycle.",
+    "counterQuestion": "What is 'Topological Sort' and how does it relate to this?",
+    "counterQuestionAnswer": "Topological sort is a linear ordering of vertices such that for every directed edge (u, v), vertex u comes before v. Course Schedule is essentially checking if a Topological Sort is possible. Kahn's Algorithm and DFS-based ordering are the two main ways to generate a topological sort.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "hard",
+    "tags": [
+      "graphs",
+      "dfs",
+      "bfs",
+      "topological_sort"
+    ],
+    "analogy": "Course Schedule is like 'Planning a college degree'. You can't take 'Advanced Algorithms' until you've finished 'Basic Data Structures'. If you find a circle of prerequisites (A needs B, B needs A), you can never graduate (Cycle detected).",
+    "code": "def canFinish(numCourses, prerequisites):\n    adj = [[] for _ in range(numCourses)]\n    for crs, pre in prerequisites: adj[crs].append(pre)\n    \n    visit, path = set(), set()\n    def dfs(crs):\n        if crs in path: return False\n        if crs in visit: return True\n        path.add(crs)\n        for pre in adj[crs]:\n            if not dfs(pre): return False\n        path.remove(crs); visit.add(crs)\n        return True\n    return all(dfs(i) for i in range(numCourses))"
+  },
+  {
+    "id": 32,
+    "question": "Top K Frequent Elements: How do you find the k most frequent elements in O(n) or O(n log k) time?",
+    "answer": "1. **O(n log k)**: Use a Hash Map to count frequencies, then use a **Min-Heap** of size k to track the most frequent elements. \n2. **O(n)**: Use **Bucket Sort**. Count frequencies in a Hash Map, then create 'buckets' where the index is the frequency. Iterate through buckets from right to left to get the top k elements. Bucket sort is more efficient when the range of frequencies is bounded by the number of elements.",
+    "counterQuestion": "When would you prefer the Heap approach over Bucket Sort?",
+    "counterQuestionAnswer": "The Heap approach is better when k is very small compared to N, or when the frequencies are very large and sparse, making the 'bucket' array extremely large and memory-intensive.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "heap",
+      "hash_map",
+      "bucket_sort"
+    ],
+    "analogy": "Finding Top K frequent elements is like 'Counting votes in an election'. You count the votes for everyone (Hash Map), then put everyone into buckets based on how many votes they got. You start checking the 'Highest Vote' bucket and work your way down until you have your K winners.",
+    "code": "def topKFrequent(nums, k):\n    count = Counter(nums)\n    buckets = [[] for _ in range(len(nums) + 1)]\n    for n, f in count.items():\n        buckets[f].append(n)\n    \n    res = []\n    for i in range(len(buckets) - 1, 0, -1):\n        for n in buckets[i]:\n            res.append(n)\n            if len(res) == k: return res"
+  },
+  {
+    "id": 33,
+    "question": "Number of Islands: How do you count the number of disconnected islands in a 2D grid?",
+    "answer": "Use **DFS or BFS**. \n1. Iterate through every cell. \n2. If a cell is '1' (land), increment the island count and start a DFS/BFS to 'sink' the entire island (change '1's to '0's or mark as visited). \n3. The number of times you start a DFS/BFS is the number of islands. This ensures that each land cell is processed exactly once, leading to **O(M * N)** time complexity.",
+    "counterQuestion": "How do you solve this using 'Union-Find'?",
+    "counterQuestionAnswer": "Treat every '1' as a separate set. Iterate through the grid; for every '1', 'Union' it with its adjacent '1's (right and down). The number of islands is the number of unique 'roots' in the Union-Find structure at the end. This is slightly more complex to implement but useful for dynamic grids.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "graphs",
+      "dfs",
+      "bfs",
+      "grid"
+    ],
+    "analogy": "Counting islands is like 'Coloring a map'. Every time you find a piece of land, you pick a new color and start coloring every piece of land connected to it. When you run out of connected land, you've finished one island.",
+    "code": "def numIslands(grid):\n    if not grid: return 0\n    R, C = len(grid), len(grid[0])\n    islands = 0\n    \n    def dfs(r, c):\n        if not (0 <= r < R and 0 <= c < C) or grid[r][c] == '0':\n            return\n        grid[r][c] = '0' # Mark as visited\n        for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)]: dfs(r+dr, c+dc)\n\n    for r in range(R):\n        for c in range(C):\n            if grid[r][c] == '1':\n                islands += 1; dfs(r, c)\n    return islands"
+  },
+  {
+    "id": 34,
+    "question": "Level Order Traversal: How do you traverse a tree level-by-level (BFS)?",
+    "answer": "Use a **Queue**. \n1. Push the root into the queue. \n2. While the queue is not empty, get its current size (number of nodes at this level). \n3. Process that many nodes: pop a node, add its value to the current level's list, and push its children into the queue. \n4. Add the level's list to the final result. This ensures that you process all nodes of level N before any nodes of level N+1.",
+    "counterQuestion": "How do you modify this for 'Zigzag' traversal?",
+    "counterQuestionAnswer": "Maintain a boolean `reverse` flag. For each level, if `reverse` is true, reverse the list of node values before adding it to the final result (or use a Deque to add values to either the front or back). Flip the flag after each level.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "trees",
+      "bfs",
+      "queue"
+    ],
+    "analogy": "Level order traversal is like 'Handing out flyers at an office building'. You start at the lobby (Root), give a flyer to everyone there, then take the elevator to the next floor and do the same for everyone on that floor, level by level.",
+    "code": "def levelOrder(root):\n    if not root: return []\n    res, q = [], deque([root])\n    while q:\n        level = []\n        for _ in range(len(q)):\n            node = q.popleft()\n            level.append(node.val)\n            if node.left: q.append(node.left)\n            if node.right: q.append(node.right)\n        res.append(level)\n    return res"
+  },
+  {
+    "id": 35,
+    "question": "Coin Change: How do you find the minimum number of coins to make up a given amount?",
+    "answer": "This is a **Dynamic Programming** (Optimization) problem. \n1. `dp[i]` represents the min coins for amount `i`. \n2. Initialize `dp[0] = 0` and all other `dp[i]` to `infinity`. \n3. For each amount `i` from 1 to `target`, and for each coin `c`: `dp[i] = min(dp[i], 1 + dp[i - c])`. \n4. If `dp[target]` is still `infinity`, return -\n1. This takes **O(amount * n_coins)** time.",
+    "counterQuestion": "What is the 'Greedy' pitfall for Coin Change?",
+    "counterQuestionAnswer": "A greedy approach (always taking the largest coin) works for standard denominations like US currency (1, 5, 10, 25). However, it fails for arbitrary sets like `[1, 3, 4]` for amount `6`. Greedy would pick `4 + 1 + 1` (3 coins), while DP correctly finds `3 + 3` (2 coins).",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "dynamic_programming",
+      "arrays"
+    ],
+    "analogy": "Coin Change is like 'Paying for a coffee' with the fewest coins possible. You start by figuring out the fewest coins needed for 1 cent, then 2 cents, and so on, using your previous answers to build up to the total price.",
+    "code": "def coinChange(coins, amount):\n    dp = [float('inf')] * (amount + 1)\n    dp[0] = 0\n    for a in range(1, amount + 1):\n        for c in coins:\n            if a - c >= 0:\n                dp[a] = min(dp[a], 1 + dp[a - c])\n    return dp[amount] if dp[amount] != float('inf') else -1"
+  },
+  {
+    "id": 36,
+    "question": "Longest Substring Without Repeating Characters: How do you solve this in O(n) time?",
+    "answer": "Use a **Sliding Window** with a Hash Map (or array). \n1. Keep a pointer `left` and `right`. \n2. Store the last seen index of each character in the map. \n3. As you move `right`, if `char[right]` is already in the map and its last index is >= `left`, move `left` to `map[char[right]] + 1`. \n4. Track the maximum `right - left + 1` found.",
+    "counterQuestion": "What is the difference between a 'Sliding Window' and 'Two Pointers'?",
+    "counterQuestionAnswer": "Sliding Window is a subset of Two Pointers where the pointers usually move in the same direction to define a continuous segment (window). Standard Two Pointers can move towards each other (like 3Sum) or in different directions.",
+    "tags": [
+      "sliding_window",
+      "strings",
+      "hash_map"
+    ],
+    "analogy": "Finding the longest substring is like 'Stretching a rubber band' across letters. You keep stretching it as long as the letters are unique. If you hit a duplicate, you have to pull the back of the rubber band forward until the duplicate is gone.",
+    "code": "def lengthOfLongestSubstring(s):\n    char_set = set()\n    l, res = 0, 0\n    for r in range(len(s)):\n        while s[r] in char_set:\n            char_set.remove(s[l])\n            l += 1\n        char_set.add(s[r])\n        res = max(res, r - l + 1)\n    return res"
+  },
+  {
+    "id": 37,
+    "question": "3Sum: How do you find all unique triplets that sum to zero?",
+    "answer": "1. **Sort** the array. \n2. Iterate through with pointer `i`. \n3. If `nums[i] > 0`, break (no more possible triplets). \n4. Skip duplicates for `i`. \n5. Use **Two Pointers** (`left = i + 1`, `right = n - 1`) to find pairs that sum to `-nums[i]`. \n6. Skip duplicates for `left` and `right` after finding a valid triplet. Sorting reduces complexity to **O(n^2)** and helps handle duplicates easily.",
+    "counterQuestion": "Why do we sort the array first?",
+    "counterQuestionAnswer": "Sorting allows us to use the Two Pointers technique to find pairs in O(n) time and makes it trivial to skip duplicate numbers, ensuring that we only return unique triplets as required by the problem.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "two_pointers",
+      "arrays",
+      "sorting"
+    ],
+    "analogy": "3Sum is like 'Finding a balanced scale' with three weights. You pick one weight, then use two pointers to find two other weights that perfectly balance the scale to zero. Sorting the weights first makes it easy to know if you need to go heavier or lighter.",
+    "code": "def threeSum(nums):\n    res = []\n    nums.sort()\n    for i, a in enumerate(nums):\n        if i > 0 and a == nums[i - 1]: continue\n        l, r = i + 1, len(nums) - 1\n        while l < r:\n            s = a + nums[l] + nums[r]\n            if s > 0: r -= 1\n            elif s < 0: l += 1\n            else:\n                res.append([a, nums[l], nums[r]])\n                l += 1\n                while nums[l] == nums[l - 1] and l < r: l += 1\n    return res"
+  },
+  {
+    "id": 38,
+    "question": "Group Anagrams: How do you group strings that contain the same characters?",
+    "answer": "Use a **Hash Map** where the **Key** is the 'normalized' version of the string. \n1. For each string, either **sort** the characters or use a **frequency count array** as the key. \n2. Add the original string to the list corresponding to that key in the map. \n3. Return all values in the map. Sorting takes O(k log k) per string; frequency count takes O(k), where k is the string length.",
+    "counterQuestion": "What is the time complexity of the frequency count approach?",
+    "counterQuestionAnswer": "The frequency count approach takes **O(N * K)** time, where N is the number of strings and K is the maximum length of a string. This is generally faster than sorting for very long strings.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "hash_map",
+      "strings",
+      "arrays"
+    ],
+    "analogy": "Grouping anagrams is like 'Sorting mail by zip code'. You take each word, figure out its 'Zip Code' (the sorted characters), and put it in the box with all the other words that have the same zip code.",
+    "code": "def groupAnagrams(strs):\n    res = collections.defaultdict(list)\n    for s in strs:\n        count = [0] * 26\n        for c in s: count[ord(c) - ord('a')] += 1\n        res[tuple(count)].append(s)\n    return res.values()"
+  },
+  {
+    "id": 39,
+    "question": "Container With Most Water: How do you find the maximum area between two vertical lines?",
+    "answer": "Use **Two Pointers** at both ends of the array. \n1. Calculate the current area: `(right - left) * min(height[left], height[right])`. \n2. Update the max area. \n3. **Move the pointer** that points to the **shorter** line (if `height[left] < height[right]`, `left++`, else `right--`). This is because the area is limited by the shorter line, and moving the taller line can only decrease the area or keep it the same.",
+    "counterQuestion": "Why is this O(n) instead of O(n^2)?",
+    "counterQuestionAnswer": "We only iterate through the array once, with each pointer starting at the ends and meeting in the middle. We never re-check pairs we've already discarded, making the algorithm extremely efficient.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "two_pointers",
+      "arrays"
+    ],
+    "analogy": "Container with most water is like 'Finding the best spot for a fence' between two posts. You start with the widest possible fence. To get more area, you'd need much taller posts, so you always replace your shortest post with a new one, hoping it's taller.",
+    "code": "def maxArea(height):\n    res, l, r = 0, 0, len(height) - 1\n    while l < r:\n        area = (r - l) * min(height[l], height[r])\n        res = max(res, area)\n        if height[l] < height[r]: l += 1\n        else: r -= 1\n    return res"
+  },
+  {
+    "id": 40,
+    "question": "Reverse Linked List: How do you reverse a singly linked list in-place?",
+    "answer": "Use three pointers: `prev`, `curr`, and `next`. \n1. Initialize `prev = null`, `curr = head`. \n2. Loop until `curr` is null: a. `next = curr.next` (save next). b. `curr.next = prev` (reverse link). c. `prev = curr`, `curr = next` (move forward). \n3. Return `prev` (new head). This takes **O(n)** time and **O(1)** space.",
+    "counterQuestion": "How do you reverse it recursively?",
+    "counterQuestionAnswer": "The base case is if the head or `head.next` is null. Recursively call `reverse(head.next)`. Then, make the next node point back to the current: `head.next.next = head`, and set `head.next = null`. Return the pointer from the base case. Recursive approach takes **O(n)** space on the call stack.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "easy",
+    "tags": [
+      "linked_list",
+      "recursion",
+      "algorithms"
+    ],
+    "analogy": "Reversing a linked list is like 'Reversing a line of people' who are each holding the shoulder of the person in front. You start at the front, and one by one, you have each person turn around and hold the shoulder of the person who was behind them.",
+    "code": "def reverseList(head):\n    prev, curr = None, head\n    while curr:\n        nxt = curr.next\n        curr.next = prev\n        prev = curr\n        curr = nxt\n    return prev"
+  },
+  {
+    "id": 41,
+    "question": "How does 'Binary Search' work? Provide a Python implementation.",
+    "answer": "Binary Search is an efficient O(log n) algorithm for finding an item in a **sorted** list by repeatedly dividing the search interval in half.\n\n**Python Implementation:**\n```python\ndef binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1\n```\n**Complexity:** Time: O(log n), Space: O(1).",
+    "counterQuestion": "What is the requirement for the input array in Binary Search?",
+    "counterQuestionAnswer": "The input array MUST be sorted. If the array is unsorted, Binary Search will not work correctly, and you would need to use Linear Search (O(n)) or sort the array first (O(n log n)).",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": [
+      "binary_search",
+      "algorithms",
+      "searching"
+    ],
+    "analogy": "Binary search is like 'Finding a page in a dictionary'. You open it in the middle. If the word you want is later, you ignore the first half and open the middle of the second half, repeating until you find it.",
+    "code": "def binary_search(arr, target):\n    l, r = 0, len(arr) - 1\n    while l <= r:\n        m = (l + r) // 2\n        if arr[m] == target: return m\n        if arr[m] < target: l = m + 1\n        else: r = m - 1\n    return -1"
+  },
+  {
+    "id": 42,
+    "question": "Two Sum: Given an array of integers and a target, return indices of the two numbers that add up to the target.",
+    "answer": "The most efficient way is to use a **Hash Map** to store the numbers we have seen so far and their indices. For each number `x`, we check if `target - x` exists in the map. If it does, we've found the pair. This takes **O(n)** time and **O(n)** space.",
+    "analogy": "Two Sum is like 'Finding a missing puzzle piece'. As you go through the pieces (numbers), you look at the shape you need (target - current) and check if you've already set that piece aside on the table (Hash Map).",
+    "code": "def twoSum(nums, target):\n    prevMap = {} # val : index\n    for i, n in enumerate(nums):\n        diff = target - n\n        if diff in prevMap:\n            return [prevMap[diff], i]\n        prevMap[n] = i",
+    "counterQuestion": "Can you solve this in O(1) space if the array is already sorted?",
+    "counterQuestionAnswer": "Yes. If the array is sorted, you can use **Two Pointers** (left and right). If the sum is too small, move the left pointer forward; if too large, move the right pointer backward. This achieves O(1) space and O(n) time.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "easy",
+    "tags": ["arrays", "hash_map", "leetcode", "highly_asked"]
+  },
+  {
+    "id": 43,
+    "question": "Valid Parentheses: Given a string containing just '()[]{}', determine if the input string is valid.",
+    "answer": "Use a **Stack**. Iterate through the string; if you see an opening bracket, push it onto the stack. If you see a closing bracket, check if it matches the top of the stack. If it does, pop it; otherwise, the string is invalid. The stack must be empty at the end. This takes **O(n)** time and **O(n)** space.",
+    "analogy": "Valid Parentheses is like 'Nesting dolls' or 'Opening and closing apps'. You can't close the 'Parentheses' app if you just opened the 'Bracket' app inside it. You have to close the most recently opened thing first (LIFO).",
+    "code": "def isValid(s):\n    stack = []\n    closeToOpen = {\")\": \"(\", \"]\": \"[\", \"}\": \"{\"}\n    for c in s:\n        if c in closeToOpen:\n            if stack and stack[-1] == closeToOpen[c]:\n                stack.pop()\n            else: return False\n        else: stack.append(c)\n    return True if not stack else False",
+    "counterQuestion": "What is the time complexity if the string only contains one type of bracket, e.g., '((()))'?",
+    "counterQuestionAnswer": "If there is only one type of bracket, you don't need a stack. You can just use a single integer counter: increment for '(' and decrement for ')'. If the counter ever goes negative or ends up non-zero, it's invalid. This reduces space complexity to O(1).",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "easy",
+    "tags": ["stack", "strings", "leetcode", "highly_asked"]
+  },
+  {
+    "id": 44,
+    "question": "Merge Two Sorted Lists: How do you merge two sorted linked lists into one sorted list?",
+    "answer": "Use a **Dummy Node** to simplify the head of the new list. Iterate through both lists with two pointers, always attaching the smaller node to the merged list and moving its pointer forward. At the end, if one list still has nodes, attach them to the end of the merged list. This takes **O(n + m)** time and **O(1)** extra space.",
+    "analogy": "Merging sorted lists is like 'Combining two lines of students' sorted by height. You look at the front of both lines, pick the shorter student to go first into the new line, and repeat until both lines are merged.",
+    "code": "def mergeTwoLists(l1, l2):\n    dummy = ListNode()\n    tail = dummy\n    while l1 and l2:\n        if l1.val < l2.val:\n            tail.next = l1; l1 = l1.next\n        else:\n            tail.next = l2; l2 = l2.next\n        tail = tail.next\n    if l1: tail.next = l1\n    elif l2: tail.next = l2\n    return dummy.next",
+    "counterQuestion": "How would you solve this recursively?",
+    "counterQuestionAnswer": "In the recursive step, compare the heads of both lists. If `l1.val < l2.val`, then `l1.next = mergeTwoLists(l1.next, l2)` and return `l1`. The base cases are when one of the lists is empty. Recursive space complexity is O(n+m) due to the call stack.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "easy",
+    "tags": ["linked_list", "recursion", "leetcode", "highly_asked"]
+  },
+  {
+    "id": 45,
+    "question": "Best Time to Buy and Sell Stock: Find the maximum profit you can achieve by buying and selling once.",
+    "answer": "Use a **Two-Pointer** or **Greedy** approach. Track the minimum price seen so far (`minPrice`) and the maximum profit (`maxProfit`). For each new price, calculate the potential profit if sold today (`currentPrice - minPrice`) and update `maxProfit`. Then update `minPrice` if the current price is lower. This is **O(n)** time and **O(1)** space.",
+    "analogy": "Buying stock is like 'Waiting for a sale'. You keep track of the lowest price you've seen at the store. Every day, you check if selling today's price would give you a bigger profit than any previous day you checked.",
+    "code": "def maxProfit(prices):\n    l, r = 0, 1 # buy, sell\n    maxP = 0\n    while r < len(prices):\n        if prices[l] < prices[r]:\n            profit = prices[r] - prices[l]\n            maxP = max(maxP, profit)\n        else:\n            l = r\n        r += 1\n    return maxP",
+    "counterQuestion": "What if you could buy and sell multiple times (Stock II)?",
+    "counterQuestionAnswer": "If you can trade multiple times, the problem becomes even simpler: just add up every positive price jump between consecutive days (`if prices[i] > prices[i-1]: profit += prices[i] - prices[i-1]`). This is also a greedy approach.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "easy",
+    "tags": ["arrays", "greedy", "leetcode", "highly_asked"]
+  },
+  {
+    "id": 46,
+    "question": "Valid Palindrome: Determine if a string is a palindrome, considering only alphanumeric characters and ignoring cases.",
+    "answer": "Use **Two Pointers** (left and right). Move them towards each other, skipping non-alphanumeric characters. Compare the characters at each pointer; if they don't match (after lowercasing), it's not a palindrome. This is **O(n)** time and **O(1)** space.",
+    "analogy": "Checking a palindrome is like 'Folding a piece of paper in half'. You compare the top-left corner to the top-right corner, the next spot to the next spot, and so on. If every pair matches perfectly as you meet in the middle, it's a palindrome.",
+    "code": "def isPalindrome(s):\n    l, r = 0, len(s) - 1\n    while l < r:\n        while l < r and not s[l].isalnum(): l += 1\n        while r > l and not s[r].isalnum(): r -= 1\n        if s[l].lower() != s[r].lower(): return False\n        l, r = l + 1, r - 1\n    return True",
+    "counterQuestion": "Why is the Two-Pointer approach better than reversing the string and comparing?",
+    "counterQuestionAnswer": "Reversing the string requires **O(n)** extra space to store the new string. The Two-Pointer approach is 'in-place' and uses **O(1)** space, making it much more memory-efficient for very long strings.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "easy",
+    "tags": ["strings", "two_pointers", "leetcode", "highly_asked"]
+  },
+  {
+    "id": 47,
+    "question": "Invert Binary Tree: How do you swap the left and right children of every node in a binary tree?",
+    "answer": "Use **Recursion (DFS)**. For the current node, swap its left and right children, then recursively call the function on both children. Alternatively, use **BFS** with a queue and swap children as you visit each node. This is **O(n)** time as every node is visited once.",
+    "analogy": "Inverting a tree is like 'Looking at a tree in a mirror'. Everything that was on the left branch is now on the right, and this swap happens at every single fork in the tree from top to bottom.",
+    "code": "def invertTree(root):\n    if not root: return None\n    root.left, root.right = root.right, root.left\n    invertTree(root.left)\n    invertTree(root.right)\n    return root",
+    "counterQuestion": "What is the time complexity of the BFS approach?",
+    "counterQuestionAnswer": "The time complexity is still **O(n)** because you must visit and swap the children of every single node in the tree, regardless of whether you use DFS or BFS.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "easy",
+    "tags": ["trees", "recursion", "leetcode", "highly_asked"]
+  },
+  {
+    "id": 48,
+    "question": "Lowest Common Ancestor (LCA) of a BST: Find the lowest node that is an ancestor of both given nodes p and q.",
+    "answer": "Leverage the **BST Property**. Starting from the root: \n1. If both `p` and `q` are smaller than the current node, move to the left child. \n2. If both are larger, move to the right child. \n3. If one is smaller and one is larger (or the current node is one of them), the current node is the LCA. This is **O(h)** time where h is the height of the tree.",
+    "analogy": "LCA in a BST is like 'Finding the last common ancestor in a family tree'. Because it's a BST (ordered), you know that if one relative moved to the West Coast and one to the East Coast, the person at the 'Fork in the road' (the node between their values) must be their last common ancestor.",
+    "code": "def lowestCommonAncestor(root, p, q):\n    curr = root\n    while curr:\n        if p.val > curr.val and q.val > curr.val:\n            curr = curr.right\n        elif p.val < curr.val and q.val < curr.val:\n            curr = curr.left\n        else:\n            return curr",
+    "counterQuestion": "How would you find the LCA if it was a regular Binary Tree, not a BST?",
+    "counterQuestionAnswer": "In a regular Binary Tree, you must use recursion to search both subtrees. If a subtree returns a non-null value for both `p` and `q`, the current node is the LCA. If only one subtree returns a value, that value is passed up. This is O(n) because you might have to visit every node.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "easy",
+    "tags": ["trees", "bst", "leetcode", "highly_asked"]
+  },
+  {
+    "id": 49,
+    "question": "Subsets: Given a set of distinct integers, return all possible subsets (the power set).",
+    "answer": "This is a **Backtracking** problem. For each number, you have two choices: either **include** it in the current subset or **exclude** it. You traverse the decision tree for all numbers and add the resulting subset to your answer at each leaf. This results in **O(n * 2^n)** time and space complexity.",
+    "analogy": "Finding subsets is like 'Choosing toppings for a pizza'. For every possible topping (number), you either say 'Yes' or 'No'. By the time you've gone through all toppings, you have one possible version of the pizza. If you do this for every combination of Yes/No, you have the full menu of possible pizzas.",
+    "code": "def subsets(nums):\n    res = []\n    subset = []\n    def dfs(i):\n        if i >= len(nums):\n            res.append(subset.copy()); return\n        # Include nums[i]\n        subset.append(nums[i]); dfs(i + 1)\n        # Exclude nums[i]\n        subset.pop(); dfs(i + 1)\n    dfs(0)\n    return res",
+    "counterQuestion": "How many subsets will a set of size N have?",
+    "counterQuestionAnswer": "A set of size N has **2^N** subsets. This is because for each of the N elements, there are exactly 2 choices (include or exclude), leading to 2 * 2 * ... * 2 (N times) total combinations.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": ["backtracking", "recursion", "leetcode", "highly_asked"]
+  },
+  {
+    "id": 50,
+    "question": "Combination Sum: Find all unique combinations in candidates where the numbers sum to target (you can reuse numbers).",
+    "answer": "Use **Backtracking**. At each step, you can either: \n1. **Include** the current number and stay at the same index (allowing reuse). \n2. **Exclude** the current number and move to the next index. If the current sum equals the target, add the combination to the result. If it exceeds the target, stop that branch (pruning).",
+    "analogy": "Combination sum is like 'Making change for a dollar' using an infinite supply of specific coins. You try adding a quarter; if you still need more, you can add another quarter or try a dime. If you go over a dollar, you 'backtrack' and try a different coin.",
+    "code": "def combinationSum(candidates, target):\n    res = []\n    def dfs(i, cur, total):\n        if total == target:\n            res.append(cur.copy()); return\n        if i >= len(candidates) or total > target:\n            return\n        cur.append(candidates[i])\n        dfs(i, cur, total + candidates[i]) # include i\n        cur.pop()\n        dfs(i + 1, cur, total) # exclude i\n    dfs(0, [], 0)\n    return res",
+    "counterQuestion": "What prevents duplicate combinations in this approach?",
+    "counterQuestionAnswer": "The decision to 'move to the next index' after deciding to exclude the current number ensures we never look back at previous numbers. This creates a canonical order for combinations, preventing `[2, 2, 3]` and `[3, 2, 2]` from being counted separately.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": ["backtracking", "recursion", "leetcode", "highly_asked"]
+  },
+  {
+    "id": 51,
+    "question": "Product of Array Except Self: Return an array where each element is the product of all other elements in O(n) without using division.",
+    "answer": "Use two passes: **Prefix** and **Postfix**. \n1. In the first pass, calculate the product of all elements to the left of each index and store it in the result array. \n2. In the second pass, iterate backwards and multiply the current result value by the product of all elements to the right. This achieves **O(n)** time and **O(1)** extra space (excluding the output array).",
+    "analogy": "Product except self is like 'Knowing what everyone else brought to a potluck'. First, you walk down the line from left to right, noting the combined total of what everyone before you brought. Then you walk back from right to left, adding the total of what everyone after you brought.",
+    "code": "def productExceptSelf(nums):\n    res = [1] * len(nums)\n    prefix = 1\n    for i in range(len(nums)):\n        res[i] = prefix; prefix *= nums[i]\n    postfix = 1\n    for i in range(len(nums) - 1, -1, -1):\n        res[i] *= postfix; postfix *= nums[i]\n    return res",
+    "counterQuestion": "Why is using division (Product of all / nums[i]) discouraged for this problem?",
+    "counterQuestionAnswer": "Division fails if any element in the array is zero (division by zero error). Additionally, it doesn't work if there are multiple zeros (the product of all others would be zero, but 'Product of all' would be zero). The prefix/postfix approach is more robust and handles zeros naturally.",
+    "category": "dsa",
+    "topic": "algorithms",
+    "difficulty": "medium",
+    "tags": ["arrays", "prefix_sum", "leetcode", "highly_asked"]
+  }
+]
